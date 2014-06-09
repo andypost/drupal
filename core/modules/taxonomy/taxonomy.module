@@ -116,15 +116,6 @@ function taxonomy_permission() {
 }
 
 /**
- * Entity URI callback.
- */
-function taxonomy_term_uri($term) {
-  return new Url('taxonomy.term_page', array(
-    'taxonomy_term' => $term->id(),
-  ));
-}
-
-/**
  * Return nodes attached to a term across all field instances.
  *
  * This function requires taxonomy module to be maintaining its own tables,

@@ -33,7 +33,6 @@ use Drupal\taxonomy\TermInterface;
  *     "translation" = "Drupal\taxonomy\TermTranslationHandler"
  *   },
  *   base_table = "taxonomy_term_data",
- *   uri_callback = "taxonomy_term_uri",
  *   fieldable = TRUE,
  *   translatable = TRUE,
  *   entity_keys = {
