@@ -15,3 +15,7 @@ services:
   forum.index_storage:
     class: Drupal\forum\ForumIndexStorage
     arguments: ['@database', '@forum_manager']
+  forum.route_processor:
+    class: Drupal\forum\Access\RouteProcessor
+    tags:
+      - { name: route_processor_outbound }

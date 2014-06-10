@@ -154,7 +154,11 @@ abstract class Entity extends DependencySerialization implements EntityInterface
     // The links array might contain URI templates set in annotations.
     $link_templates = $this->linkTemplates();
 
-    if ($this->getEntityType()->hasKey('bundle')) {
+    if (isset($link_templates[$rel])) {
+      // If there is a template for the given relationship type, generate the path.
+      $uri = new Url($link_templates[$rel], $this->urlRouteParameters($rel));
+    }
+    else {
       $bundle = $this->bundle();
       // A bundle-specific callback takes precedence over the generic one for
       // the entity type.
@@ -162,29 +166,21 @@ abstract class Entity extends DependencySerialization implements EntityInterface
       if (isset($bundles[$bundle]['uri_callback'])) {
         $uri_callback = $bundles[$bundle]['uri_callback'];
       }
-    }
-
-    if (!isset($uri_callback)) {
-      // If there is no bundle callback, use the default URI format.
-      if ($entity_uri_callback = $this->getEntityType()->getUriCallback()) {
+      elseif ($entity_uri_callback = $this->getEntityType()->getUriCallback()) {
         $uri_callback = $entity_uri_callback;
       }
-    }
 
-    if (isset($uri_callback) && is_callable($uri_callback)) {
-      // Invoke the callback to get the URI.
-      $uri = call_user_func($uri_callback, $this);
-    }
-    elseif (isset($link_templates[$rel])) {
-      // If there is a template for the given relationship type, generate the
-      // path.
-      $uri = new Url($link_templates[$rel], $this->urlRouteParameters($rel));
-    }
-    else {
-      throw new UndefinedLinkTemplateException(String::format('No link template "@rel" found for the "@entity_type" entity type', array(
-        '@rel' => $rel,
-        '@entity_type' => $this->getEntityTypeId(),
-      )));
+      // Invoke the callback to get the URI. If there is no callback, use the
+      // default URI format.
+      if (isset($uri_callback) && is_callable($uri_callback)) {
+        $uri = call_user_func($uri_callback, $this);
+      }
+      else {
+        throw new UndefinedLinkTemplateException(String::format('No link template "@rel" found for the "@entity_type" entity type', array(
+          '@rel' => $rel,
+          '@entity_type' => $this->getEntityTypeId(),
+        )));
+      }
     }
 
     // Pass the entity data to url() so that alter functions do not need to

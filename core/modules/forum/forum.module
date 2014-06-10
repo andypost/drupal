@@ -173,30 +173,6 @@ function forum_entity_type_build(array &$entity_types) {
 }
 
 /**
- * Implements hook_entity_bundle_info_alter().
- */
-function forum_entity_bundle_info_alter(&$bundles) {
-  // Take over URI construction for taxonomy terms that are forums.
-  if ($vid = \Drupal::config('forum.settings')->get('vocabulary')) {
-    if (isset($bundles['taxonomy_term'][$vid])) {
-      $bundles['taxonomy_term'][$vid]['uri_callback'] = 'forum_uri';
-    }
-  }
-}
-
-/**
- * Entity URI callback used in forum_entity_bundle_info_alter().
- */
-function forum_uri($forum) {
-  return array(
-    'route_name' => 'forum.page',
-    'route_parameters' => array(
-      'taxonomy_term' => $forum->id(),
-    ),
-  );
-}
-
-/**
  * Implements hook_node_validate().
  *
  * Checks in particular that the node is assigned only a "leaf" term in the
