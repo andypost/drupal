@@ -187,6 +187,11 @@ class ForumTest extends WebTestBase {
 
     // Test adding a comment to a forum topic.
     $node = $this->createForumTopic($this->forum, FALSE);
+
+    // Make sure the forum field points to the forum.
+    $elements = $this->xpath('//div[contains(@class, "field-name-taxonomy-forums")]//a[contains(@href, :href)]', array(':href' => 'forum/' . $this->forum['tid']));
+    $this->assertEqual(count($elements), 1, 'Found taxonomy term overriden link.');
+
     $edit = array();
     $edit['comment_body[0][value]'] = $this->randomName();
     $this->drupalPostForm('node/' . $node->id(), $edit, t('Save'));

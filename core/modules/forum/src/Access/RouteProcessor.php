@@ -8,9 +8,7 @@
 namespace Drupal\forum\Access;
 
 use Drupal\Core\RouteProcessor\OutboundRouteProcessorInterface;
-use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\taxonomy\Entity\Term;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -33,4 +31,3 @@ class RouteProcessor implements OutboundRouteProcessorInterface {
   }
 
 }
-
