@@ -395,8 +395,9 @@ class CommentForm extends ContentEntityForm {
       }
       $query = array();
       // Find the current display page for this comment.
-      $field_definition = $this->entityManager->getFieldDefinitions($entity->getEntityTypeId(), $entity->bundle())[$field_name];
-      $page = comment_get_display_page($comment->id(), $field_definition);
+      $display_settings = entity_get_display($entity->getEntityTypeId(), $entity->bundle(), 'default')
+        ->getComponent($field_name);
+      $page = comment_get_display_page($comment->id(), $display_settings);
       if ($page > 0) {
         $query['page'] = $page;
       }

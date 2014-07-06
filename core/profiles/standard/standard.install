@@ -4,6 +4,7 @@
  * Install, update and uninstall functions for the standard installation profile.
  */
 
+use Drupal\comment\Plugin\Field\FieldFormatter\CommentDefaultFormatter;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 
 /**
@@ -19,6 +20,26 @@ function standard_install() {
 
   // Add comment field to article node type.
   \Drupal::service('comment.manager')->addDefaultField('node', 'article', 'comment', CommentItemInterface::OPEN);
+  // Set some display options for comments in search results.
+  foreach (array('search_result', 'search_index') as $view_mode) {
+    $display = entity_get_display('node', 'article', $view_mode);
+    $display->removeComponent('comment');
+    $display->save();
+  }
+  // Set comment field to use the link formatter on article teasers.
+  entity_get_display('node', 'article', 'teaser')
+    ->setComponent('comment', array(
+      'label' => 'hidden',
+      'type' => 'comment_links',
+      'weight' => 20,
+      'settings' => array(
+        'per_page' => 50,
+        'default_mode' => COMMENT_MODE_THREADED,
+        'form_location' => COMMENT_FORM_BELOW,
+        'show_links' => CommentDefaultFormatter::LINKS_TEASER,
+      ),
+    ))
+    ->save();
 
   // Hide the comment field in the rss view mode.
   entity_get_display('node', 'article', 'rss')

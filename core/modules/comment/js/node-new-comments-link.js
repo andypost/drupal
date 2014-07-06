@@ -40,9 +40,12 @@
         return;
       }
 
+      var perPage = $placeholder.closest('[data-comment-per-page]').attr('data-comment-per-page');
+      var defaultMode = $placeholder.closest('[data-comment-default-mode]').attr('data-comment-default-mode');
+
       // Perform an AJAX request to retrieve node read timestamps.
       Drupal.history.fetchTimestamps(nodeIDs, function () {
-        processNodeNewCommentLinks($placeholders);
+        processNodeNewCommentLinks($placeholders, perPage, defaultMode);
       });
     }
   };
@@ -71,7 +74,7 @@
       .end().show();
   }
 
-  function processNodeNewCommentLinks($placeholders) {
+  function processNodeNewCommentLinks($placeholders, perPage, defaultMode) {
     // Figure out which placeholders need the "x new comments" links.
     var $placeholdersToUpdate = {};
     var fieldName = 'comment';
@@ -121,7 +124,7 @@
       $.ajax({
         url: Drupal.url('comments/render_new_comments_node_links'),
         type: 'POST',
-        data: { 'node_ids[]': nodeIDs, 'field_name': fieldName },
+        data: { 'node_ids[]': nodeIDs, 'field_name': fieldName, 'per_page': perPage, 'default_mode': defaultMode },
         dataType: 'json',
         success: render
       });

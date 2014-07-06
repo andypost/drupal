@@ -89,6 +89,21 @@ class NodeNewComments extends Numeric {
       '#type' => 'checkbox',
       '#default_value' => $this->options['link_to_comment'],
     );
+    $form['default_mode'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Threading'),
+      '#default_value' => $this->options['default_mode'],
+      '#description' => t('Comment replies use a threaded list.'),
+    );
+    $element['per_page'] = array(
+      '#type' => 'number',
+      '#title' => t('Comments per page'),
+      '#default_value' => $this->options['per_page'],
+      '#required' => TRUE,
+      '#min' => 10,
+      '#max' => 1000,
+      '#step' => 10,
+    );
 
     parent::buildOptionsForm($form, $form_state);
   }
@@ -153,7 +168,7 @@ class NodeNewComments extends Numeric {
       ));
       $this->options['alter']['make_link'] = TRUE;
       $this->options['alter']['path'] = 'node/' . $node->id();
-      $this->options['alter']['query'] = comment_new_page_count($this->getValue($values, 'comment_count'), $this->getValue($values), $node);
+      $this->options['alter']['query'] = comment_new_page_count($this->getValue($values, 'comment_count'), $this->getValue($values), $node, $this->options['per_page'], $this->options['default_mode']);
       $this->options['alter']['fragment'] = 'new';
     }
 

@@ -12,6 +12,7 @@ use Drupal\comment\CommentManagerInterface;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\Entity\Node;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -280,17 +281,19 @@ class CommentController extends ControllerBase {
 
     $nids = $request->request->get('node_ids');
     $field_name = $request->request->get('field_name');
-    if (!isset($nids)) {
+    $per_page = $request->request->get('per_page');
+    $default_mode = $request->request->get('default_mode');
+    if (!isset($nids) || !in_array($default_mode, array(COMMENT_MODE_THREADED, COMMENT_MODE_FLAT))) {
       throw new NotFoundHttpException();
     }
     // Only handle up to 100 nodes.
     $nids = array_slice($nids, 0, 100);
 
     $links = array();
-    foreach ($nids as $nid) {
-      $node = node_load($nid);
+    $nodes = Node::loadMultiple($nids);
+    foreach ($nodes as $nid => $node) {
       $new = $this->commentManager->getCountNewComments($node);
-      $query = comment_new_page_count($node->{$field_name}->comment_count, $new, $node);
+      $query = comment_new_page_count($node->{$field_name}->comment_count, $new, $node, $per_page, $default_mode);
       $links[$nid] = array(
         'new_comment_count' => (int) $new,
         'first_new_comment_link' => $this->urlGenerator()->generateFromPath('node/' . $node->id(), array('query' => $query, 'fragment' => 'new')),

@@ -79,6 +79,20 @@ abstract class CommentTestBase extends WebTestBase {
     // Create comment field on article.
     $this->container->get('comment.manager')->addDefaultField('node', 'article');
 
+    // Set some display options for search results and print pages.
+    if (module_exists('book')) {
+      $display = entity_get_display('node', 'article', 'print');
+      $display->removeComponent('comment');
+      $display->save();
+    }
+    if (module_exists('search')) {
+      foreach (array('search_result', 'search_index') as $view_mode) {
+        $display = entity_get_display('node', 'article', $view_mode);
+        $display->removeComponent('comment');
+        $display->save();
+      }
+    }
+
     // Create a test node authored by the web user.
     $this->node = $this->drupalCreateNode(array('type' => 'article', 'promote' => 1, 'uid' => $this->web_user->id()));
   }
@@ -254,7 +268,7 @@ abstract class CommentTestBase extends WebTestBase {
    *   Defaults to 'comment'.
    */
   public function setCommentForm($enabled, $field_name = 'comment') {
-    $this->setCommentSettings('form_location', ($enabled ? COMMENT_FORM_BELOW : COMMENT_FORM_SEPARATE_PAGE), 'Comment controls ' . ($enabled ? 'enabled' : 'disabled') . '.', $field_name);
+    $this->setCommentFormatterSettings('form_location', ($enabled ? COMMENT_FORM_BELOW : COMMENT_FORM_SEPARATE_PAGE), 'Comment controls ' . ($enabled ? 'enabled' : 'disabled') . '.', $field_name);
   }
 
   /**
@@ -280,7 +294,7 @@ abstract class CommentTestBase extends WebTestBase {
    *   Defaults to 'comment'.
    */
   public function setCommentsPerPage($number, $field_name = 'comment') {
-    $this->setCommentSettings('per_page', $number, format_string('Number of comments per page set to @number.', array('@number' => $number)), $field_name);
+    $this->setCommentFormatterSettings('per_page', $number, format_string('Number of comments per page set to @number.', array('@number' => $number)), $field_name);
   }
 
   /**
@@ -300,6 +314,29 @@ abstract class CommentTestBase extends WebTestBase {
     $instance = FieldInstanceConfig::loadByName('node', 'article', $field_name);
     $instance->settings[$name] = $value;
     $instance->save();
+    // Display status message.
+    $this->pass($message);
+  }
+
+  /**
+   * Sets a comment settings variable for the article content type.
+   *
+   * @param string $name
+   *   Name of variable.
+   * @param string $value
+   *   Value of variable.
+   * @param string $message
+   *   Status message to display.
+   * @param string $field_name
+   *   (optional) Field name through which the comment should be posted.
+   *   Defaults to 'comment'.
+   */
+  public function setCommentFormatterSettings($name, $value, $message, $field_name = 'comment') {
+    $display = entity_get_display('node', 'article', 'full');
+    $component = $display->getComponent($field_name);
+    $component['settings'][$name] = $value;
+    $display->setComponent($field_name, $component);
+    $display->save();
     // Display status message.
     $this->pass($message);
   }

@@ -7,6 +7,7 @@
 
 namespace Drupal\comment;
 
+use Drupal\comment\Plugin\Field\FieldFormatter\CommentDefaultFormatter;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Unicode;
@@ -215,6 +216,12 @@ class CommentManager implements CommentManagerInterface {
           'label' => 'hidden',
           'type' => 'comment_default',
           'weight' => 20,
+          'settings' => array(
+            'per_page' => 50,
+            'default_mode' => COMMENT_MODE_THREADED,
+            'form_location' => COMMENT_FORM_BELOW,
+            'show_links' => CommentDefaultFormatter::LINKS_PAGE,
+          )
         ))
         ->save();
       // The comment field should be hidden in all other view displays.

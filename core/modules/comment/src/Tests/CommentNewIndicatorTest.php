@@ -115,6 +115,8 @@ class CommentNewIndicatorTest extends CommentTestBase {
     // perform an HTTP request to render the "new comments" node link.
     $this->assertIdentical(1, count($this->xpath('//*[@data-history-node-last-comment-timestamp="' . $comment->getChangedTime() .  '"]')), 'data-history-node-last-comment-timestamp attribute is set to the correct value.');
     $this->assertIdentical(1, count($this->xpath('//*[@data-history-node-field-name="comment"]')), 'data-history-node-field-name attribute is set to the correct value.');
+    $this->assertIdentical(1, count($this->xpath('//*[@data-comment-per-page="50"]')), 'data-comment-per-page attribute is set to the correct value.');
+    $this->assertIdentical(1, count($this->xpath('//*[@data-comment-default-mode="1"]')), 'data-comment-default-mode is set to the correct value.');
     $response = $this->renderNewCommentsNodeLinks(array($this->node->id()));
     $this->assertResponse(200);
     $json = Json::decode($response);

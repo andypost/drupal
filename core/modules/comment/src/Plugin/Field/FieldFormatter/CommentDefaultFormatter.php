@@ -7,9 +7,12 @@
 
 namespace Drupal\comment\Plugin\Field\FieldFormatter;
 
+use Drupal\comment\CommentManagerInterface;
 use Drupal\comment\CommentStorageInterface;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityViewBuilderInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
@@ -35,11 +38,35 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryPluginInterface {
 
   /**
+   * Display no links.
+   */
+  const LINKS_NONE = 0;
+
+  /**
+   * Display default 'add new comment' and 'x comments' links seen on page view.
+   */
+  const LINKS_PAGE = 1;
+
+  /**
+   * Display RSS style links.
+   */
+  const LINKS_RSS = 2;
+
+  /**
+   * Display teaser style links.
+   */
+  const LINKS_TEASER = 3;
+
+  /**
    * {@inheritdoc}
    */
   public static function defaultSettings() {
     return array(
       'pager_id' => 0,
+      'show_links' => static::LINKS_NONE,
+      'default_mode' => COMMENT_MODE_THREADED,
+      'per_page' => 50,
+      'form_location' => COMMENT_FORM_BELOW,
     ) + parent::defaultSettings();
   }
 
@@ -65,6 +92,20 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
   protected $viewBuilder;
 
   /**
+   * The module handler service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
+
+  /**
+   * The comment manager service.
+   *
+   * @var \Drupal\comment\CommentManagerInterface
+   */
+  protected $commentManager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
@@ -78,7 +119,9 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
       $configuration['third_party_settings'],
       $container->get('current_user'),
       $container->get('entity.manager')->getStorage('comment'),
-      $container->get('entity.manager')->getViewBuilder('comment')
+      $container->get('entity.manager')->getViewBuilder('comment'),
+      $container->get('module_handler'),
+      $container->get('comment.manager')
     );
   }
 
@@ -105,12 +148,18 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
    *   The comment storage.
    * @param \Drupal\Core\Entity\EntityViewBuilderInterface $comment_view_builder
    *   The comment view builder.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler service.
+   * @param \Drupal\comment\CommentManagerInterface $comment_manager
+   *   The comment manager service.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, AccountInterface $current_user, CommentStorageInterface $comment_storage, EntityViewBuilderInterface $comment_view_builder) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, AccountInterface $current_user, CommentStorageInterface $comment_storage, EntityViewBuilderInterface $comment_view_builder, ModuleHandlerInterface $module_handler, CommentManagerInterface $comment_manager) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
     $this->viewBuilder = $comment_view_builder;
     $this->storage = $comment_storage;
     $this->currentUser = $current_user;
+    $this->moduleHandler = $module_handler;
+    $this->commentManager = $comment_manager;
   }
 
   /**
@@ -130,7 +179,6 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
       // comment_node_update_index() instead of by this formatter, so don't
       // return anything if the view mode is search_index or search_result.
       !in_array($this->viewMode, array('search_result', 'search_index'))) {
-      $comment_settings = $this->getFieldSettings();
 
       // Only attempt to render comments if the entity has visible comments.
       // Unpublished comments are not included in
@@ -138,9 +186,9 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
       // should display if the user is an administrator.
       if ((($entity->get($field_name)->comment_count && $this->currentUser->hasPermission('access comments')) ||
         $this->currentUser->hasPermission('administer comments'))) {
-        $mode = $comment_settings['default_mode'];
-        $comments_per_page = $comment_settings['per_page'];
-        if ($cids = comment_get_thread($entity, $field_name, $mode, $comments_per_page, $this->getSetting('pager_id'))) {
+        // @todo Use $this->storage once https://www.drupal.org/node/2156089 is
+        //   in.
+        if ($cids = comment_get_thread($entity, $field_name, $this->getSetting('default_mode'), $this->getSetting('per_page'), $this->getSetting('pager_id'))) {
           $comments = $this->storage->loadMultiple($cids);
           comment_prepare_thread($comments);
           $build = $this->viewBuilder->viewMultiple($comments);
@@ -168,7 +216,7 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
 
       // Append comment form if the comments are open and the form is set to
       // display below the entity. Do not show the form for the print view mode.
-      if ($status == CommentItemInterface::OPEN && $comment_settings['form_location'] == COMMENT_FORM_BELOW && $this->viewMode != 'print') {
+      if ($status == CommentItemInterface::OPEN && $this->getSetting('form_location') == COMMENT_FORM_BELOW && $this->viewMode != 'print') {
         // Only show the add comment form if the user has permission.
         if ($this->currentUser->hasPermission('post comments')) {
           // All users in the "anonymous" role can use the same form: it is fine
@@ -201,9 +249,10 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
       $elements[] = $output + array(
         '#theme' => 'comment_wrapper__' . $entity->getEntityTypeId() . '__' . $entity->bundle() . '__' . $field_name,
         '#entity' => $entity,
-        '#display_mode' => $this->getFieldSetting('default_mode'),
+        '#display_mode' => $this->getSetting('default_mode'),
         'comments' => array(),
         'comment_form' => array(),
+        'links' => $this->buildLinks($items),
       );
     }
 
@@ -215,6 +264,38 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
    */
   public function settingsForm(array $form, array &$form_state) {
     $element = array();
+    $element['default_mode'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Threading'),
+      '#default_value' => $this->getSetting('default_mode'),
+      '#description' => t('Show comment replies in a threaded list.'),
+    );
+    $element['show_links'] = array(
+      '#type' => 'select',
+      '#title' => t('Show links'),
+      '#default_value' => $this->getSetting('show_links'),
+      '#description' => t('Show comment links.'),
+      '#options' => array(
+        static::LINKS_NONE => $this->t('None'),
+        static::LINKS_PAGE => $this->t('Default links'),
+        static::LINKS_RSS => $this->t('RSS links'),
+        static::LINKS_TEASER => $this->t('Teaser links'),
+      ),
+    );
+    $element['per_page'] = array(
+      '#type' => 'number',
+      '#title' => t('Comments per page'),
+      '#default_value' => $this->getSetting('per_page'),
+      '#required' => TRUE,
+      '#min' => 10,
+      '#max' => 1000,
+      '#step' => 10,
+    );
+    $element['form_location'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show reply form on the same page as comments'),
+      '#default_value' => $this->getSetting('form_location'),
+    );
     $element['pager_id'] = array(
       '#type' => 'select',
       '#title' => $this->t('Pager ID'),
@@ -229,13 +310,180 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
    * {@inheritdoc}
    */
   public function settingsSummary() {
-    // Only show a summary if we're using a non-standard pager id.
+    $links_map = array(
+      static::LINKS_NONE => $this->t('without links'),
+      static::LINKS_RSS => $this->t('RSS style links'),
+      static::LINKS_PAGE => $this->t('with full-page style links'),
+      static::LINKS_TEASER => $this->t('with teaser style links'),
+    );
+    $variables = array(
+      '@id' => $this->getSetting('pager_id'),
+      '@form' => $this->getSetting('form_location') ? $this->t('inline form') : $this->t('form on separate page'),
+      '@per_page' => $this->getSetting('per_page'),
+      '@mode' => $this->getSetting('default_mode') ? $this->t('threaded') : $this->t('flat'),
+      '@links' => $links_map[$this->getSetting('show_links')],
+    );
     if ($this->getSetting('pager_id')) {
-      return array($this->t('Pager ID: @id', array(
-        '@id' => $this->getSetting('pager_id'),
-      )));
+      // Only include pager details in summary if we're using a non-standard
+      // pager id.
+      return array($this->t('Showing @per_page @mode comments with @form, using pager ID @id and @links', $variables));
     }
-    return array();
+    return array($this->t('Showing @per_page @mode comments with @form and @links', $variables));
+  }
+
+  /**
+   * Builds links for commented entity.
+   */
+  protected function buildLinks(FieldItemListInterface $items) {
+    $links = array();
+    if ($this->getSetting('show_links') == static::LINKS_NONE) {
+      return $links;
+    }
+
+    $field_name = $this->fieldDefinition->getName();
+    $entity = $items->getEntity();
+    $commenting_status = $items->status;
+    if ($commenting_status) {
+      $field_definition = $this->fieldDefinition;
+      $link_style = $this->getSetting('show_links');
+      // Node has commenting open or closed.
+      if ($link_style == static::LINKS_RSS) {
+        // Add a comments RSS element which is a URL to the comments of this
+        // node.
+        $options = array(
+          'fragment' => 'comments',
+          'absolute' => TRUE,
+        );
+        $entity->rss_elements[] = array(
+          'key' => 'comments',
+          'value' => $entity->url('canonical', $options),
+        );
+      }
+      elseif ($link_style == static::LINKS_PAGE) {
+        // Default links: display the number of comments that have been posted,
+        // or a link to add new comments if the user has permission, the node
+        // is open to new comments, and there currently are none.
+        if ($this->currentUser->hasPermission('access comments')) {
+          if (!empty($items->comment_count)) {
+            $links['comment-comments'] = array(
+              'title' => $this->formatPlural($items->comment_count, '1 comment', '@count comments'),
+              'attributes' => array('title' => $this->t('Jump to the first comment of this posting.')),
+              'fragment' => 'comments',
+              'html' => TRUE,
+            ) + $entity->urlInfo()->toArray();
+            if ($this->moduleHandler->moduleExists('history')) {
+              $links['comment-new-comments'] = array(
+                'title' => '',
+                'href' => '',
+                'attributes' => array(
+                  'class' => 'hidden',
+                  'title' => t('Jump to the first new comment of this posting.'),
+                  'data-history-node-last-comment-timestamp' => $items->last_comment_timestamp,
+                  'data-history-node-field-name' => $field_name,
+                  'data-comment-per-page' => $this->getSetting('per_page'),
+                  'data-comment-default-mode' => $this->getSetting('default_mode'),
+                ),
+                'html' => TRUE,
+              );
+            }
+          }
+        }
+        // Provide a link to new comment form.
+        if ($commenting_status == CommentItemInterface::OPEN) {
+          $comment_form_location = $this->getSetting('form_location');
+          if ($this->currentUser->hasPermission('post comments')) {
+            $links['comment-add'] = array(
+              'title' => t('Add new comment'),
+              'language' => $entity->language(),
+              'attributes' => array('title' => t('Add a new comment to this page.')),
+              'fragment' => 'comment-form',
+            );
+            if ($comment_form_location == COMMENT_FORM_SEPARATE_PAGE) {
+              $links['comment-add']['route_name'] = 'comment.reply';
+              $links['comment-add']['route_parameters'] = array(
+                'entity_type' => $entity->getEntityTypeId(),
+                'entity_id' => $entity->id(),
+                'field_name' => $field_name,
+              );
+            }
+            else {
+              $links['comment-add'] += $entity->urlInfo()->toArray();
+            }
+          }
+          elseif ($this->currentUser->isAnonymous()) {
+            $links['comment-forbidden'] = array(
+              'title' => $this->commentManager->forbiddenMessage($entity, $field_name),
+              'html' => TRUE,
+            );
+          }
+        }
+      }
+      else {
+        // Teaser style links - Node in other view modes: add a "post comment"
+        // link if the user is allowed to post comments and if this node is
+        // allowing new comments.
+        if ($commenting_status == CommentItemInterface::OPEN) {
+          $comment_form_location = $this->getSetting('form_location');
+          if ($this->currentUser->hasPermission('post comments')) {
+            // Show the "post comment" link if the form is on another page, or
+            // if there are existing comments that the link will skip past.
+            if ($comment_form_location == COMMENT_FORM_SEPARATE_PAGE || (!empty($items->comment_count) && $this->currentUser->hasPermission('access comments'))) {
+              $links['comment-add'] = array(
+                'title' => t('Add new comment'),
+                'attributes' => array('title' => t('Share your thoughts and opinions related to this posting.')),
+                'fragment' => 'comment-form',
+              );
+              if ($comment_form_location == COMMENT_FORM_SEPARATE_PAGE) {
+                $links['comment-add']['route_name'] = 'comment.reply';
+                $links['comment-add']['route_parameters'] = array(
+                  'entity_type' => $entity->getEntityTypeId(),
+                  'entity_id' => $entity->id(),
+                  'field_name' => $field_name,
+                );
+              }
+              else {
+                $links['comment-add'] += $entity->urlInfo()->toArray();
+              }
+            }
+          }
+          elseif ($this->currentUser->isAnonymous()) {
+            $links['comment-forbidden'] = array(
+              'title' => $this->commentManager->forbiddenMessage($entity, $field_name),
+              'html' => TRUE,
+            );
+          }
+        }
+      }
+
+      if (!empty($links)) {
+        $build['comment__' . $field_name] = array(
+          '#theme' => 'links__entity__comment__' . $field_name,
+          '#links' => $links,
+          '#attributes' => array('class' => array('links', 'inline')),
+        );
+        if ($link_style == static::LINKS_TEASER && $this->moduleHandler->moduleExists('history') && $this->currentUser->isAuthenticated()) {
+          if ($entity->getEntityTypeId() == 'node') {
+            $build['comment__' . $field_name]['#attached']['library'][] = 'comment/drupal.node-new-comments-link';
+          }
+
+          // Embed the metadata for the "X new comments" link (if any) on this
+          // node.
+          $build['comment__' . $field_name]['#post_render_cache']['history_attach_timestamp'] = array(
+            array($entity->getEntityTypeId() . '_id' => $entity->id()),
+          );
+          $build['comment__' . $field_name]['#post_render_cache']['Drupal\comment\CommentViewBuilder::attachNewCommentsLinkMetadata'] = array(
+            array(
+              'entity_type' => $entity->getEntityTypeId(),
+              'entity_id' => $entity->id(),
+              'field_name' => $field_name,
+              'per_page' => $this->getSetting('per_page'),
+              'default_mode' => $this->getSetting('default_mode'),
+            ),
+          );
+        }
+        return $build;
+      }
+    }
   }
 
 }

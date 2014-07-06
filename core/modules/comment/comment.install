@@ -31,6 +31,32 @@ function comment_install() {
 }
 
 /**
+ * Implements hook_modules_installed().
+ */
+function comment_modules_installed($modules) {
+  // Book is being enabled.
+  if (in_array('book', $modules)) {
+    // Disable comments in print view mode.
+    foreach (\Drupal::service('comment.manager')->getFields('node') as $field_name => $detail) {
+      foreach ($detail['bundles'] as $bundle) {
+        $display = entity_get_display('node', $bundle, 'print');
+        $display->removeComponent($field_name)->save();
+      }
+    }
+  }
+  // Comment is being enabled, check if book exists.
+  if (in_array('comment', $modules) && \Drupal::moduleHandler()->moduleExists('book')) {
+    // Disable comments in print view mode.
+    foreach (\Drupal::service('comment.manager')->getFields('node') as $field_name => $detail) {
+      foreach ($detail['bundles'] as $bundle) {
+        $display = entity_get_display('node', $bundle, 'print');
+        $display->removeComponent($field_name)->save();
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_schema().
  */
 function comment_schema() {

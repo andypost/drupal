@@ -337,7 +337,7 @@ class CommentViewBuilder extends EntityViewBuilder {
       ->getStorage($context['entity_type'])
       ->load($context['entity_id']);
     $field_name = $context['field_name'];
-    $query = comment_new_page_count($entity->{$field_name}->comment_count, $new, $entity);
+    $query = comment_new_page_count($entity->{$field_name}->comment_count, $new, $entity, $context['per_page'], $context['default_mode']);
 
     // Attach metadata.
     $element['#attached']['js'][] = array(

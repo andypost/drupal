@@ -7,9 +7,11 @@
 
 namespace Drupal\comment\Tests;
 
+use Drupal\comment\Plugin\Field\FieldFormatter\CommentDefaultFormatter;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\comment\CommentInterface;
+use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests comment links based on environment configurations.
@@ -32,6 +34,28 @@ class CommentLinksTest extends CommentTestBase {
       'group' => 'Comment',
     );
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+    // Set comment field to use the link formatter on article teasers.
+    entity_get_display('node', 'article', 'teaser')
+      ->setComponent('comment', array(
+        'label' => 'hidden',
+        'type' => 'comment_links',
+        'weight' => 20,
+        'settings' => array(
+          'per_page' => 50,
+          'default_mode' => COMMENT_MODE_THREADED,
+          'form_location' => COMMENT_FORM_BELOW,
+          'show_links' => CommentDefaultFormatter::LINKS_TEASER,
+        ),
+      ))
+      ->save();
+  }
+
 
   /**
    * Tests comment links.
@@ -166,7 +190,7 @@ class CommentLinksTest extends CommentTestBase {
     }
 
     // Change comment settings.
-    $this->setCommentSettings('form_location', $info['form'], 'Set comment form location');
+    $this->setCommentFormatterSettings('form_location', $info['form'], 'Set comment form location');
     $this->setCommentAnonymous($info['contact']);
     if ($this->node->comment->status != $info['comments']) {
       $this->node->comment = $info['comments'];

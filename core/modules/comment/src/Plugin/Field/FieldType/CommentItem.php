@@ -40,9 +40,6 @@ class CommentItem extends FieldItemBase implements CommentItemInterface {
    */
   public static function defaultInstanceSettings() {
     return array(
-      'default_mode' => COMMENT_MODE_THREADED,
-      'per_page' => 50,
-      'form_location' => COMMENT_FORM_BELOW,
       'anonymous' => COMMENT_ANONYMOUS_MAYNOT_CONTACT,
       'subject' => 1,
       'preview' => DRUPAL_OPTIONAL,
@@ -116,21 +113,6 @@ class CommentItem extends FieldItemBase implements CommentItemInterface {
         'library' => array('comment/drupal.comment'),
       ),
     );
-    $element['comment']['default_mode'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Threading'),
-      '#default_value' => $settings['default_mode'],
-      '#description' => t('Show comment replies in a threaded list.'),
-    );
-    $element['comment']['per_page'] = array(
-      '#type' => 'number',
-      '#title' => t('Comments per page'),
-      '#default_value' => $settings['per_page'],
-      '#required' => TRUE,
-      '#min' => 10,
-      '#max' => 1000,
-      '#step' => 10,
-    );
     $element['comment']['anonymous'] = array(
       '#type' => 'select',
       '#title' => t('Anonymous commenting'),
@@ -146,11 +128,6 @@ class CommentItem extends FieldItemBase implements CommentItemInterface {
       '#type' => 'checkbox',
       '#title' => t('Allow comment title'),
       '#default_value' => $settings['subject'],
-    );
-    $element['comment']['form_location'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Show reply form on the same page as comments'),
-      '#default_value' => $settings['form_location'],
     );
     $element['comment']['preview'] = array(
       '#type' => 'radios',

@@ -28,7 +28,7 @@ class CommentThreadingTest extends CommentTestBase {
     $this->setCommentPreview(DRUPAL_DISABLED);
     $this->setCommentForm(TRUE);
     $this->setCommentSubject(TRUE);
-    $this->setCommentSettings('default_mode', COMMENT_MODE_THREADED, 'Comment paging changed.');
+    $this->setCommentFormatterSettings('default_mode', COMMENT_MODE_THREADED, 'Comment paging changed.');
     $this->drupalLogout();
 
     // Create a node.
