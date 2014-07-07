@@ -206,11 +206,11 @@ function comment_field_config_insert(FieldConfigInterface $field) {
 function comment_field_instance_config_delete(FieldInstanceConfigInterface $instance) {
   if ($instance->getType() == 'comment') {
     // Delete all comments that used by the entity bundle.
-    $comments = db_query("SELECT cid FROM {comment} WHERE entity_type = :entity_type AND field_name = :field_name", array(
-      ':entity_type' => $instance->getEntityTypeId(),
-      ':field_name' => $instance->getName(),
-    ))->fetchCol();
-    entity_delete_multiple('comment', $comments);
+    $entity_query = \Drupal::entityQuery('comment');
+    $entity_query->condition('entity_type', $instance->getEntityTypeId());
+    $entity_query->condition('field_name', $instance->getName());
+    $cids = $entity_query->execute();
+    entity_delete_multiple('comment', $cids);
   }
 }
 
@@ -365,33 +365,6 @@ function comment_node_view_alter(array &$build, EntityInterface $node, EntityVie
   if (\Drupal::moduleHandler()->moduleExists('history')) {
     $build['#attributes']['data-history-node-id'] = $node->id();
   }
-}
-
-/**
- * Returns a rendered form to comment the given entity.
- *
- * @param \Drupal\Core\Entity\EntityInterface $entity
- *   The entity to which the comments are in reply to.
- * @param string $field_name
- *   The field name where the comments were entered.
- * @param int $pid
- *   (optional) Some comments are replies to other comments. In those cases,
- *   $pid is the parent comment's comment ID. Defaults to NULL.
- *
- * @return array
- *   The renderable array for the comment addition form.
- */
-function comment_add(EntityInterface $entity, $field_name = 'comment', $pid = NULL) {
-  $field = Fieldconfig::loadByName($entity->getEntityTypeId(), $field_name);
-  $values = array(
-    'entity_type' => $entity->getEntityTypeId(),
-    'entity_id' => $entity->id(),
-    'field_name' => $field_name,
-    'comment_type' => $field->getSetting('bundle'),
-    'pid' => $pid,
-  );
-  $comment = entity_create('comment', $values);
-  return \Drupal::service('entity.form_builder')->getForm($comment);
 }
 
 /**
@@ -843,30 +816,6 @@ function comment_user_predelete($account) {
   $entity_query->condition('uid', $account->id());
   $cids = $entity_query->execute();
   entity_delete_multiple('comment', $cids);
-}
-
-/**
- * Loads comment entities from the database.
- *
- * @deprecated in Drupal 8.x, will be removed before Drupal 9.0.
- *   Use \Drupal\comment\Entity\Comment::loadMultiple().
- *
- * @param array $cids
- *   (optional) An array of entity IDs. If omitted, all entities are loaded.
- * @param bool $reset
- *   (optional) Whether to reset the internal static entity cache.
- *
- * @return array
- *   An array of comment objects, indexed by comment ID.
- *
- * @see entity_load()
- * @see \Drupal\Core\Entity\Query\QueryInterface
- */
-function comment_load_multiple(array $cids = NULL, $reset = FALSE) {
-  if ($reset) {
-    \Drupal::entityManager()->getStorage('comment')->resetCache($cids);
-  }
-  return Comment::loadMultiple($cids);
 }
 
 /**
