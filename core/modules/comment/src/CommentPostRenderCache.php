@@ -9,6 +9,7 @@ namespace Drupal\comment;
 
 use Drupal\Core\Entity\EntityFormBuilderInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\field\Entity\FieldConfig;
 
 /**
@@ -31,16 +32,26 @@ class CommentPostRenderCache {
   protected $entityFormBuilder;
 
   /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
+
+  /**
    * Constructs a new CommentPostRenderCache object.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager service.
    * @param \Drupal\Core\Entity\EntityFormBuilderInterface $entity_form_builder
    *   The entity form builder service.
+   * @param \Drupal\Core\Session\AccountInterface $current_user
+   *   The current user.
    */
-  public function __construct(EntityManagerInterface $entity_manager, EntityFormBuilderInterface $entity_form_builder) {
+  public function __construct(EntityManagerInterface $entity_manager, EntityFormBuilderInterface $entity_form_builder, AccountInterface $current_user) {
     $this->entityManager = $entity_manager;
     $this->entityFormBuilder = $entity_form_builder;
+    $this->currentUser = $current_user;
   }
 
   /**
@@ -67,6 +78,7 @@ class CommentPostRenderCache {
       'field_name' => $field_name,
       'comment_type' => $field->getSetting('bundle'),
       'pid' => NULL,
+      'uid' => $this->currentUser->id(),
     );
     $comment = $this->entityManager->getStorage('comment')->create($values);
     $form = $this->entityFormBuilder->getForm($comment);

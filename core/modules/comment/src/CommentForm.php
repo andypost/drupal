@@ -130,6 +130,11 @@ class CommentForm extends ContentEntityForm {
       $date = !empty($comment->date) ? $comment->date : DrupalDateTime::createFromTimestamp($comment->getCreatedTime());
     }
 
+    $form['uid'] = array(
+      '#type' => 'value',
+      '#value' => $comment->getOwnerId(),
+    );
+
     // Add the author name field depending on the current user.
     $form['name']['widget'][0]['value']['#required'] = ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT);
     if ($is_admin) {
@@ -237,7 +242,6 @@ class CommentForm extends ContentEntityForm {
    * Overrides Drupal\Core\Entity\EntityForm::validate().
    */
   public function validate(array $form, array &$form_state) {
-    parent::validate($form, $form_state);
     $entity = $this->entity;
 
     if (!$entity->isNew()) {
@@ -265,6 +269,7 @@ class CommentForm extends ContentEntityForm {
         }
       }
     }
+    parent::validate($form, $form_state);
   }
 
   /**

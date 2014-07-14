@@ -15,4 +15,4 @@ services:
 
   comment.post_render_cache:
     class: Drupal\comment\CommentPostRenderCache
-    arguments: ['@entity.manager', '@entity.form_builder']
+    arguments: ['@entity.manager', '@entity.form_builder', '@current_user']

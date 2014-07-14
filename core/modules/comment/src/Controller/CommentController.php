@@ -256,6 +256,7 @@ class CommentController extends ControllerBase {
       'pid' => $pid,
       'entity_type' => $entity->getEntityTypeId(),
       'field_name' => $field_name,
+      'uid' => $this->currentUser()->id(),
     ));
     $build['comment_form'] = $this->entityFormBuilder()->getForm($comment);
 

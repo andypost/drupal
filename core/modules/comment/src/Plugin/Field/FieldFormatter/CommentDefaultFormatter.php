@@ -192,6 +192,7 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
               'field_name' => $field_name,
               'comment_type' => $this->getFieldSetting('comment_type'),
               'pid' => NULL,
+              'uid' => $this->currentUser->id(),
             ));
             $output['comment_form'] = $this->entityFormBuilder->getForm($comment);
           }
