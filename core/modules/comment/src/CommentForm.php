@@ -131,11 +131,9 @@ class CommentForm extends ContentEntityForm {
     }
 
     // Add the author name field depending on the current user.
-    if ($is_admin) {
-      $form['name']['#group'] = 'author';
-    }
     $form['name']['widget'][0]['value']['#required'] = ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT);
     if ($is_admin) {
+      $form['name']['#group'] = 'author';
       $form['name']['widget'][0]['value']['#title'] = $this->t('Authored by');
       $form['name']['widget'][0]['value']['#description'] = $this->t('Leave blank for %anonymous.', array('%anonymous' => $this->config('user.settings')->get('anonymous')));
       $form['name']['widget'][0]['value']['#autocomplete_route_name'] = 'user.autocomplete';
