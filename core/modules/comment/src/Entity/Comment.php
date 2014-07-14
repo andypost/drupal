@@ -242,25 +242,43 @@ class Comment extends ContentEntityBase implements CommentInterface {
       ->setDefaultValue(0);
 
     $fields['name'] = FieldDefinition::create('string')
-      ->setLabel(t('Name'))
-      ->setDescription(t("The comment author's name."))
+      ->setLabel(t('Your name'))
       ->setTranslatable(TRUE)
       ->setSetting('max_length', 60)
       ->setDefaultValue('')
-      ->addConstraint('CommentName', array());
+      ->addConstraint('CommentName', array())
+      ->setDisplayOptions('form', array(
+        'type' => 'string',
+        'weight' => -15,
+        'settings' => array(
+          'size' => 30,
+        ),
+      ))
+      ->setDisplayConfigurable('form', TRUE);
 
     $fields['mail'] = FieldDefinition::create('email')
       ->setLabel(t('Email'))
-      ->setDescription(t("The comment author's email address."))
-      ->setTranslatable(TRUE);
+      ->setDescription(t('The content of this field is kept private and will not be shown publicly.'))
+      ->setTranslatable(TRUE)
+      ->setDisplayOptions('form', array(
+        'type' => 'email_default',
+        'weight' => -10,
+        'settings' => array(
+          'size' => 30,
+        ),
+      ));
 
     $fields['homepage'] = FieldDefinition::create('uri')
       ->setLabel(t('Homepage'))
-      ->setDescription(t("The comment author's home page address."))
       ->setTranslatable(TRUE)
       // URIs are not length limited by RFC 2616, but we can only store 255
       // characters in our comment DB schema.
-      ->setSetting('max_length', 255);
+      ->setSetting('max_length', 255)
+      ->setDisplayOptions('form', array(
+        'type' => 'uri',
+        'size' => 30,
+        'weight' => -5,
+      ));
 
     $fields['hostname'] = FieldDefinition::create('string')
       ->setLabel(t('Hostname'))
@@ -268,6 +286,7 @@ class Comment extends ContentEntityBase implements CommentInterface {
       ->setTranslatable(TRUE)
       ->setSetting('max_length', 128);
 
+    // @todo Use timestamp widget after https://drupal.org/node/2226493 lands.
     $fields['created'] = FieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time that the comment was created.'))

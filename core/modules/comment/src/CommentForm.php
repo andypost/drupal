@@ -75,6 +75,8 @@ class CommentForm extends ContentEntityForm {
   public function form(array $form, array &$form_state) {
     /** @var \Drupal\comment\CommentInterface $comment */
     $comment = $this->entity;
+    $form = parent::form($form, $form_state, $comment);
+
     $entity = $this->entityManager->getStorage($comment->getCommentedEntityTypeId())->load($comment->getCommentedEntityId());
     $field_name = $comment->getFieldName();
     $field_definition = $this->entityManager->getFieldDefinitions($entity->getEntityTypeId(), $entity->bundle())[$comment->getFieldName()];
@@ -112,7 +114,6 @@ class CommentForm extends ContentEntityForm {
 
     // Prepare default values for form elements.
     if ($is_admin) {
-      $author = $comment->getAuthorName();
       $status = $comment->isPublished();
       if (empty($form_state['comment_preview'])) {
         $form['#title'] = $this->t('Edit comment %title', array(
@@ -121,12 +122,6 @@ class CommentForm extends ContentEntityForm {
       }
     }
     else {
-      if ($this->currentUser->isAuthenticated()) {
-        $author = $this->currentUser->getUsername();
-      }
-      else {
-        $author = ($comment->getAuthorName() ? $comment->getAuthorName() : '');
-      }
       $status = ($this->currentUser->hasPermission('skip comment approval') ? CommentInterface::PUBLISHED : CommentInterface::NOT_PUBLISHED);
     }
 
@@ -136,24 +131,20 @@ class CommentForm extends ContentEntityForm {
     }
 
     // Add the author name field depending on the current user.
-    $form['author']['name'] = array(
-      '#type' => 'textfield',
-      '#title' => $this->t('Your name'),
-      '#default_value' => $author,
-      '#required' => ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT),
-      '#maxlength' => 60,
-      '#size' => 30,
-    );
     if ($is_admin) {
-      $form['author']['name']['#title'] = $this->t('Authored by');
-      $form['author']['name']['#description'] = $this->t('Leave blank for %anonymous.', array('%anonymous' => $this->config('user.settings')->get('anonymous')));
-      $form['author']['name']['#autocomplete_route_name'] = 'user.autocomplete';
+      $form['name']['#group'] = 'author';
+    }
+    $form['name']['widget'][0]['value']['#required'] = ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT);
+    if ($is_admin) {
+      $form['name']['widget'][0]['value']['#title'] = $this->t('Authored by');
+      $form['name']['widget'][0]['value']['#description'] = $this->t('Leave blank for %anonymous.', array('%anonymous' => $this->config('user.settings')->get('anonymous')));
+      $form['name']['widget'][0]['value']['#autocomplete_route_name'] = 'user.autocomplete';
     }
     elseif ($this->currentUser->isAuthenticated()) {
-      $form['author']['name']['#type'] = 'item';
-      $form['author']['name']['#value'] = $form['author']['name']['#default_value'];
-      $form['author']['name']['#theme'] = 'username';
-      $form['author']['name']['#account'] = $this->currentUser;
+      $form['name']['widget'][0]['value']['#type'] = 'item';
+      $form['name']['widget'][0]['value']['#value'] = $this->currentUser->getUsername();
+      $form['name']['widget'][0]['value']['#theme'] = 'username';
+      $form['name']['widget'][0]['value']['#account'] = $this->currentUser;
     }
 
     $language_configuration = \Drupal::moduleHandler()->invoke('language', 'get_default_configuration', array('comment', $comment->getTypeId()));
@@ -166,25 +157,17 @@ class CommentForm extends ContentEntityForm {
     );
 
     // Add author email and homepage fields depending on the current user.
-    $form['author']['mail'] = array(
-      '#type' => 'email',
-      '#title' => $this->t('Email'),
-      '#default_value' => $comment->getAuthorEmail(),
-      '#required' => ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT),
-      '#maxlength' => 64,
-      '#size' => 30,
-      '#description' => $this->t('The content of this field is kept private and will not be shown publicly.'),
-      '#access' => $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT),
-    );
+    // @todo Leverage field access https://www.drupal.org/node/2098419
+    $form['mail']['widget'][0]['value']['#required'] = ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT);
+    $form['mail']['#access'] = $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT);
+    if ($is_admin) {
+      $form['mail']['#group'] = 'author';
+    }
 
-    $form['author']['homepage'] = array(
-      '#type' => 'url',
-      '#title' => $this->t('Homepage'),
-      '#default_value' => $comment->getHomepage(),
-      '#maxlength' => 255,
-      '#size' => 30,
-      '#access' => $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT),
-    );
+    $form['homepage']['#access'] = $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT);
+    if ($is_admin) {
+      $form['homepage']['#group'] = 'author';
+    }
 
     // Add administrative comment publishing options.
     $form['author']['date'] = array(
@@ -212,7 +195,7 @@ class CommentForm extends ContentEntityForm {
       '#value' => ($comment->id() ? !$comment->getOwnerId() : $this->currentUser->isAnonymous()),
     );
 
-    return parent::form($form, $form_state, $comment);
+    return $form;
   }
 
   /**

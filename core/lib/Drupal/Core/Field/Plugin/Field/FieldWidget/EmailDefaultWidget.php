@@ -28,6 +28,7 @@ class EmailDefaultWidget extends WidgetBase {
    */
   public static function defaultSettings() {
     return array(
+      'size' => 60,
       'placeholder' => '',
     ) + parent::defaultSettings();
   }
@@ -70,6 +71,8 @@ class EmailDefaultWidget extends WidgetBase {
       '#type' => 'email',
       '#default_value' => isset($items[$delta]->value) ? $items[$delta]->value : NULL,
       '#placeholder' => $this->getSetting('placeholder'),
+      '#size' => $this->getSetting('size'),
+      '#maxlength' => EMAIL_MAX_LENGTH,
     );
     return $element;
   }
