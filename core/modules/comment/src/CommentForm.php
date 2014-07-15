@@ -242,6 +242,7 @@ class CommentForm extends ContentEntityForm {
    * Overrides Drupal\Core\Entity\EntityForm::validate().
    */
   public function validate(array $form, array &$form_state) {
+    parent::validate($form, $form_state);
     $entity = $this->entity;
 
     if (!$entity->isNew()) {
@@ -254,22 +255,21 @@ class CommentForm extends ContentEntityForm {
       if ($date instanceOf DrupalDateTime && $date->hasErrors()) {
         $this->setFormError('date', $form_state, $this->t('You have to specify a valid date.'));
       }
-      if ($form_state['values']['name'] && !$form_state['values']['is_anonymous'] && !$account) {
-        $this->setFormError('name', $form_state, $this->t('You have to specify a valid author.'));
+      if ($form_state['values']['name'][0]['value'] && !$form_state['values']['is_anonymous'] && !$account) {
+        $this->setFormError('name][0][value', $form_state, $this->t('You have to specify a valid author.'));
       }
     }
     elseif ($form_state['values']['is_anonymous']) {
       // Validate anonymous comment author fields (if given). If the (original)
       // author of this comment was an anonymous user, verify that no registered
       // user with this name exists.
-      if ($form_state['values']['name']) {
-        $accounts = $this->entityManager->getStorage('user')->loadByProperties(array('name' => $form_state['values']['name']));
+      if ($form_state['values']['name'][0]['value']) {
+        $accounts = $this->entityManager->getStorage('user')->loadByProperties(array('name' => $form_state['values']['name'][0]['value']));
         if (!empty($accounts)) {
-          $this->setFormError('name', $form_state, $this->t('The name you used belongs to a registered user.'));
+          $this->setFormError('name][0][value', $form_state, $this->t('The name you used belongs to a registered user.'));
         }
       }
     }
-    parent::validate($form, $form_state);
   }
 
   /**
