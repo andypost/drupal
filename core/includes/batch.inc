@@ -445,15 +445,16 @@ function _batch_finished() {
       }
     }
 
-    // Use drupal_redirect_form() to handle the redirection logic.
-    $redirect = drupal_redirect_form($_batch['form_state']);
+    // Use \Drupal\Core\Form\FormSubmitterInterface::redirectForm() to handle
+    // the redirection logic.
+    $redirect = \Drupal::service('form_submitter')->redirectForm($_batch['form_state']);
     if (is_object($redirect)) {
       return $redirect;
     }
 
     // If no redirection happened, redirect to the originating page. In case the
     // form needs to be rebuilt, save the final $form_state for
-    // drupal_build_form().
+    // \Drupal\Core\Form\FormBuilderInterface::buildForm().
     if (!empty($_batch['form_state']['rebuild'])) {
       $_SESSION['batch_form_state'] = $_batch['form_state'];
     }
