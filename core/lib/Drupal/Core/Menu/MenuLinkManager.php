@@ -154,7 +154,7 @@ class MenuLinkManager implements MenuLinkManagerInterface {
    */
   protected function getDiscovery() {
     if (empty($this->discovery)) {
-      $yaml = new YamlDiscovery('menu_links', $this->moduleHandler->getModuleDirectories());
+      $yaml = new YamlDiscovery('links.menu', $this->moduleHandler->getModuleDirectories());
       $this->discovery = new ContainerDerivativeDiscoveryDecorator($yaml);
     }
     return $this->discovery;
@@ -255,7 +255,7 @@ class MenuLinkManager implements MenuLinkManagerInterface {
       if ($instance->isDeletable()) {
         $this->deleteInstance($instance, TRUE);
       }
-      elseif ($instance->isResetable()) {
+      elseif ($instance->isResettable()) {
         $new_instance = $this->resetInstance($instance);
         $affected_menus[$new_instance->getMenuName()] = $new_instance->getMenuName();
       }
@@ -395,7 +395,7 @@ class MenuLinkManager implements MenuLinkManagerInterface {
   protected function resetInstance(MenuLinkInterface $instance) {
     $id = $instance->getPluginId();
 
-    if (!$instance->isResetable()) {
+    if (!$instance->isResettable()) {
       throw new PluginException(String::format('Menu link %id is not resettable', array('%id' => $id)));
     }
     // Get the original data from disk, reset the override and re-save the menu
