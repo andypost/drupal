@@ -552,9 +552,6 @@ services:
   controller.ajax:
     class: Drupal\Core\Controller\AjaxController
     arguments: ['@controller_resolver', '@ajax_response_renderer']
-  controller.entityform:
-    class: Drupal\Core\Entity\HtmlEntityFormController
-    arguments: ['@class_resolver', '@controller_resolver', '@service_container', '@entity.manager']
   controller.dialog:
     class: Drupal\Core\Controller\DialogController
     arguments: ['@controller_resolver', '@title_resolver']
@@ -734,7 +731,10 @@ services:
       - { name: event_subscriber }
   image.toolkit.manager:
     class: Drupal\Core\ImageToolkit\ImageToolkitManager
-    arguments: ['@container.namespaces', '@cache.discovery', '@config.factory', '@module_handler']
+    arguments: ['@container.namespaces', '@cache.discovery', '@config.factory', '@module_handler', '@image.toolkit.operation.manager']
+  image.toolkit.operation.manager:
+    class: Drupal\Core\ImageToolkit\ImageToolkitOperationManager
+    parent: default_plugin_manager
   image.factory:
     class: Drupal\Core\Image\ImageFactory
     arguments: ['@image.toolkit.manager']

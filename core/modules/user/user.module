@@ -417,32 +417,6 @@ function _user_role_permissions_update($roles) {
 }
 
 /**
- * Determine whether the user has a given privilege.
- *
- * @param $string
- *   The permission, such as "administer nodes", being checked for.
- * @param \Drupal\Core\Session\AccountInterface $account
- *   (optional) The account to check, if not given use currently logged in user.
- *
- * @return bool
- *   Boolean TRUE if the current user has the requested permission.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\Core\Session\AccountInterface::hasPermission().
- */
-function user_access($string, AccountInterface $account = NULL) {
-  global $user;
-
-  if (!isset($account)) {
-    // In the installer request session is not set, so we have to fall back
-    // to the global $user. In all other cases the session key is preferred.
-    $account = \Drupal::currentUser() ?: $user;
-  }
-
-  return $account->hasPermission($string);
-}
-
-/**
  * Checks for usernames blocked by user administration.
  *
  * @param $name
@@ -691,23 +665,6 @@ function user_translated_menu_link_alter(MenuLink &$menu_link) {
   if ($menu_link->machine_name == 'user.page' && \Drupal::currentUser()->isAnonymous()) {
     $menu_link->hidden = 1;
   }
-}
-
-/**
- * Try to validate the user's login credentials locally.
- *
- * @param $name
- *   User name to authenticate.
- * @param $password
- *   A plain-text password, such as trimmed text from form values.
- * @return
- *   The user's uid on success, or FALSE on failure to authenticate.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\user\UserAuth::authenticate() instead.
- */
-function user_authenticate($name, $password) {
-  return \Drupal::service('user.auth')->authenticate($name, $password);
 }
 
 /**

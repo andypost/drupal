@@ -91,8 +91,10 @@ class UrlGenerator extends ProviderBasedGenerator implements UrlGeneratorInterfa
    *    The read only settings.
    * @param \Psr\Log\LoggerInterface $logger
    *   An optional logger for recording errors.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   A request stack object.
    */
-  public function __construct(RouteProviderInterface $provider, OutboundPathProcessorInterface $path_processor, OutboundRouteProcessorInterface $route_processor, ConfigFactoryInterface $config, Settings $settings, LoggerInterface $logger = NULL, RequestStack $requestStack) {
+  public function __construct(RouteProviderInterface $provider, OutboundPathProcessorInterface $path_processor, OutboundRouteProcessorInterface $route_processor, ConfigFactoryInterface $config, Settings $settings, LoggerInterface $logger = NULL, RequestStack $request_stack) {
     parent::__construct($provider, $logger);
 
     $this->pathProcessor = $path_processor;
@@ -100,7 +102,7 @@ class UrlGenerator extends ProviderBasedGenerator implements UrlGeneratorInterfa
     $this->mixedModeSessions = $settings->get('mixed_mode_sessions', FALSE);
     $allowed_protocols = $config->get('system.filter')->get('protocols') ?: array('http', 'https');
     UrlHelper::setAllowedProtocols($allowed_protocols);
-    $this->requestStack = $requestStack;
+    $this->requestStack = $request_stack;
     $this->updateFromRequest();
   }
 
@@ -186,6 +188,7 @@ class UrlGenerator extends ProviderBasedGenerator implements UrlGeneratorInterfa
    * {@inheritdoc}
    */
   public function generateFromRoute($name, $parameters = array(), $options = array()) {
+    $options += array('prefix' => '');
     $absolute = !empty($options['absolute']);
     $route = $this->getRoute($name);
     $this->processRoute($route, $parameters);
@@ -197,6 +200,12 @@ class UrlGenerator extends ProviderBasedGenerator implements UrlGeneratorInterfa
 
     $path = $this->getInternalPathFromRoute($route, $parameters);
     $path = $this->processPath($path, $options);
+    if (!empty($options['prefix'])) {
+      $path = ltrim($path, '/');
+      $prefix = empty($path) ? rtrim($options['prefix'], '/') : $options['prefix'];
+      $path = '/' . str_replace('%2F', '/', rawurlencode($prefix)) . $path;
+    }
+
     $fragment = '';
     if (isset($options['fragment'])) {
       if (($fragment = trim($options['fragment'])) != '') {
