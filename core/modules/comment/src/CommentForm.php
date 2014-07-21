@@ -162,12 +162,12 @@ class CommentForm extends ContentEntityForm {
     // Add author email and homepage fields depending on the current user.
     // @todo Leverage field access https://www.drupal.org/node/2098419
     $form['mail']['widget'][0]['value']['#required'] = ($this->currentUser->isAnonymous() && $anonymous_contact == COMMENT_ANONYMOUS_MUST_CONTACT);
-    $form['mail']['#access'] = $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT);
+    $form['mail']['widget'][0]['value']['#access'] = $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT);
     if ($is_admin) {
       $form['mail']['#group'] = 'author';
     }
 
-    $form['homepage']['#access'] = $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT);
+    $form['homepage']['widget'][0]['value']['#access'] = $is_admin || ($this->currentUser->isAnonymous() && $anonymous_contact != COMMENT_ANONYMOUS_MAYNOT_CONTACT);
     if ($is_admin) {
       $form['homepage']['#group'] = 'author';
     }
