@@ -10,7 +10,9 @@ namespace Drupal\system\Tests\Session;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests session handling.
+ * Drupal session handling tests.
+ *
+ * @group Session
  */
 class SessionTest extends WebTestBase {
 
@@ -23,20 +25,12 @@ class SessionTest extends WebTestBase {
 
   protected $dumpHeaders = TRUE;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Session tests',
-      'description' => 'Drupal session handling tests.',
-      'group' => 'Session'
-    );
-  }
-
   /**
    * Tests for \Drupal\Core\Session\SessionManager::isEnabled() and ::regenerate().
    */
   function testSessionSaveRegenerate() {
     $session_manager = $this->container->get('session_manager');
-    $this->assertFalse($session_manager->isEnabled(), 'SessionManager->isEnabled() initially returns FALSE (in testing framework).');
+    $this->assertTrue($session_manager->isEnabled(), 'SessionManager->isEnabled() initially returns TRUE.');
     $this->assertFalse($session_manager->disable()->isEnabled(), 'SessionManager->isEnabled() returns FALSE after disabling.');
     $this->assertTrue($session_manager->enable()->isEnabled(), 'SessionManager->isEnabled() returns TRUE after enabling.');
 
@@ -260,7 +254,7 @@ class SessionTest extends WebTestBase {
     // be valid. Closing the curl handler will stop the previous session ID
     // from persisting.
     $this->curlClose();
-    $this->additionalCurlOptions[CURLOPT_COOKIE] = rawurlencode($this->session_name) . '=;';
+    $this->additionalCurlOptions[CURLOPT_COOKIE] = rawurlencode($this->getSessionName()) . '=;';
     $this->drupalGet('session-test/id-from-cookie');
     $this->assertRaw("session_id:\n", 'Session ID is blank as sent from cookie header.');
     // Assert that we have an anonymous session now.

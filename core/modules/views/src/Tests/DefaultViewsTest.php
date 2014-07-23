@@ -14,7 +14,9 @@ use Drupal\views\ViewExecutable;
 use Drupal\views\Views;
 
 /**
- * Tests for views default views.
+ * Tests the default views provided by views.
+ *
+ * @group views
  */
 class DefaultViewsTest extends ViewTestBase {
 
@@ -36,14 +38,6 @@ class DefaultViewsTest extends ViewTestBase {
     'glossary' => array('all'),
   );
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Default views',
-      'description' => 'Tests the default views provided by views',
-      'group' => 'Views',
-    );
-  }
-
   protected function setUp() {
     parent::setUp();
 
@@ -63,7 +57,7 @@ class DefaultViewsTest extends ViewTestBase {
 
     // Setup a field and instance.
     $this->field_name = drupal_strtolower($this->randomName());
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',

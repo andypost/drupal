@@ -8,7 +8,9 @@
 namespace Drupal\hal\Tests;
 
 /**
- * Test the HAL normalizer on various entities
+ * Tests that nodes and terms are correctly normalized and denormalized.
+ *
+ * @group hal
  */
 class EntityTest extends NormalizerTestBase {
 
@@ -18,17 +20,6 @@ class EntityTest extends NormalizerTestBase {
    * @var array
    */
   public static $modules = array('node', 'taxonomy', 'comment');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity normalizer Test',
-      'description' => 'Test that nodes and terms are correctly normalized and denormalized.',
-      'group' => 'HAL',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -53,6 +44,15 @@ class EntityTest extends NormalizerTestBase {
 
     $user = entity_create('user', array('name' => $this->randomName()));
     $user->save();
+
+    // Add comment type.
+    $this->container->get('entity.manager')->getStorage('comment_type')->create(array(
+      'id' => 'comment',
+      'label' => 'comment',
+      'target_entity_type_id' => 'node',
+    ))->save();
+
+    $this->container->get('comment.manager')->addDefaultField('node', 'example_type');
 
     $node = entity_create('node', array(
       'title' => $this->randomName(),
@@ -129,6 +129,15 @@ class EntityTest extends NormalizerTestBase {
     $user = entity_create('user', array('name' => $this->randomName()));
     $user->save();
 
+    // Add comment type.
+    $this->container->get('entity.manager')->getStorage('comment_type')->create(array(
+      'id' => 'comment',
+      'label' => 'comment',
+      'target_entity_type_id' => 'node',
+    ))->save();
+
+    $this->container->get('comment.manager')->addDefaultField('node', 'example_type');
+
     $node = entity_create('node', array(
       'title' => $this->randomName(),
       'uid' => $user->id(),
@@ -142,8 +151,6 @@ class EntityTest extends NormalizerTestBase {
       )
     ));
     $node->save();
-
-    $this->container->get('comment.manager')->addDefaultField('node', 'example_type');
 
     $comment = entity_create('comment', array(
       'uid' => $user->id(),

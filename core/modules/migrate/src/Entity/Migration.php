@@ -79,6 +79,13 @@ class Migration extends ConfigEntityBase implements MigrationInterface, Requirem
   public $process;
 
   /**
+   * The configuration describing the load plugins.
+   *
+   * @var array
+   */
+  public $load;
+
+  /**
    * The cached process plugins.
    *
    * @var array

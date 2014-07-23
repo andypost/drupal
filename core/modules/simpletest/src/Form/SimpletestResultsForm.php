@@ -7,8 +7,10 @@
 
 namespace Drupal\simpletest\Form;
 
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
+use Drupal\simpletest\TestDiscovery;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -48,6 +50,12 @@ class SimpletestResultsForm extends FormBase {
    */
   public function __construct(Connection $database) {
     $this->database = $database;
+  }
+
+  /**
+   * Builds the status image map.
+   */
+  protected function buildStatusImageMap() {
     // Initialize image mapping property.
     $image_pass = array(
       '#theme' => 'image',
@@ -96,6 +104,7 @@ class SimpletestResultsForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, array &$form_state, $test_id = NULL) {
+    $this->buildStatusImageMap();
     // Make sure there are test results to display and a re-run is not being
     // performed.
     $results = array();
@@ -141,7 +150,7 @@ class SimpletestResultsForm extends FormBase {
     $form['result']['results'] = array();
     foreach ($results as $group => $assertions) {
       // Create group details with summary information.
-      $info = call_user_func(array($group, 'getInfo'));
+      $info = TestDiscovery::getTestInfo(new \ReflectionClass($group));
       $form['result']['results'][$group] = array(
         '#type' => 'details',
         '#title' => $info['name'],
@@ -155,7 +164,8 @@ class SimpletestResultsForm extends FormBase {
       $rows = array();
       foreach ($assertions as $assertion) {
         $row = array();
-        $row[] = $assertion->message;
+        // Assertion messages are in code, so we assume they are safe.
+        $row[] = SafeMarkup::set($assertion->message);
         $row[] = $assertion->message_group;
         $row[] = drupal_basename($assertion->file);
         $row[] = $assertion->line;

@@ -10,7 +10,9 @@ namespace Drupal\block\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the block configuration UI.
+ * Tests that the block configuration UI exists and stores data correctly.
+ *
+ * @group block
  */
 class BlockUiTest extends WebTestBase {
 
@@ -41,14 +43,6 @@ class BlockUiTest extends WebTestBase {
    * An administrative user to configure the test environment.
    */
   protected $adminUser;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Block UI',
-      'description' => 'Checks that the block configuration UI exists and stores data correctly.',
-      'group' => 'Block',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -155,6 +149,24 @@ class BlockUiTest extends WebTestBase {
     $this->drupalGet('admin/structure/block');
     $elements = $this->xpath('//details[@id="edit-category-custom-category"]//ul[contains(@class, :ul_class)]/li[contains(@class, :li_class)]/a[contains(@href, :href) and text()=:text]', $arguments);
     $this->assertTrue(!empty($elements), 'The test block appears in a custom category controlled by block_test_block_alter().');
+  }
+
+  /**
+   * Tests the behavior of context-aware blocks.
+   */
+  public function testContextAwareBlocks() {
+    $arguments = array(
+      ':ul_class' => 'block-list',
+      ':li_class' => 'test-context-aware',
+      ':href' => 'admin/structure/block/add/test_context_aware/stark',
+      ':text' => 'Test context-aware block',
+    );
+
+    $this->drupalGet('admin/structure/block');
+    $elements = $this->xpath('//details[@id="edit-category-block-test"]//ul[contains(@class, :ul_class)]/li[contains(@class, :li_class)]/a[contains(@href, :href) and text()=:text]', $arguments);
+    $this->assertTrue(empty($elements), 'The context-aware test block does not appear.');
+    $definition = \Drupal::service('plugin.manager.block')->getDefinition('test_context_aware');
+    $this->assertTrue(!empty($definition), 'The context-aware test block exists.');
   }
 
   /**

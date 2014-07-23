@@ -9,6 +9,8 @@ namespace Drupal\views\Tests;
 
 /**
  * Tests basic functions from the Views module.
+ *
+ * @group views
  */
 use Drupal\views\Plugin\views\filter\Standard;
 use Drupal\views\Views;
@@ -38,14 +40,6 @@ class ModuleTest extends ViewUnitTestBase {
    * @see \Drupal\views\Tests\ModuleTest::errorHandler()
    */
   protected $lastErrorMessage;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Views Module tests',
-      'description' => 'Tests some basic functions of views.module.',
-      'group' => 'Views',
-    );
-  }
 
   /**
    * Tests the views_get_handler method.
@@ -114,19 +108,9 @@ class ModuleTest extends ViewUnitTestBase {
     $item = array(
       'table' => 'table_invalid',
       'field' => 'id',
-      'optional' => FALSE,
     );
     $this->container->get('plugin.manager.views.filter')->getHandler($item);
     $this->assertEqual(strpos($this->lastErrorMessage, format_string("Missing handler: @table @field @type", array('@table' => 'table_invalid', '@field' => 'id', '@type' => 'filter'))) !== FALSE, 'An invalid table name throws a debug message.');
-    unset($this->lastErrorMessage);
-
-    $item = array(
-      'table' => 'table_invalid',
-      'field' => 'id',
-      'optional' => TRUE,
-    );
-    $this->container->get('plugin.manager.views.filter')->getHandler($item);
-    $this->assertFalse($this->lastErrorMessage, "An optional handler does not throw a debug message.");
     unset($this->lastErrorMessage);
 
     restore_error_handler();

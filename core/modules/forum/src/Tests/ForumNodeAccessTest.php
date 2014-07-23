@@ -11,6 +11,8 @@ use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests forum block view for private node access.
+ *
+ * @group forum
  */
 class ForumNodeAccessTest extends WebTestBase {
 
@@ -21,17 +23,10 @@ class ForumNodeAccessTest extends WebTestBase {
    */
   public static $modules = array('node', 'comment', 'forum', 'taxonomy', 'tracker', 'node_access_test', 'block');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Forum private node access test',
-      'description' => 'Tests forum block view for private node access',
-      'group' => 'Forum',
-    );
-  }
-
   function setUp() {
     parent::setUp();
     node_access_rebuild();
+    node_access_test_add_field(entity_load('node_type', 'forum'));
     \Drupal::state()->set('node_access_test.private', TRUE);
   }
 
@@ -54,7 +49,7 @@ class ForumNodeAccessTest extends WebTestBase {
     $edit = array(
       'title[0][value]' => $private_node_title,
       'body[0][value]' => $this->randomName(200),
-      'private' => TRUE,
+      'private[0][value]' => TRUE,
     );
     $this->drupalPostForm('node/add/forum', $edit, t('Save'), array('query' => array('forum_id' => 1)));
     $private_node = $this->drupalGetNodeByTitle($private_node_title);

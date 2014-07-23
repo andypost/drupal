@@ -8,8 +8,8 @@
 namespace Drupal\field_ui\Plugin\Derivative;
 
 use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\Component\Plugin\Derivative\DerivativeBase;
-use Drupal\Core\Plugin\Discovery\ContainerDerivativeInterface;
+use Drupal\Component\Plugin\Derivative\DeriverBase;
+use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Provides local task definitions for all entity bundles.
  */
-class FieldUiLocalTask extends DerivativeBase implements ContainerDerivativeInterface {
+class FieldUiLocalTask extends DeriverBase implements ContainerDeriverInterface {
   use StringTranslationTrait;
 
   /**
@@ -102,7 +102,7 @@ class FieldUiLocalTask extends DerivativeBase implements ContainerDerivativeInte
 
         // Field settings tab.
         $this->derivatives["field_edit_$entity_type_id"] = array(
-          'route_name' => "field_ui.field_edit_$entity_type_id",
+          'route_name' => "field_ui.storage_edit_$entity_type_id",
           'title' => $this->t('Field settings'),
           'base_route' => "field_ui.instance_edit_$entity_type_id",
         );

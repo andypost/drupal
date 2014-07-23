@@ -11,7 +11,9 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Functional tests for configuring a different path alias per language.
+ * Tests you can configure a language for individual URL aliases.
+ *
+ * @group locale
  */
 class LocalePathTest extends WebTestBase {
 
@@ -22,15 +24,10 @@ class LocalePathTest extends WebTestBase {
    */
   public static $modules = array('node', 'locale', 'path', 'views');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Path language settings',
-      'description' => 'Checks you can configure a language for individual URL aliases.',
-      'group' => 'Locale',
-    );
-  }
-
-  function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
     parent::setUp();
 
     $this->drupalCreateContentType(array('type' => 'page', 'name' => 'Basic page'));
@@ -40,7 +37,7 @@ class LocalePathTest extends WebTestBase {
   /**
    * Test if a language can be associated with a path alias.
    */
-  function testPathLanguageConfiguration() {
+  public function testPathLanguageConfiguration() {
     // User to add and remove language.
     $admin_user = $this->drupalCreateUser(array('administer languages', 'create page content', 'administer url aliases', 'create url aliases', 'access administration pages'));
 
@@ -56,12 +53,12 @@ class LocalePathTest extends WebTestBase {
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
       'name' => $name,
-      'direction' => '0',
+      'direction' => LanguageInterface::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
 
     // Set path prefix.
-    $edit = array( "prefix[$langcode]" => $prefix );
+    $edit = array("prefix[$langcode]" => $prefix);
     $this->drupalPostForm('admin/config/regional/language/detection/url', $edit, t('Save configuration'));
 
     // Check that the "xx" front page is readily available because path prefix

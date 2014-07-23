@@ -35,6 +35,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   'article'. Entity IDs may contain dots/periods. The entire remaining string
  *   after the config_prefix in a config name forms the entity ID. Additional or
  *   custom suffixes are not possible.
+ *
+ * @ingroup entity_api
  */
 class ConfigEntityStorage extends EntityStorageBase implements ConfigEntityStorageInterface, ImportableEntityStorageInterface {
 
@@ -57,13 +59,6 @@ class ConfigEntityStorage extends EntityStorageBase implements ConfigEntityStora
    * {@inheritdoc}
    */
   protected $uuidKey = 'uuid';
-
-  /**
-   * Name of the entity's status key or FALSE if a status is not supported.
-   *
-   * @var string|bool
-   */
-  protected $statusKey = 'status';
 
   /**
    * The config factory service.
@@ -102,8 +97,6 @@ class ConfigEntityStorage extends EntityStorageBase implements ConfigEntityStora
    */
   public function __construct(EntityTypeInterface $entity_type, ConfigFactoryInterface $config_factory, StorageInterface $config_storage, UuidInterface $uuid_service, LanguageManagerInterface $language_manager) {
     parent::__construct($entity_type);
-
-    $this->statusKey = $this->entityType->getKey('status');
 
     $this->configFactory = $config_factory;
     $this->configStorage = $config_storage;
@@ -186,10 +179,6 @@ class ConfigEntityStorage extends EntityStorageBase implements ConfigEntityStora
     $values += array('langcode' => $this->languageManager->getDefaultLanguage()->id);
     $entity = new $this->entityClass($values, $this->entityTypeId);
 
-    // Default status to enabled.
-    if (!empty($this->statusKey) && !isset($entity->{$this->statusKey})) {
-      $entity->{$this->statusKey} = TRUE;
-    }
     return $entity;
   }
 
@@ -248,12 +237,26 @@ class ConfigEntityStorage extends EntityStorageBase implements ConfigEntityStora
     }
 
     // Retrieve the desired properties and set them in config.
-    foreach ($entity->toArray() as $key => $value) {
+    $record = $this->mapToStorageRecord($entity);
+    foreach ($record as $key => $value) {
       $config->set($key, $value);
     }
     $config->save();
 
     return $is_new ? SAVED_NEW : SAVED_UPDATED;
+  }
+
+  /**
+   * Maps from an entity object to the storage record.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity object.
+   *
+   * @return array
+   *   The record to store.
+   */
+  protected function mapToStorageRecord(EntityInterface $entity) {
+    return $entity->toArray();
   }
 
   /**

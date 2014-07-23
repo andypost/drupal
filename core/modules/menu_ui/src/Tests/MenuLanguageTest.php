@@ -12,7 +12,10 @@ use Drupal\Core\Language\Language;
 use Drupal\system\Entity\Menu;
 
 /**
- * Defines a test class for testing menu language functionality.
+ * Create menu and menu links in non-English language, and edit language
+ * settings.
+ *
+ * @group menu_ui
  */
 class MenuLanguageTest extends MenuWebTestBase {
 
@@ -25,14 +28,6 @@ class MenuLanguageTest extends MenuWebTestBase {
 
   protected $admin_user;
   protected $menu;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Menu language',
-      'description' => 'Create menu and menu links in non-English language, and edit language settings.',
-      'group' => 'Menu',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -70,7 +65,7 @@ class MenuLanguageTest extends MenuWebTestBase {
     $this->drupalPostForm('admin/structure/menu/add', $edit, t('Save'));
 
     // Check that the language settings were saved.
-    $this->assertEqual(entity_load('menu', $menu_name)->langcode, $edit['langcode']);
+    $this->assertEqual(entity_load('menu', $menu_name)->language()->getId(), $edit['langcode']);
     $language_settings = language_get_default_configuration('menu_link', $menu_name);
     $this->assertEqual($language_settings['langcode'], 'bb');
     $this->assertEqual($language_settings['language_show'], TRUE);
@@ -176,7 +171,7 @@ class MenuLanguageTest extends MenuWebTestBase {
 
     // Check that the language settings were saved.
     $menu = Menu::load($menu_name);
-    $this->assertEqual($menu->langcode, 'en');
+    $this->assertEqual($menu->language()->getId(), 'en');
 
     // Remove English language. To do that another language has to be set as
     // default.
@@ -188,7 +183,7 @@ class MenuLanguageTest extends MenuWebTestBase {
     // Save the menu again and check if the language is still the same.
     $this->drupalPostForm("admin/structure/menu/manage/$menu_name", array(), t('Save'));
     $menu = Menu::load($menu_name);
-    $this->assertEqual($menu->langcode, 'en');
+    $this->assertEqual($menu->language()->getId(), 'en');
   }
 
 }

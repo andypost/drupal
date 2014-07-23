@@ -7,6 +7,7 @@
 
 use Drupal\Core\PhpStorage\PhpStorageFactory;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\language\ConfigurableLanguageManager;
 use Drupal\language\ConfigurableLanguageManagerInterface;
 use Drupal\language\Entity\Language as LanguageEntity;
@@ -14,12 +15,11 @@ use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUI;
 use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUrl;
 use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUrlFallback;
 use Drupal\node\NodeTypeInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Implements hook_help().
  */
-function language_help($route_name, Request $request) {
+function language_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.language':
       $output = '';
@@ -73,13 +73,13 @@ function language_help($route_name, Request $request) {
       return $output;
 
     case 'block.admin_edit':
-      if (($block = $request->attributes->get('block')) && $block->get('plugin') == 'language_block:language_interface') {
+      if (($block = $route_match->getParameter('block')) && $block->get('plugin') == 'language_block:language_interface') {
         return '<p>' . t('With multiple languages added, registered users can select their preferred language and authors can assign a specific language to content.') . '</p>';
       }
       break;
 
     case 'block.admin_add':
-      if ($request->attributes->get('plugin_id') == 'language_block:language_interface') {
+      if ($route_match->getParameter('plugin_id') == 'language_block:language_interface') {
         return '<p>' . t('With multiple languages added, registered users can select their preferred language and authors can assign a specific language to content.') . '</p>';
       }
       break;
@@ -87,16 +87,6 @@ function language_help($route_name, Request $request) {
     case 'language.content_settings_page':
       return t('Change language settings for <em>content types</em>, <em>taxonomy vocabularies</em>, <em>user profiles</em>, or any other supported element on your site. By default, language settings hide the language selector and the language is the site\'s default language.');
   }
-}
-
-/**
- * Editing or deleting locked languages should not be possible.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\language\LanguageAccessController.
- */
-function language_access_language_edit_or_delete($language) {
-  return !$language->locked && \Drupal::currentUser()->hasPermission('administer languages');
 }
 
 /**
@@ -357,7 +347,7 @@ function language_get_default_configuration_settings_key($entity_type, $bundle) 
 }
 
 /**
- * Implements hook_node_type_update().
+ * Implements hook_ENTITY_TYPE_update() for node_type entities.
  */
 function language_node_type_update(NodeTypeInterface $type) {
   if ($type->original->id() != $type->id()) {
@@ -442,10 +432,10 @@ function language_save($language) {
   if ($language->is_new) {
     // Install any available language configuration overrides for the language.
     \Drupal::service('language.config_factory_override')->installLanguageOverrides($language->getId());
-    watchdog('language', 'The %language (%langcode) language has been created.', $t_args);
+    \Drupal::logger('language')->notice('The %language (%langcode) language has been created.', $t_args);
   }
   else {
-    watchdog('language', 'The %language (%langcode) language has been updated.', $t_args);
+    \Drupal::logger('language')->notice('The %language (%langcode) language has been updated.', $t_args);
   }
 
   return $language;
@@ -481,7 +471,7 @@ function language_delete($langcode) {
     }
 
     $t_args = array('%language' => $language->name, '%langcode' => $language->id);
-    watchdog('language', 'The %language (%langcode) language has been removed.', $t_args);
+    \Drupal::logger('language')->notice('The %language (%langcode) language has been removed.', $t_args);
     return TRUE;
   }
   return FALSE;

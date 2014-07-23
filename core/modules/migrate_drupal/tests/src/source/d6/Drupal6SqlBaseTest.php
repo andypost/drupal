@@ -10,8 +10,9 @@ namespace Drupal\migrate_drupal\Tests\source\d6;
 use Drupal\migrate\Tests\MigrateTestCase;
 
 /**
+ * Tests the D6 SQL base class.
+ *
  * @group migrate_drupal
- * @group Drupal
  */
 class Drupal6SqlBaseTest extends MigrateTestCase {
 
@@ -61,17 +62,6 @@ class Drupal6SqlBaseTest extends MigrateTestCase {
       ),
     ),
   );
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'D6 SQL base class tests',
-      'description' => 'Tests D6 SQL base class.',
-      'group' => 'Migrate Drupal',
-    );
-  }
 
   /**
    * {@inheritdoc}

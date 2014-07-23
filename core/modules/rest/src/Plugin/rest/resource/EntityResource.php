@@ -22,7 +22,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  *   id = "entity",
  *   label = @Translation("Entity"),
  *   serialization_class = "Drupal\Core\Entity\Entity",
- *   derivative = "Drupal\rest\Plugin\Derivative\EntityDerivative",
+ *   deriver = "Drupal\rest\Plugin\Derivative\EntityDerivative",
  *   uri_paths = {
  *     "canonical" = "/entity/{entity_type}/{entity}",
  *     "http://drupal.org/link-relations/create" = "/entity/{entity_type}"
@@ -214,4 +214,20 @@ class EntityResource extends ResourceBase {
       throw new HttpException(422, $message);
     }
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getBaseRoute($canonical_path, $method) {
+    $route = parent::getBaseRoute($canonical_path, $method);
+    $definition = $this->getPluginDefinition();
+
+    $parameters = $route->getOption('parameters') ?: array();
+    $parameters[$definition['entity_type']]['type'] = 'entity:' . $definition['entity_type'];
+    $route->setOption('parameters', $parameters);
+
+    return $route;
+  }
+
+
 }

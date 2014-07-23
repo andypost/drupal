@@ -15,9 +15,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Zend\Stdlib\ArrayObject;
 
 /**
- * Tests local tasks manager.
- *
- * @see \Drupal\Core\Menu\LocalTaskManager
+ * @coversDefaultClass \Drupal\Core\Menu\LocalTaskManager
+ * @group Menu
  */
 class LocalTaskManagerTest extends UnitTestCase {
 
@@ -83,14 +82,6 @@ class LocalTaskManagerTest extends UnitTestCase {
    * @var \Drupal\Core\Access\AccessManager|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $accessManager;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Local tasks manager.',
-      'description' => 'Tests local tasks manager.',
-      'group' => 'Menu',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -291,7 +282,7 @@ class LocalTaskManagerTest extends UnitTestCase {
       ->method('getCurrentLanguage')
       ->will($this->returnValue(new Language(array('id' => 'en'))));
 
-    $this->manager->setCacheBackend($this->cacheBackend, $language_manager, 'local_task', array('local_task' => 1));
+    $this->manager->setCacheBackend($this->cacheBackend, 'local_task:en', array('local_task' => 1));
   }
 
   /**

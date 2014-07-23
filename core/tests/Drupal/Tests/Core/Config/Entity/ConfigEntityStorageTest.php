@@ -15,8 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * @coversDefaultClass \Drupal\Core\Config\Entity\ConfigEntityStorage
- *
- * @group Drupal
+ * @group Config
  */
 class ConfigEntityStorageTest extends UnitTestCase {
 
@@ -98,15 +97,11 @@ class ConfigEntityStorageTest extends UnitTestCase {
   protected $cacheBackend;
 
   /**
-   * {@inheritdoc}
+   * The mocked typed config manager.
+   *
+   * @var \Drupal\Core\Config\TypedConfigManagerInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  public static function getInfo() {
-    return array(
-      'name' => 'ConfigEntityStorage unit test',
-      'description' => 'Tests \Drupal\Core\Config\Entity\ConfigEntityStorage',
-      'group' => 'Configuration',
-    );
-  }
+  protected $typedConfigManager;
 
   /**
    * {@inheritdoc}
@@ -167,8 +162,13 @@ class ConfigEntityStorageTest extends UnitTestCase {
 
     $this->cacheBackend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
 
+    $this->typedConfigManager = $this->getMock('Drupal\Core\Config\TypedConfigManagerInterface');
+    $this->typedConfigManager->expects($this->any())
+      ->method('getDefinition')
+      ->will($this->returnValue(array('mapping' => array('id' => '', 'uuid' => '', 'dependencies' => ''))));
     $container = new ContainerBuilder();
     $container->set('entity.manager', $this->entityManager);
+    $container->set('config.typed', $this->typedConfigManager);
     $container->set('cache.test', $this->cacheBackend);
     $container->setParameter('cache_bins', array('cache.test' => 'test'));
     \Drupal::setContainer($container);
@@ -242,7 +242,7 @@ class ConfigEntityStorageTest extends UnitTestCase {
     $config_object->expects($this->atLeastOnce())
       ->method('isNew')
       ->will($this->returnValue(TRUE));
-    $config_object->expects($this->exactly(4))
+    $config_object->expects($this->exactly(3))
       ->method('set');
     $config_object->expects($this->once())
       ->method('save');
@@ -301,7 +301,7 @@ class ConfigEntityStorageTest extends UnitTestCase {
     $config_object->expects($this->atLeastOnce())
       ->method('isNew')
       ->will($this->returnValue(FALSE));
-    $config_object->expects($this->exactly(4))
+    $config_object->expects($this->exactly(3))
       ->method('set');
     $config_object->expects($this->once())
       ->method('save');
@@ -361,7 +361,7 @@ class ConfigEntityStorageTest extends UnitTestCase {
     $config_object->expects($this->atLeastOnce())
       ->method('isNew')
       ->will($this->returnValue(FALSE));
-    $config_object->expects($this->exactly(4))
+    $config_object->expects($this->exactly(3))
       ->method('set');
     $config_object->expects($this->once())
       ->method('save');

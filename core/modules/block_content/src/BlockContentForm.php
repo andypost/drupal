@@ -7,7 +7,6 @@
 
 namespace Drupal\block_content;
 
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -160,7 +159,7 @@ class BlockContentForm extends ContentEntityForm {
       '#title' => $this->t('Revision log message'),
       '#rows' => 4,
       '#default_value' => $block->getRevisionLog(),
-      '#description' => $this->t('Briefly desribe the changes you have made.'),
+      '#description' => $this->t('Briefly describe the changes you have made.'),
     );
 
     return parent::form($form, $form_state, $block);
@@ -232,9 +231,6 @@ class BlockContentForm extends ContentEntityForm {
       drupal_set_message($this->t('The block could not be saved.'), 'error');
       $form_state['rebuild'] = TRUE;
     }
-
-    // Clear the page and block caches.
-    Cache::invalidateTags(array('content' => TRUE));
   }
 
   /**

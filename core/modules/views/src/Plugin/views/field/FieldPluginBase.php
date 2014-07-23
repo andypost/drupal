@@ -2,12 +2,13 @@
 
 /**
  * @file
- * Definition of Drupal\views\Plugin\views\field\FieldPluginBase.
+ * Contains \Drupal\views\Plugin\views\field\FieldPluginBase.
  */
 
 namespace Drupal\views\Plugin\views\field;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Xss;
@@ -17,24 +18,33 @@ use Drupal\views\ResultRow;
 use Drupal\views\ViewExecutable;
 
 /**
- * @defgroup views_field_handlers Views field handlers
+ * @defgroup views_field_handlers Views field handler plugins
  * @{
- * Handlers to tell Views how to build and display fields.
+ * Handler plugins for Views fields.
  *
+ * Field handlers handle both querying and display of fields in views.
+ *
+ * Field handler plugins extend
+ * \Drupal\views\Plugin\views\field\FieldHandlerBase. They must be
+ * annotated with \Drupal\views\Annotation\ViewsField annotation, and they
+ * must be in namespace directory Plugin\views\field.
+ *
+ * The following items can go into a hook_views_data() implementation in a
+ * field section to affect how the field handler will behave:
+ * - additional fields: An array of fields that should be added to the query.
+ *   The array is in the form of:
+ *   @code
+ *   array('identifier' => array('table' => tablename, 'field' => fieldname))
+ *   @endcode
+ *   As many fields as are necessary may be in this array.
+ * - click sortable: If TRUE (default), this field may be click sorted.
+ *
+ * @ingroup views_plugins
+ * @see plugin_api
  */
 
 /**
  * Base field handler that has no options and renders an unformatted field.
- *
- * Definition terms:
- * - additional fields: An array of fields that should be added to the query
- *                      for some purpose. The array is in the form of:
- *                      array('identifier' => array('table' => tablename,
- *                      'field' => fieldname); as many fields as are necessary
- *                      may be in this array.
- * - click sortable: If TRUE, this field may be click sorted.
- *
- * @ingroup views_field_handlers
  */
 abstract class FieldPluginBase extends HandlerBase {
 
@@ -890,7 +900,7 @@ abstract class FieldPluginBase extends HandlerBase {
       $form['alter']['help'] = array(
         '#type' => 'details',
         '#title' => t('Replacement patterns'),
-        '#value' => $output,
+        '#value' => SafeMarkup::set($output),
         '#states' => array(
           'visible' => array(
             array(
@@ -937,7 +947,7 @@ abstract class FieldPluginBase extends HandlerBase {
 
       $form['alter']['ellipsis'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Add "..." at the end of trimmed text'),
+        '#title' => t('Add "…" at the end of trimmed text'),
         '#default_value' => $this->options['alter']['ellipsis'],
         '#states' => array(
           'visible' => array(
@@ -1172,6 +1182,9 @@ abstract class FieldPluginBase extends HandlerBase {
         $this->last_render = $this->renderText($alter);
       }
     }
+    // @todo Fix this in https://www.drupal.org/node/2280961
+    $this->last_render = SafeMarkup::set($this->last_render);
+
 
     return $this->last_render;
   }
@@ -1646,7 +1659,7 @@ abstract class FieldPluginBase extends HandlerBase {
    *   The alter array of options to use.
    *     - max_length: Maximum length of the string, the rest gets truncated.
    *     - word_boundary: Trim only on a word boundary.
-   *     - ellipsis: Show an ellipsis (...) at the end of the trimmed string.
+   *     - ellipsis: Show an ellipsis (…) at the end of the trimmed string.
    *     - html: Make sure that the html is correct.
    *
    * @param string $value
@@ -1675,8 +1688,7 @@ abstract class FieldPluginBase extends HandlerBase {
       $value = rtrim(preg_replace('/(?:<(?!.+>)|&(?!.+;)).*$/us', '', $value));
 
       if (!empty($alter['ellipsis'])) {
-        // @todo: What about changing this to a real ellipsis?
-        $value .= t('...');
+        $value .= t('…');
       }
     }
     if (!empty($alter['html'])) {

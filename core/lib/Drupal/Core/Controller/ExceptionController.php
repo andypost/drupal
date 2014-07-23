@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Drupal\Core\ContentNegotiation;
@@ -142,6 +143,8 @@ class ExceptionController extends HtmlControllerBase implements ContainerAwareIn
    *   A response object.
    */
   public function on403Html(FlattenException $exception, Request $request) {
+    // @todo Remove dependency on the internal _system_path attribute:
+    //   https://www.drupal.org/node/2293523.
     $system_path = $request->attributes->get('_system_path');
     watchdog('access denied', $system_path, array(), WATCHDOG_WARNING);
 
@@ -200,6 +203,8 @@ class ExceptionController extends HtmlControllerBase implements ContainerAwareIn
       }
     }
 
+    // @todo Remove dependency on the internal _system_path attribute:
+    //   https://www.drupal.org/node/2293523.
     $system_path = $request->attributes->get('_system_path');
 
     $path = $this->container->get('path.alias_manager')->getPathByAlias(\Drupal::config('system.site')->get('page.404'));
@@ -312,7 +317,7 @@ class ExceptionController extends HtmlControllerBase implements ContainerAwareIn
         // Generate a backtrace containing only scalar argument values.
         $message .= '<pre class="backtrace">' . Error::formatFlattenedBacktrace($backtrace) . '</pre>';
       }
-      drupal_set_message($message, $class, TRUE);
+      drupal_set_message(SafeMarkup::set($message), $class, TRUE);
     }
 
     $content = $this->t('The website has encountered an error. Please try again later.');

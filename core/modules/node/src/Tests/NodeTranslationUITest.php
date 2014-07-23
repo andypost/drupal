@@ -12,6 +12,8 @@ use Drupal\content_translation\Tests\ContentTranslationUITest;
 
 /**
  * Tests the Node Translation UI.
+ *
+ * @group node
  */
 class NodeTranslationUITest extends ContentTranslationUITest {
 
@@ -28,14 +30,6 @@ class NodeTranslationUITest extends ContentTranslationUITest {
    * @var string
    */
   protected $profile = 'standard';
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Node translation UI',
-      'description' => 'Tests the node translation UI.',
-      'group' => 'Node',
-    );
-  }
 
   function setUp() {
     $this->entityTypeId = 'node';
@@ -70,7 +64,7 @@ class NodeTranslationUITest extends ContentTranslationUITest {
    * {@inheritdoc}
    */
   protected function getAdministratorPermissions() {
-    return array_merge(parent::getAdministratorPermissions(), array('access administration pages', 'administer content types', 'administer node fields', 'access content overview', 'bypass node access', 'administer languages'));
+    return array_merge(parent::getAdministratorPermissions(), array('access administration pages', 'administer content types', 'administer node fields', 'access content overview', 'bypass node access', 'administer languages', 'administer themes', 'view the administration theme'));
   }
 
   /**
@@ -180,19 +174,26 @@ class NodeTranslationUITest extends ContentTranslationUITest {
   }
 
   /**
-   * Tests translate link on content admin page.
+   * Tests that translation page inherits admin status of edit page.
    */
-  function testTranslateLinkContentAdminPage() {
+  function testTranslationLinkTheme() {
     $this->drupalLogin($this->administrator);
-
-    $page = $this->drupalCreateNode(array('type' => 'page'));
     $article = $this->drupalCreateNode(array('type' => 'article', 'langcode' => $this->langcodes[0]));
 
-    // Verify translation links.
-    $this->drupalGet('admin/content');
-    $this->assertResponse(200);
-    $this->assertLinkByHref('node/' . $article->id() . '/translations');
-    $this->assertNoLinkByHref('node/' . $page->id() . '/translations');
+    // Set up Seven as the admin theme and use it for node editing.
+    $this->container->get('theme_handler')->enable(array('seven'));
+    $edit = array();
+    $edit['admin_theme'] = 'seven';
+    $edit['use_admin_theme'] = TRUE;
+    $this->drupalPostForm('admin/appearance', $edit, t('Save configuration'));
+    $this->drupalGet('node/' . $article->id() . '/translations');
+    $this->assertRaw('"theme":"seven"', 'Translation uses admin theme if edit is admin.');
+
+    // Turn off admin theme for editing, assert inheritance to translations.
+    $edit['use_admin_theme'] = FALSE;
+    $this->drupalPostForm('admin/appearance', $edit, t('Save configuration'));
+    $this->drupalGet('node/' . $article->id() . '/translations');
+    $this->assertNoRaw('"theme":"seven"', 'Translation uses frontend theme if edit is frontend.');
   }
 
   /**

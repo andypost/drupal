@@ -10,7 +10,6 @@ namespace Drupal\block;
 use Drupal\block\BlockManagerInterface;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\String;
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -356,7 +355,11 @@ class BlockListBuilder extends ConfigEntityListBuilder implements FormInterface 
       }
       $form['place_blocks']['list'][$category_key]['content']['#links'][$plugin_id] = array(
         'title' => $plugin_definition['admin_label'],
-        'href' => 'admin/structure/block/add/' . $plugin_id . '/' . $this->theme,
+        'route_name' => 'block.admin_add',
+        'route_parameters' => array(
+          'plugin_id' => $plugin_id,
+          'theme' => $this->theme
+        ),
         'attributes' => array(
           'class' => array('use-ajax', 'block-filter-text-source'),
           'data-accepts' => 'application/vnd.drupal-modal',
@@ -411,8 +414,6 @@ class BlockListBuilder extends ConfigEntityListBuilder implements FormInterface 
 
     // Remove any previously set block placement.
     $this->request->query->remove('block-placement');
-
-    Cache::invalidateTags(array('content' => TRUE));
   }
 
 }

@@ -10,17 +10,11 @@ namespace Drupal\field\Tests;
 use Drupal\field\Tests\FieldUnitTestBase;
 
 /**
- * Unit test class for field validation.
+ * Tests field validation.
+ *
+ * @group field
  */
 class FieldValidationTest extends FieldUnitTestBase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Field validation',
-      'description' => 'Tests field validation.',
-      'group' => 'Field API',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -41,7 +35,7 @@ class FieldValidationTest extends FieldUnitTestBase {
    * Tests that the number of values is validated against the field cardinality.
    */
   function testCardinalityConstraint() {
-    $cardinality = $this->field->cardinality;
+    $cardinality = $this->field_storage->cardinality;
     $entity = $this->entity;
 
     for ($delta = 0; $delta < $cardinality + 1; $delta++) {
@@ -61,7 +55,7 @@ class FieldValidationTest extends FieldUnitTestBase {
    * Tests that constraints defined by the field type are validated.
    */
   function testFieldConstraints() {
-    $cardinality = $this->field->getCardinality();
+    $cardinality = $this->field_storage->getCardinality();
     $entity = $this->entity;
 
     // The test is only valid if the field cardinality is greater than 2.

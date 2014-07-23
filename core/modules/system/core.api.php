@@ -17,10 +17,10 @@
  *
  * @section essentials Essential background concepts
  *
- * - @link architecture Drupal's architecture @endlink
  * - @link oo_conventions Object-oriented conventions used in Drupal @endlink
  * - @link extending Extending and altering Drupal @endlink
  * - @link best_practices Security and best practices @endlink
+ * - @link info_types Types of information in Drupal @endlink
  *
  * @section interface User interface
  *
@@ -32,15 +32,16 @@
  * @section store_retrieve Storing and retrieving data
  *
  * - @link entity_api Entities @endlink
+ * - @link field Fields @endlink
  * - @link config_api Configuration API @endlink
  * - @link state_api State API @endlink
- * - @link field Fields @endlink
- * - @link node_overview Node system @endlink
  * - @link views_overview Views @endlink
  * - @link database Database abstraction layer @endlink
  *
  * @section other_essentials Other essential APIs
  *
+ * - @link plugin_api Plugins @endlink
+ * - @link container Services and the Dependency Injection Container @endlink
  * - @link i18n Internationalization @endlink
  * - @link cache Caching @endlink
  * - @link utility Utility classes and functions @endlink
@@ -52,7 +53,6 @@
  *
  * - @link batch Batch API @endlink
  * - @link queue Queue API @endlink
- * - @link container Services and the Dependency Injection Container @endlink
  * - @link typed_data Typed Data @endlink
  * - @link testing Automated tests @endlink
  * - @link third_party Integrating third-party applications @endlink
@@ -66,47 +66,117 @@
  */
 
 /**
- * @defgroup block_api Block API
- * @{
- * Information about the classes and interfaces that make up the Block API.
- *
- * Blocks are a combination of a configuration entity and a plugin. The
- * configuration entity stores placement information (theme, region, weight) and
- * any other configuration that is specific to the block. The block plugin does
- * the work of rendering the block's content for display.
- *
- * To define a block in a module you need to:
- * - Define a Block plugin by creating a new class that implements the
- *   \Drupal\block\BlockPluginInterface. For more information about how block
- *   plugins are discovered see the @link plugin_api Plugin API topic @endlink.
- * - Usually you will want to extend the \Drupal\block\BlockBase class, which
- *   provides a common configuration form and utility methods for getting and
- *   setting configuration in the block configuration entity.
- * - Block plugins use the annotations defined by
- *   \Drupal\block\Annotation\Block. See the
- *   @link annotation Annotations topic @endlink for more information about
- *   annotations.
- *
- * Further information and examples:
- * - \Drupal\system\Plugin\Block\SystemPoweredByBlock provides a simple example
- *   of defining a block.
- * - \Drupal\book\Plugin\Block\BookNavigationBlock is an example of a block with
- *   a custom configuration form.
- * - For a more in-depth discussion of the Block API see
- *   https://drupal.org/developing/api/8/block_api
- * - The examples project also provides a Block example in
- *   https://drupal.org/project/examples.
- */
-
-/**
  * @defgroup third_party REST and Application Integration
  * @{
  * Integrating third-party applications using REST and related operations.
  *
- * @todo write this
+ * @section sec_overview Overview of web services
+ * Web services make it possible for applications and web sites to read and
+ * update information from other web sites. There are several standard
+ * techniques for providing web services, including:
+ * - SOAP: http://en.wikipedia.org/wiki/SOAP SOAP
+ * - XML-RPC: http://en.wikipedia.org/wiki/XML-RPC
+ * - REST: http://en.wikipedia.org/wiki/Representational_state_transfer
+ * Drupal sites can both provide web services and integrate third-party web
+ * services.
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * @section sec_rest_overview Overview of REST
+ * The REST technique uses basic HTTP requests to obtain and update data, where
+ * each web service defines a specific API (HTTP GET and/or POST parameters and
+ * returned response) for its HTTP requests. REST requests are separated into
+ * several types, known as methods, including:
+ * - GET: Requests to obtain data.
+ * - PUT: Requests to update or create data.
+ * - PATCH: Requests to update a subset of data, such as one field.
+ * - DELETE: Requests to delete data.
+ * The Drupal Core REST module provides support for GET, PUT, PATCH, and DELETE
+ * quests on entities, GET requests on the database log from the Database
+ * Logging module, and a plugin framework for providing REST support for other
+ * data and other methods.
+ *
+ * REST requests can be authenticated. The Drupal Core Basic Auth module
+ * provides authentication using the HTTP Basic protocol; contributed module
+ * OAuth (https://www.drupal.org/project/oauth) implements the OAuth
+ * authenticaion protocol. You can also use cookie-based authentication, which
+ * would require users to be logged into the Drupal site while using the
+ * application on the third-party site that is using the REST service.
+ *
+ * @section sec_rest Enabling REST for entities and the log
+ * Here are the steps to take to use the REST operations provided by Drupal
+ * Core:
+ * - Enable the REST module, plus Basic Auth (or another authentication method)
+ *   and HAL.
+ * - Node entity support is configured by default. If you would like to support
+ *   other types of entities, you can copy
+ *   core/modules/rest/config/install/rest.settings.yml to your staging
+ *   configuration directory, appropriately modified for other entity types,
+ *   and import it. Support for GET on the log from the Database Logging module
+ *   can also be enabled in this way; in this case, the 'entity:node' line
+ *   in the configuration would be replaced by the appropriate plugin ID,
+ *   'dblog'.
+ * - Set up permissions to allow the desired REST operations for a role, and set
+ *   up one or more user accounts to perform the operations.
+ * - To perform a REST operation, send a request to either the canonical URL
+ *   for an entity (such as node/12345 for a node), or if the entity does not
+ *   have a canonical URL, a URL like entity/(type)/(ID). The URL for a log
+ *   entry is dblog/(ID). The request must have the following properties:
+ *   - The request method must be set to the REST method you are using (POST,
+ *     GET, PATCH, etc.).
+ *   - The content type for the data you send, or the accept type for the
+ *     data you are receiving, must be set to 'application/hal+json'.
+ *   - If you are sending data, it must be JSON-encoded.
+ *   - You'll also need to make sure the authentication information is sent
+ *     with the request, unless you have allowed access to anonymous users.
+ *
+ * For more detailed information on setting up REST, see
+ * https://www.drupal.org/documentation/modules/rest.
+ *
+ * @section sec_plugins Defining new REST plugins
+ * The REST framework in the REST module has support built in for entities, but
+ * it is also an extensible plugin-based system. REST plugins implement
+ * interface \Drupal\rest\Plugin\ResourceInterface, and generally extend base
+ * class \Drupal\rest\Plugin\ResourceBase. They are annotated with
+ * \Drupal\rest\Annotation\RestResource annotation, and must be in plugin
+ * namespace subdirectory Plugin\rest\resource. For more information on how to
+ * create plugins, see the @link plugin_api Plugin API topic. @endlink
+ *
+ * If you create a new REST plugin, you will also need to enable it by
+ * providing default configuration or configuration import, as outlined in
+ * @ref sec_rest above.
+ *
+ * @section sec_xmlrpc Using XML-RPC
+ * In XML-RPC, a web site can set up one or more XML-RPC methods, which it
+ * will usually service at a central XML-RPC URL. Drupal Core's XML-RPC module
+ * provides both client and server XML-RPC functionality.
+ *
+ * On the server side, the XML-RPC module sets up URL path xmlrpc.php, which
+ * responds to XML-RPC requests. Individual XML-RPC request methods are defined
+ * by modules by implementing hook_xmlrpc(); Drupal Core does not define any
+ * XML-RPC web service requests by default.
+ *
+ * On the client side, XML-RPC requests to other web sites that provide XML-RPC
+ * web services can be performed in Drupal by using the xmlrpc() function.
+ *
+ * @section sec_integrate Integrating data from other sites into Drupal
+ * If you want to integrate data from other web sites into Drupal, here are
+ * some notes:
+ * - There are contributed modules available for integrating many third-party
+ *   sites into Drupal. Search on https://www.drupal.org/project/project_module
+ * - If there is not an existing module, you will need to find documentation on
+ *   the specific web services API for the site you are trying to integrate.
+ * - There are several classes and functions that are useful for interacting
+ *   with web services:
+ *   - You should make requests using the 'http_client' service, which
+ *     implements \GuzzleHttp\ClientInterface. See the
+ *     @link container Services topic @endlink for more information on
+ *     services. If you cannot use dependency injection to retrieve this
+ *     service, the \Drupal::httpClient() method is available. A good example
+ *     of how to use this service can be found in
+ *     \Drupal\aggregator\Plugin\aggregator\fetcher\DefaultFetcher
+ *   - \Drupal\Component\Serialization\Json (JSON encoding and decoding).
+ *   - PHP has functions and classes for parsing XML; see
+ *     http://php.net/manual/refs.xml.php
+ *   - As mentioned above, for XML-RPC requests, use function xmlrpc().
  * @}
  */
 
@@ -116,7 +186,7 @@
  * Information about the State API.
  *
  * The State API is one of several methods in Drupal for storing information.
- * See @link architecture Drupal's architecture topic @endlink for an
+ * See the @link info_types Information types topic @endlink for an
  * overview of the different types of information.
  *
  * The basic entry point into the State API is \Drupal::state(), which returns
@@ -142,7 +212,7 @@
  * Information about the Configuration API.
  *
  * The Configuration API is one of several methods in Drupal for storing
- * information. See @link architecture Drupal's architecture topic @endlink for
+ * information. See the @link info_types Information types topic @endlink for
  * an overview of the different types of information. The sections below have
  * more information about the configuration API; see
  * https://drupal.org/developing/api/8/configuration for more details.
@@ -162,6 +232,10 @@
  * a configuration object, configuration settings have data types (integer,
  * string, Boolean, etc.) and settings can also exist in a nested hierarchy,
  * known as a "mapping".
+ *
+ * Configuration can also be overridden on a global, per-language, or
+ * per-module basis. See https://www.drupal.org/node/1928898 for more
+ * information.
  *
  * @section sec_yaml Configuration YAML files
  * Whether or not configuration files are being used for the active
@@ -187,7 +261,8 @@
  * structure of the configuration, its data types, and which of its values need
  * to be translatable. Each module needs to define its configuration schema in
  * files in the config/schema directory under the top-level module directory, so
- * look there in most Core modules for examples.
+ * look there in most Core modules for examples. Note that data types label,
+ * text, and data_format are translatable; string is non-translatable text.
  *
  * @section sec_simple Simple configuration
  * The simple configuration API should be used for information that will always
@@ -260,6 +335,9 @@
  *   overriding the
  *   \Drupal\Core\Config\Entity\ConfigEntityInterface::calculateDependencies()
  *   method.
+ *
+ * @see i18n
+ *
  * @}
  */
 
@@ -268,120 +346,338 @@
  * @{
  * Describes how to define and manipulate content and configuration entities.
  *
- * @todo Add an overview here, describing what an entity is, bundles, entity
- *   types, etc. at an overview level. And link to more detailed documentation:
- *   https://drupal.org/developing/api/entity
- *
- * @section types Types of entities
- * Entities can be used to store content or configuration information. See the
- * @link architecture Drupal's architecture topic @endlink for an overview of
- * the different types of information, and the
+ * Entities, in Drupal, are objects that are used for persistent storage of
+ * content and configuration information. See the
+ * @link info_types Information types topic @endlink for an overview of the
+ * different types of information, and the
  * @link config_api Configuration API topic @endlink for more about the
- * configuration API. Defining and manipulating content and configuration
- * entities is very similar, and this is described in the sections below.
+ * configuration API.
+ *
+ * Each entity is an instance of a particular "entity type". Some content entity
+ * types have sub-types, which are known as "bundles", while for other entity
+ * types, there is only a single bundle. For example, the Node content entity
+ * type, which is used for the main content pages in Drupal, has bundles that
+ * are known as "content types", while the User content type, which is used for
+ * user accounts, has only one bundle.
+ *
+ * The sections below have more information about entities and the Entity API;
+ * for more detailed information, see https://drupal.org/developing/api/entity
  *
  * @section define Defining an entity type
- *
- * @todo This section was written for Config entities. Add information about
- *   content entities to each item, and add additional items that are relevant
- *   to content entities, making sure to say they are not needed for config
- *   entities, such as view page controllers, etc.
- *
- * Here are the steps to follow to define a new entity type:
+ * Entity types are defined by modules, using Drupal's Plugin API (see the
+ * @link plugin_api Plugin API topic @endlink for more information about plugins
+ * in general). Here are the steps to follow to define a new entity type:
  * - Choose a unique machine name, or ID, for your entity type. This normally
  *   starts with (or is the same as) your module's machine name. It should be
  *   as short as possible, and may not exceed 32 characters.
  * - Define an interface for your entity's get/set methods, extending either
- *   \Drupal\Core\Config\Entity\ConfigEntityInterface or [content entity
- *   interface].
+ *   \Drupal\Core\Config\Entity\ConfigEntityInterface or
+ *   \Drupal\Core\Entity\ContentEntityInterface.
  * - Define a class for your entity, implementing your interface and extending
- *   either \Drupal\Core\Config\Entity\ConfigEntityBase or [content entity
- *   class] , with annotation for \@ConfigEntityType or [content entity
- *   annotation] in its documentation block.
+ *   either \Drupal\Core\Config\Entity\ConfigEntityBase or
+ *   \Drupal\Core\Entity\ContentEntityBase, with annotation for
+ *   \@ConfigEntityType or \@ContentEntityType in its documentation block.
  * - The 'id' annotation gives the entity type ID, and the 'label' annotation
- *   gives the human-readable name of the entity type.
+ *   gives the human-readable name of the entity type. If you are defining a
+ *   content entity type that uses bundles, the 'bundle_label' annotation gives
+ *   the human-readable name to use for a bundle of this entity type (for
+ *   example, "Content type" for the Node entity).
  * - The annotation will refer to several controller classes, which you will
  *   also need to define:
  *   - list_builder: Define a class that extends
- *     \Drupal\Core\Config\Entity\ConfigEntityListBuilder or [content entity
-       list builder], to provide an administrative overview for your entities.
+ *     \Drupal\Core\Config\Entity\ConfigEntityListBuilder (for configuration
+ *     entities) or \Drupal\Core\Entity\EntityListBuilder (for content
+ *     entities), to provide an administrative overview for your entities.
  *   - add and edit forms, or default form: Define a class (or two) that
  *     extend(s) \Drupal\Core\Entity\EntityForm to provide add and edit forms
- *     for your entities.
+ *     for your entities. For content entities, base class
+ *     \Drupal\Core\Entity\ContentEntityForm is a better starting point.
  *   - delete form: Define a class that extends
  *     \Drupal\Core\Entity\EntityConfirmFormBase to provide a delete
  *     confirmation form for your entities.
+ *   - view_builder: For content entities and config entities that need to be
+ *     viewed, define a class that implements
+ *     \Drupal\Core\Entity\EntityViewBuilderInterface (usually extending
+ *     \Drupal\Core\Entity\EntityViewBuilder), to display a single entity.
+ *   - translation: For translatable content entities (if the 'translatable'
+ *     annotation has value TRUE), define a class that extends
+ *     \Drupal\content_translation\ContentTranslationHandler, to translate
+ *     the content. Configuration translation is handled automatically by the
+ *     Configuration Translation module, without the need of a controller class.
  *   - access: If your configuration entity has complex permissions, you might
  *     need an access controller, implementing
  *     \Drupal\Core\Entity\EntityAccessControllerInterface, but most entities
- *     can just use the 'admin_permission' annotation instead.
+ *     can just use the 'admin_permission' annotation instead. Note that if you
+ *     are creating your own access controller, you should override the
+ *     checkAccess() and checkCreateAccess() methods, not access().
+ *   - storage: A class implementing
+ *     \Drupal\Core\Entity\EntityStorageInterface. If not specified, content
+ *     entities will use \Drupal\Core\Entity\ContentEntityDatabaseStorage, and
+ *     config entities will use \Drupal\Core\Config\Entity\ConfigEntityStorage.
+ *     You can extend one of these classes to provide custom behavior.
+ * - For content entities, the annotation will refer to a number of database
+ *   tables and their fields. These annotation properties, such as 'base_table',
+ *   'data_table', 'entity_keys', etc., are documented on
+ *   \Drupal\Core\Entity\EntityType. Your module will also need to set up its
+ *   database tables using hook_schema().
+ * - For content entities that are displayed on their own pages, the annotation
+ *   will refer to a 'uri_callback' function, which takes an object of the
+ *   entity interface you have defined as its parameter, and returns routing
+ *   information for the entity page; see node_uri() for an example. You will
+ *   also need to add a corresponding route to your module's routing.yml file;
+ *   see the node.view route in node.routing.yml for an example, and see
+ *   @ref sec_routes below for some notes.
+ * - Define routing and links for the various URLs associated with the entity.
+ *   These go into the 'links' annotation, with the link type as the key, and
+ *   the route machine name (defined in your module's routing.yml file) as the
+ *   value; see @ref sec_routes below for some routing notes. Typical link
+ *   types are:
+ *   - canonical: Default link, either to view (if entities are viewed on their
+ *     own pages) or edit the entity.
+ *   - delete-form: Confirmation form to delete the entity.
+ *   - edit-form: Editing form.
+ *   - admin-form: Form for editing bundle or entity type settings.
+ *   - Other link types specific to your entity type can also be defined.
+ * - If your content entity has bundles, you will also need to define a second
+ *   plugin to handle the bundles. This plugin is itself a configuration entity
+ *   type, so follow the steps here to define it. The machine name ('id'
+ *   annotation) of this configuration entity class goes into the
+ *   'bundle_entity_type' annotation on the entity type class. For example, for
+ *   the Node entity, the bundle class is \Drupal\node\Entity\NodeType, whose
+ *   machine name is 'node_type'. This is the annotation value for
+ *   'bundle_entity_type' on the \Drupal\node\Entity\Node class. Also, the
+ *   bundle config entity type annotation must have a 'bundle_of' entry,
+ *   giving the machine name of the entity type it is acting as a bundle for.
+ * - Additional annotations can be seen on entity class examples such as
+ *   \Drupal\node\Entity\Node (content) and \Drupal\user\Entity\Role
+ *   (configuration). These annotations are documented on
+ *   \Drupal\Core\Entity\EntityType.
  *
- * @section load_query Loading and querying entities
- * To load entities, use the entity storage manager, which is a class
+ * @section sec_routes Entity routes
+ * Entity routes, like other routes, are defined in *.routing.yml files; see
+ * the @link menu Menu and routing @endlink topic for more information. Here
+ * is a typical entry, for the block configure form:
+ * @code
+ * block.admin_edit:
+ *   path: '/admin/structure/block/manage/{block}'
+ *   defaults:
+ *     _entity_form: 'block.default'
+ *     _title: 'Configure block'
+ *   requirements:
+ *     _entity_access: 'block.update'
+ * @endcode
+ * Some notes:
+ * - path: The {block} in the path is a placeholder, which (for an entity) must
+ *   always take the form of {machine_name_of_entity_type}. In the URL, the
+ *   placeholder value will be the ID of an entity item. When the route is used,
+ *   the entity system will load the corresponding entity item and pass it in as
+ *   an object to the controller for the route.
+ * - defaults: For entity form routes, use _entity_form rather than the generic
+ *   _content or _form. The value is composed of the entity type machine name
+ *   and a form controller type from the entity annotation (see @ref define
+ *   above more more on controllers and annotation). So, in this example,
+ *   block.default refers to the 'default' form controller on the block entity
+ *   type, whose annotation contains:
+ *   @code
+ *   controllers = {
+ *     "form" = {
+ *       "default" = "Drupal\block\BlockForm",
+ *   @endcode
+ *
+ * @section bundle Defining a content entity bundle
+ * For entity types that use bundles, such as Node (bundles are content types)
+ * and Taxonomy (bundles are vocabularies), modules and install profiles can
+ * define bundles by supplying default configuration in their config/install
+ * directories. (See the @link config_api Configuration API topic @endlink for
+ * general information about configuration.)
+ *
+ * There are several good examples of this in Drupal Core:
+ * - The Forum module defines a content type in node.type.forum.yml and a
+ *   vocabulary in taxonomy.vocabulary.forums.yml
+ * - The Book module defines a content type in node.type.book.yml
+ * - The Standard install profile defines Page and Article content types in
+ *   node.type.page.yml and node.type.article.yml, a Tags vocabulary in
+ *   taxonomy.vocabulary.tags.yml, and a Node comment type in
+ *   comment.type.comment.yml. This profile's configuration is especially
+ *   instructive, because it also adds several fields to the Article type, and
+ *   it sets up view and form display modes for the node types.
+ *
+ * @section load_query Loading, querying, and rendering entities
+ * To load entities, use the entity storage manager, which is an object
  * implementing \Drupal\Core\Entity\EntityStorageInterface that you can
  * retrieve with:
  * @code
  * $storage = \Drupal::entityManager()->getStorage('your_entity_type');
+ * // Or if you have a $container variable:
+ * $storage = $container->get('entity.manager')->getStorage('your_entity_type');
  * @endcode
+ * Here, 'your_entity_type' is the machine name of your entity type ('id'
+ * annotation on the entity class), and note that you should use dependency
+ * injection to retrieve this object if possible. See the
+ * @link container Services and Dependency Injection topic @endlink for more
+ * about how to properly retrieve services.
  *
- * To query to find entities to load, use an entity query, which is a class
+ * To query to find entities to load, use an entity query, which is a object
  * implementing \Drupal\Core\Entity\Query\QueryInterface that you can retrieve
  * with:
  * @code
- * $storage = \Drupal::entityQuery('your_entity_type');
+ * // Simple query:
+ * $query = \Drupal::entityQuery('your_entity_type');
+ * // Or, if you have a $container variable:
+ * $query_service = $container->get('entity.query');
+ * $query = $query_service->get('your_entity_type');
+ * @endcode
+ * If you need aggregation, there is an aggregate query avaialable, which
+ * implements \Drupal\Core\Entity\Query\QueryAggregateInterface:
+ * @code
+ * $query \Drupal::entityQueryAggregate('your_entity_type');
+ * // Or:
+ * $query = $query_service->getAggregate('your_entity_type');
+ * @endcode
+ * Also, you should use dependency injection to get this object if
+ * possible; the service you need is entity.query, and its methods getQuery()
+ * or getAggregateQuery() will get the query object.
+ *
+ * In either case, you can then add conditions to your query, using methods
+ * like condition(), exists(), etc. on $query; add sorting, pager, and range
+ * if needed, and execute the query to return a list of entity IDs that match
+ * the query.
+ *
+ * Here is an example, using the core File entity:
+ * @code
+ * $fids = Drupal::entityQuery('file')
+ *   ->condition('status', FILE_STATUS_PERMANENT, '<>')
+ *   ->condition('changed', REQUEST_TIME - $age, '<')
+ *   ->range(0, 100)
+ *   ->execute();
+ * $files = $storage->loadMultiple($fids);
  * @endcode
  *
- * @todo Add additional relevant classes and interfaces to this topic using
- *   ingroup.
+ * The normal way of viewing entities is by using a route, as described in the
+ * sections above. If for some reason you need to render an entity in code in a
+ * particular view mode, you can use an entity view builder, which is an object
+ * implementing \Drupal\Core\Entity\EntityViewBuilderInterface that you can
+ * retrieve with:
+ * @code
+ * $view_builder = \Drupal::entityManager()->getViewBuilder('your_entity_type');
+ * // Or if you have a $container variable:
+ * $view_builder = $container->get('entity.manager')->getViewBuilder('your_entity_type');
+ * @endcode
+ * Then, to build and render the entity:
+ * @code
+ * // You can omit the language ID if the default language is being used.
+ * $build = $view_builder->view($entity, 'view_mode_name', $language->id);
+ * // $build is a render array.
+ * $rendered = drupal_render($build);
+ * @endcode
+ *
+ * @section sec_access Access checking on entities
+ * Entity types define their access permission scheme in their annotation.
+ * Access permissions can be quite complex, so you should not assume any
+ * particular permission scheme. Instead, once you have an entity object
+ * loaded, you can check for permission for a particular operation (such as
+ * 'view') at the entity or field level by calling:
+ * @code
+ * $entity->access($operation);
+ * $entity->nameOfField->access($operation);
+ * @endcode
+ * The interface related to access checking in entities and fields is
+ * \Drupal\Core\Access\AccessibleInterface.
+ *
+ * The default entity access controller invokes two hooks while checking
+ * access on a single entity: hook_entity_access() is invoked first, and
+ * then hook_ENTITY_TYPE_access() (where ENTITY_TYPE is the machine name
+ * of the entity type). If no module returns a TRUE or FALSE value from
+ * either of these hooks, then the entity's default access checking takes
+ * place. For create operations (creating a new entity), the hooks that
+ * are invoked are hook_entity_create_access() and
+ * hook_ENTITY_TYPE_create_access() instead.
+ *
+ * The Node entity type has a complex system for determining access, which
+ * developers can interact with. This is described in the
+ * @link node_access Node access topic. @endlink
+ *
+ * @see i18n
+ * @see entity_crud
  * @}
  */
-
-/**
- * @defgroup node_overview Nodes Overview
- * @{
- * Overview of how to interact with the Node system
- *
- * @todo write this
- *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic. This topic should
- * describe node access, the node classes/interfaces, and the node hooks that a
- * developer would need to know about, at a high level, and link to more
- * detailed information.
- *
- * @see node_access
- * @see node_api_hooks
- * @}
- */
-
-/**
- * @defgroup views_overview Views overview
- * @{
- * Overview of the Views module API
- *
- * @todo write this
- *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic. Should link to all
- * or most of the existing Views topics, and maybe this should be moved into
- * a different file? This topic should be an overview so that developers know
- * which of the many Views classes and topics are important if they want to
- * accomplish tasks that they may have.
- * @}
- */
-
 
 /**
  * @defgroup i18n Internationalization
  * @{
  * Internationalization and translation
  *
- * @todo write this
+ * The principle of internationalization is that it should be possible to make a
+ * Drupal site in any language (or a multi-lingual site), where only content in
+ * the desired language is displayed for any particular page request. In order
+ * to make this happen, developers of modules, themes, and installation profiles
+ * need to make sure that all of the displayable content and user interface (UI)
+ * text that their project deals with is internationalized properly, so that it
+ * can be translated using the standard Drupal translation mechanisms.
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * @section internationalization Internationalization
+ * Different @link info_types types of information in Drupal @endlink have
+ * different methods for internationalization, and different portions of the
+ * UI also have different methods for internationalization. Here is a list of
+ * the different mechanisms for internationalization, and some notes:
+ * - UI text is always put into code and related files in English.
+ * - Any time UI text is displayed using PHP code, it should be passed through
+ *   either the global t() function or a t() method on the class. If it
+ *   involves plurals, it should be passed through either the global
+ *   formatPlural() function or a formatPlural() method on the class. Use
+ *   \Drupal\Core\StringTranslation\StringTranslationTrait to get these methods
+ *   into a class.
+ * - Dates displayed in the UI should be passed through the 'date' service
+ *   class's format() method. Again see the Services topic; the method to
+ *   call is \Drupal\Core\Datetime\Date::format().
+ * - Some YML files contain UI text that is automatically translatable:
+ *   - *.routing.yml files: route titles. This also applies to
+ *     *.links.task.yml, *.links.action.yml, and *.links.contextual.yml files.
+ *   - *.info.yml files: module names and descriptions.
+ * - For configuration, make sure any configuration that is displayable to
+ *   users is marked as translatable in the configuration schema. Configuration
+ *   types label, text, and date_format are translatable; string is
+ *   non-translatable text. See the @link config_api Config API topic @endlink
+ *   for more information.
+ * - For annotation, make sure that any text that is displayable in the UI
+ *   is wrapped in \@Translation(). See the
+ *   @link plugin_translatable Plugin translatables topic @endlink for more
+ *   information.
+ * - Content entities are translatable if they have
+ *   @code
+ *   translatable = TRUE,
+ *   @endcode
+ *   in their annotation. The use of entities to store user-editable content to
+ *   be displayed in the site is highly recommended over creating your own
+ *   method for storing, retrieving, displaying, and internationalizing content.
+ * - For Twig templates, use 't' or 'trans' filters to indicate translatable
+ *   text. See https://www.drupal.org/node/2133321 for more information.
+ * - In JavaScript code, use the Drupal.t() and Drupal.formatPlural() functions
+ *   (defined in core/misc/drupal.js) to translate UI text.
+ * - If you are using a custom module, theme, etc. that is not hosted on
+ *   Drupal.org, see
+ *   @link interface_translation_properties Interface translation properties topic @endlink
+ *   for information on how to make sure your UI text is translatable.
  *
- * See https://drupal.org/node/2133321 and https://drupal.org/node/303984
+ * @section translation Translation
+ * Once your data and user interface are internationalized, the following Core
+ * modules are used to translate it into different languages (machine names of
+ * modules in parentheses):
+ * - Language (language): Define which languages are active on the site.
+ * - Interface Translation (locale): Translate UI text.
+ * - Content Translation (content_translation): Translate content entities.
+ * - Configuration Translation (config_translation): Translate configuration.
+ *
+ * The Interface Translation module deserves special mention, because besides
+ * providing a UI for translating UI text, it also imports community
+ * translations from the
+ * @link https://localize.drupal.org Drupal translation server. @endlink If
+ * UI text in Drupal Core and contributed modules, themes, and installation
+ * profiles is properly internationalized (as described above), the text is
+ * automatically added to the translation server for community members to
+ * translate.
+ *
+ * @see transliteration
  * @}
  */
 
@@ -571,26 +867,167 @@
  */
 
 /**
- * @defgroup user_api User Accounts System
+ * @defgroup user_api User accounts, permissions, and roles
  * @{
  * API for user accounts, access checking, roles, and permissions.
  *
- * @todo write this
+ * @sec sec_overview Overview and terminology
+ * Drupal's permission system is based on the concepts of accounts, roles,
+ * and permissions.
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * Users (site visitors) have accounts, which include a user name, an email
+ * address, a password (or some other means of authentication), and possibly
+ * other fields (if defined on the site). Anonymous users have an implicit
+ * account that does not have a real user name or any account information.
+ *
+ * Each user account is assigned one or more roles. The anonymous user account
+ * automatically has the anonymous user role; real user accounts
+ * automatically have the authenticated user role, plus any roles defined on
+ * the site that they have been assigned.
+ *
+ * Each role, including the special anonymous and authenticated user roles, is
+ * granted one or more named permissions, which allow them to perform certain
+ * tasks or view certain content on the site. It is possible to designate a
+ * role to be the "administrator" role; if this is set up, this role is
+ * automatically granted all available permissions whenever a module is
+ * enabled that defines permissions.
+ *
+ * All code in Drupal that allows users to perform tasks or view content must
+ * check that the current user has the correct permission before allowing the
+ * action. In the standard case, access checking consists of answering the
+ * question "Does the current user have permission 'foo'?", and allowing or
+ * denying access based on the answer. Note that access checking should nearly
+ * always be done at the permission level, not by checking for a particular role
+ * or user ID, so that site administrators can set up user accounts and roles
+ * appropriately for their particular sites.
+ *
+ * @sec sec_define Defining permissions
+ * Modules define permissions by implementing hook_permission(). The return
+ * value defines machine names, human-readable names, and optionally
+ * descriptions for each permission type. The machine names are the canonical
+ * way to refer to permissions for access checking.
+ *
+ * @sec sec_access Access permission checking
+ * Depending on the situation, there are several methods for ensuring that
+ * access checks are done properly in Drupal:
+ * - Routes: When you register a route, include a 'requirements' section that
+ *   either gives the machine name of the permission that is needed to visit the
+ *   URL of the route, or tells Drupal to use an access check method or service
+ *   to check access. See the @link menu Routing topic @endlink for more
+ *   information.
+ * - Entities: Access for various entity operations is designated either with
+ *   simple permissions or access controller classes in the entity annotation.
+ *   See the @link entity_api Entity API topic @endlink for more information.
+ * - Other code: There is a 'current_user' service, which can be injected into
+ *   classes to provide access to the current user account (see the
+ *   @link container Services and Dependency Injection topic @endlink for more
+ *   information on dependency injection). In code that cannot use dependency
+ *   injection, you can access this service and retrieve the current user
+ *   account object by calling \Drupal::currentUser(). Once you have a user
+ *   object for the current user (implementing \Drupal\user\UserInterface), you
+ *   can call inherited method
+ *   \Drupal\Core\Session\AccountInterface::hasPermission() to check
+ *   permissions, or pass this object into other functions/methods.
+ * - Forms: Each element of a form array can have a Boolean '#access' property,
+ *   which determines whether that element is visible and/or usable. This is a
+ *   common need in forms, so the current user service (described above) is
+ *   injected into the form base class as method
+ *   \Drupal\Core\Form\FormBase::currentUser().
+ *
+ * @sec sec_entities User and role objects
+ * User objects in Drupal are entity items, implementing
+ * \Drupal\user\UserInterface. Role objects in Drupal are also entity items,
+ * implementing \Drupal\user\RoleInterface. See the
+ * @link entity_api Entity API topic @endlink for more information about
+ * entities in general (including how to load, create, modify, and query them).
+ *
+ * Roles often need to be manipulated in automated test code, such as to add
+ * permissions to them. Here's an example:
+ * @code
+ * $role = \Drupal\user\Entity\Role::load('authenticated');
+ * $role->grantPermission('access comments');
+ * $role->save();
+ * @endcode
+ *
+ * Other important interfaces:
+ * - \Drupal\Core\Session\AccountInterface: The part of UserInterface that
+ *   deals with access checking. In writing code that checks access, your
+ *   method parameters should use this interface, not UserInterface.
+ * - \Drupal\Core\Session\AccountProxyInterface: The interface for the
+ *   current_user service (described above).
  * @}
  */
 
 /**
  * @defgroup theme_render Theme system and Render API
  * @{
- * Overview of the theme system and render API
+ * Overview of the Theme system and Render API.
  *
- * @todo write this
+ * The main purpose of Drupal's Theme system is to give themes complete control
+ * over the appearance of the site, which includes the markup returned from HTTP
+ * requests and the CSS files used to style that markup. In order to ensure that
+ * a theme can completely customize the markup, module developers should avoid
+ * directly writing HTML markup for pages, blocks, and other user-visible output
+ * in their modules, and instead return structured "render arrays" (described
+ * below). Doing this also increases usability, by ensuring that the markup used
+ * for similar functionality on different areas of the site is the same, which
+ * gives users fewer user interface patterns to learn.
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * The core structure of the Render API is the render array, which is a
+ * hierarchical associative array containing data to be rendered and properties
+ * describing how the data should be rendered. A render array that is returned
+ * by a function to specify markup to be sent to the web browser or other
+ * services will eventually be rendered by a call to drupal_render(), which will
+ * recurse through the render array hierarchy if appropriate, making calls into
+ * the theme system to do the actual rendering. If a function or method actually
+ * needs to return rendered output rather than a render array, the best practice
+ * would be to create a render array, render it by calling drupal_render(), and
+ * return that result, rather than writing the markup directly. See the
+ * documentation of drupal_render() for more details of the rendering process.
+ *
+ * Each level in the hierarchy of a render array (including the outermost array)
+ * has one or more array elements. Array elements whose names start with '#' are
+ * known as "properties", and the array elements with other names are "children"
+ * (constituting the next level of the hierarchy); the names of children are
+ * flexible, while property names are specific to the Render API and the
+ * particular type of data being rendered. A special case of render arrays is a
+ * form array, which specifies the form elements for an HTML form; see the
+ * @link form_api Form generation topic @endlink for more information on forms.
+ *
+ * Render arrays (at each level in the hierarchy) will usually have one of the
+ * following three properties defined:
+ * - #type: Specifies that the array contains data and options for a particular
+ *   type of "render element" (examples: 'form', for an HTML form; 'textfield',
+ *   'submit', and other HTML form element types; 'table', for a table with
+ *   rows, columns, and headers). Modules define render elements by implementing
+ *   hook_element_info(), which specifies the properties that are used in render
+ *   arrays to provide the data and options, and default values for these
+ *   properties. Look through implementations of hook_element_info() to discover
+ *   what render elements are available.
+ * - #theme: Specifies that the array contains data to be themed by a particular
+ *   theme hook. Modules define theme hooks by implementing hook_theme(), which
+ *   specifies the input "variables" used to provide data and options; if a
+ *   hook_theme() implementation specifies variable 'foo', then in a render
+ *   array, you would provide this data using property '#foo'. Modules
+ *   implementing hook_theme() also need to provide a default implementation for
+ *   each of their theme hooks, normally in a Twig file. For more information
+ *   and to discover available theme hooks, see the documentation of
+ *   hook_theme() and the
+ *   @link themeable Default theme implementations topic. @endlink
+ * - #markup: Specifies that the array provides HTML markup directly. Unless the
+ *   markup is very simple, such as an explanation in a paragraph tag, it is
+ *   normally preferable to use #theme or #type instead, so that the theme can
+ *   customize the markup.
+ *
+ * For further information on the Theme and Render APIs, see:
+ * - https://drupal.org/documentation/theme
+ * - https://drupal.org/developing/modules/8
+ * - https://drupal.org/node/722174
+ * - https://drupal.org/node/933976
+ * - https://drupal.org/node/930760
+ *
+ * @todo Check these links. Some are for Drupal 7, and might need updates for
+ *   Drupal 8.
  * @}
  */
 
@@ -611,14 +1048,60 @@
 /**
  * @defgroup typed_data Typed Data API
  * @{
- * API for defining what type of data is used in fields, configuration, etc.
+ * API for describing data based on a set of available data types.
  *
- * @todo write this
+ * The Typed Data API was created to provide developers with a consistent
+ * interface for interacting with data, as well as an API for metadata
+ * (information about the data, such as the data type, whether it is
+ * translatable, and who can access it). The Typed Data API is used in several
+ * Drupal sub-systems, such as the Entity Field API and Configuration API.
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * See https://drupal.org/node/1794140 for more information about the Typed
+ * Data API.
  *
- * See https://drupal.org/node/1794140
+ * @section interfaces Interfaces and classes in the Typed Data API
+ * There are several basic interfaces in the Typed Data API, representing
+ * different types of data:
+ * - \Drupal\Core\TypedData\PrimitiveInterface: Used for primitive data, such
+ *   as strings, numeric types, etc. Drupal provides primitive types for
+ *   integers, strings, etc. based on this interface, and you should
+ *   not ever need to create new primitive types.
+ * - \Drupal\Core\TypedData\TypedDataInterface: Used for single pieces of data,
+ *   with some information about its context. Abstract base class
+ *   \Drupal\Core\TypedData\TypedData is a useful starting point, and contains
+ *   documentation on how to extend it.
+ * - \Drupal\Core\TypedData\ComplexDataInterface: Used for complex data, which
+ *   contains named and typed properties; extends TypedDataInterface. Examples
+ *   of complex data include content entities and field items. See the
+ *   @link entity_api Entity API topic @endlink for more information about
+ *   entities; for most complex data, developers should use entities.
+ * - \Drupal\Core\TypedData\ListInterface: Used for a sequential list of other
+ *   typed data. Class \Drupal\Core\TypedData\Plugin\DataType\ItemList is a
+ *   generic implementation of this interface, and it is used by default for
+ *   data declared as a list of some other data type. You can also define a
+ *   custom list class, in which case ItemList is a useful base class.
+ *
+ * @section defining Defining data types
+ * To define a new data type:
+ * - Create a class that implements one of the Typed Data interfaces.
+ *   Typically, you will want to extend one of the classes listed in the
+ *   section above as a starting point.
+ * - Make your class into a DataType plugin. To do that, put it in namespace
+ *   \Drupal\yourmodule\Plugin\DataType (where "yourmodule" is your module's
+ *   short name), and add annotation of type
+ *   \Drupal\Core\TypedData\Annotation\DataType to the documentation header.
+ *   See the @link plugin_api Plugin API topic @endlink and the
+ *   @link annotation Annotations topic @endlink for more information.
+ *
+ * @section using Using data types
+ * The data types of the Typed Data API can be used in several ways, once they
+ * have been defined:
+ * - In the Field API, data types can be used as the class in the property
+ *   definition of the field. See the @link field Field API topic @endlink for
+ *   more information.
+ * - In configuration schema files, you can use the unique ID ('id' annotation)
+ *   from any DataType plugin class as the 'type' value for an entry. See the
+ *   @link config_api Confuration API topic @endlink for more information.
  * @}
  */
 
@@ -641,28 +1124,104 @@
  * @{
  * Overview of PHPUnit tests and Simpletest tests.
  *
- * @todo write this
+ * The Drupal project has embraced a philosophy of using automated tests,
+ * consisting of both unit tests (which test the functionality of classes at a
+ * low level) and functional tests (which test the functionality of Drupal
+ * systems at a higher level, usually involving web output). The goal is to
+ * have test coverage for all or most of the components and features, and to
+ * run the automated tests before any code is changed or added, to make sure
+ * it doesn't break any existing functionality (regression testing).
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * In order to implement this philosophy, developers need to do the following:
+ * - When making a patch to fix a bug, make sure that the bug fix patch includes
+ *   a test that fails without the code change and passes with the code change.
+ *   This helps reviewers understand what the bug is, demonstrates that the code
+ *   actually fixes the bug, and ensures the bug will not reappear due to later
+ *   code changes.
+ * - When making a patch to implement a new feature, include new unit and/or
+ *   functional tests in the patch. This serves to both demonstrate that the
+ *   code actually works, and ensure that later changes do not break the new
+ *   functionality.
  *
- * See https://drupal.org/simpletest and https://drupal.org/phpunit
+ * @section write_unit Writing PHPUnit tests for classes
+ * PHPUnit tests for classes are written using the industry-standard PHPUnit
+ * framework. Use a PHPUnit test to test functionality of a class if the Drupal
+ * environment (database, settings, etc.) and web browser are not needed for the
+ * test, or if the Drupal environment can be replaced by a "mock" object. To
+ * write a PHPUnit test:
+ * - Define a class that extends \Drupal\Tests\UnitTestCase.
+ * - The class name needs to end in the word Test.
+ * - The namespace must be a subspace/subdirectory of \Drupal\yourmodule\Tests,
+ *   where yourmodule is your module's machine name.
+ * - The test class file must be named and placed under the yourmodule/tests/src
+ *   directory, according to the PSR-4 standard.
+ * - Your test class needs a getInfo() method, which gives information about
+ *   the test.
+ * - Methods in your test class whose names start with 'test' are the actual
+ *   test cases. Each one should test a logical subset of the functionality.
+ * For more details, see:
+ * - https://drupal.org/phpunit for full documentation on how to write PHPUnit
+ *   tests for Drupal.
+ * - http://phpunit.de for general information on the PHPUnit framework.
+ * - @link oo_conventions Object-oriented programming topic @endlink for more
+ *   on PSR-4, namespaces, and where to place classes.
+ *
+ * @section write_functional Writing functional tests
+ * Functional tests are written using a Drupal-specific framework that is, for
+ * historical reasons, known as "Simpletest". Use a Simpletest test to test the
+ * functionality of sub-system of Drupal, if the functionality depends on the
+ * Drupal database and settings, or to test the web output of Drupal. To
+ * write a Simpletest test:
+ * - For functional tests of the web output of Drupal, define a class that
+ *   extends \Drupal\simpletest\WebTestBase, which contains an internal web
+ *   browser and defines many helpful test assertion methods that you can use
+ *   in your tests. You can specify modules to be enabled by defining a
+ *   $modules member variable -- keep in mind that by default, WebTestBase uses
+ *   a "testing" install profile, with a minimal set of modules enabled.
+ * - For functional tests that do not test web output, define a class that
+ *   extends \Drupal\simpletest\KernelTestBase. This class is much faster
+ *   than WebTestBase, because instead of making a full install of Drupal, it
+ *   uses an in-memory pseudo-installation (similar to what the installer and
+ *   update scripts use). To use this test class, you will need to create the
+ *   database tables you need and install needed modules manually.
+ * - The namespace must be a subspace/subdirectory of \Drupal\yourmodule\Tests,
+ *   where yourmodule is your module's machine name.
+ * - The test class file must be named and placed under the yourmodule/src/Tests
+ *   directory, according to the PSR-4 standard.
+ * - Your test class needs a getInfo() method, which gives information about
+ *   the test.
+ * - You may also override the default setUp() method, which can set be used to
+ *   set up content types and similar procedures.
+ * - In some cases, you may need to write a test module to support your test;
+ *   put such modules under the yourmodule/tests/modules directory.
+ * - Methods in your test class whose names start with 'test', and which have
+ *   no arguments, are the actual test cases. Each one should test a logical
+ *   subset of the functionality, and each one runs in a new, isolated test
+ *   environment, so it can only rely on the setUp() method, not what has
+ *   been set up by other test methods.
+ * For more details, see:
+ * - https://drupal.org/simpletest for full documentation on how to write
+ *   functional tests for Drupal.
+ * - @link oo_conventions Object-oriented programming topic @endlink for more
+ *   on PSR-4, namespaces, and where to place classes.
+ *
+ * @section running Running tests
+ * You can run both Simpletest and PHPUnit tests by enabling the core Testing
+ * module (core/modules/simpletest). Once that module is enabled, tests can be
+ * run usin the core/scripts/run-tests.sh script, using
+ * @link https://drupal.org/project/drush Drush @endlink, or from the Testing
+ * module user interface.
+ *
+ * PHPUnit tests can also be run from the command line, using the PHPUnit
+ * framework. See https://drupal.org/node/2116263 for more information.
  * @}
  */
 
 /**
- * @defgroup architecture Architecture overview
+ * @defgroup info_types Information types
  * @{
- * Overview of Drupal's architecture for developers.
+ * Types of information in Drupal.
  *
- * @todo write this
- *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
- *
- * Should include: modules, info.yml files, location of files, etc.
- *
- * @section Types of information in Drupal
  * Drupal has several distinct types of information, each with its own methods
  * for storage and retrieval:
  * - Content: Information meant to be displayed on your site: articles, basic
@@ -671,7 +1230,10 @@
  * - Session: Information about individual users' interactions with the site,
  *   such as whether they are logged in. This is really "state" information, but
  *   it is not stored the same way so it's a separate type here. Session
- *   information is managed ...
+ *   information is managed via the session_manager service in Drupal, which
+ *   implements \Drupal\Core\Session\SessionManagerInterface. See the
+ *   @link container Services topic @endlink for more information about
+ *   services.
  * - State: Information of a temporary nature, generally machine-generated and
  *   not human-edited, about the current state of your site. Examples: the time
  *   when Cron was last run, whether node access permissions need rebuilding,
@@ -682,9 +1244,8 @@
  *   you have defined, etc. See
  *   @link config_api the Configuration API topic @endlink for more information.
  *
- * @todo Add something relevant to the list item about sessions.
- * @todo Add some information about Settings, the key-value store in general,
- *   and maybe the cache to this list (not sure if cache belongs here?).
+ * @see cache
+ * @see i18n
  * @}
  */
 
@@ -716,7 +1277,7 @@
  *   See the @link hooks Hooks topic @endlink for more information.
  * - Plugins: Classes that a module defines, which are discovered and
  *   instantiated at specific times to add functionality. See the
- *   @link plugins Plugin API topic @endlink for more information.
+ *   @link plugin_api Plugin API topic @endlink for more information.
  * - Entities: Special plugins that define entity types for storing new types
  *   of content or configuration in Drupal. See the
  *   @link entity_api Entity API topic @endlink for more information.
@@ -731,17 +1292,189 @@
  */
 
 /**
- * @defgroup plugins Plugin API
+ * @defgroup plugin_api Plugin API
  * @{
- * Overview of the Plugin API
+ * Using the Plugin API
  *
- * @todo write this
+ * @section sec_overview Overview and terminology
+
+ * The basic idea of plugins is to allow a particular module or subsystem of
+ * Drupal to provide functionality in an extensible, object-oriented way. The
+ * controlling module or subsystem defines the basic framework (interface) for
+ * the functionality, and other modules can create plugins (implementing the
+ * interface) with particular behaviors. The controlling module instantiates
+ * existing plugins as needed, and calls methods to invoke their functionality.
+ * Examples of functionality in Drupal Core that use plugins include: the block
+ * system (block types are plugins), the entity/field system (entity types,
+ * field types, field formatters, and field widgets are plugins), the image
+ * manipulation system (image effects and image toolkits are plugins), and the
+ * search system (search page types are plugins).
  *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
+ * Plugins are grouped into plugin types, each generally defined by an
+ * interface. Each plugin type is managed by a plugin manager service, which
+ * uses a plugin discovery method to discover provided plugins of that type and
+ * instantiate them using a plugin factory.
  *
- * See https://drupal.org/developing/api/8/plugins and links therein for
- * references. This should be an overview and link to details.
+ * Some plugin types make use of the following concepts or components:
+ * - Plugin derivatives: Allows a single plugin class to present itself as
+ *   multiple plugins. Example: the Menu module provides a block for each
+ *   defined menu via a block plugin derivative.
+ * - Plugin mapping: Allows a plugin class to map a configuration string to an
+ *   instance, and have the plugin automatically instantiated without writing
+ *   additional code.
+ * - Plugin bags: Provide a way to lazily instantiate a set of plugin
+ *   instances from a single plugin definition.
+ *
+ * There are several things a module developer may need to do with plugins:
+ * - Define a completely new plugin type: see @ref sec_define below.
+ * - Create a plugin of an existing plugin type: see @ref sec_create below.
+ * - Perform tasks that involve plugins: see @ref sec_use below.
+ *
+ * See https://drupal.org/developing/api/8/plugins for more detailed
+ * documentation on the plugin system. There are also topics for a few
+ * of the many existing types of plugins:
+ * - @link block_api Block API @endlink
+ * - @link entity_api Entity API @endlink
+ * - @link field Various types of field-related plugins @endlink
+ * - @link views_plugins Views plugins @endlink (has links to topics covering
+ *   various specific types of Views plugins).
+ * - @link search Search page plugins @endlink
+ *
+ * @section sec_define Defining a new plugin type
+ * To define a new plugin type:
+ * - Define an interface for the plugin. This describes the common set of
+ *   behavior, and the methods you will call on each plugin class that is
+ *   instantiated. Usually this interface will extend one or more of the
+ *   following interfaces:
+ *   - \Drupal\Component\Plugin\PluginInspectionInterface
+ *   - \Drupal\Component\Plugin\ConfigurablePluginInterface
+ *   - \Drupal\Component\Plugin\ContextAwarePluginInterface
+ *   - \Drupal\Core\Plugin\PluginFormInterface
+ *   - \Drupal\Core\Executable\ExecutableInterface
+ * - (optional) Create a base class that provides a partial implementation of
+ *   the interface, for the convenience of developers wishing to create plugins
+ *   of your type. The base class usually extends
+ *   \Drupal\Core\Plugin\PluginBase, or one of the base classes that extends
+ *   this class.
+ * - Choose a method for plugin discovery, and define classes as necessary.
+ *   See @ref sub_discovery below.
+ * - Create a plugin manager/factory class and service, which will discover and
+ *   instantiate plugins. See @ref sub_manager below.
+ * - Use the plugin manager to instantiate plugins. Call methods on your plugin
+ *   interface to perform the tasks of your plugin type.
+ * - (optional) If appropriate, define a plugin bag. See @ref sub_bag below
+ *   for more information.
+ *
+ * @subsection sub_discovery Plugin discovery
+ * Plugin discovery is the process your plugin manager uses to discover the
+ * individual plugins of your type that have been defined by your module and
+ * other modules. Plugin discovery methods are classes that implement
+ * \Drupal\Component\Plugin\Discovery\DiscoveryInterface. Most plugin types use
+ * one of the following discovery mechanisms:
+ * - Annotation: Plugin classes are annotated and placed in a defined namespace
+ *   subdirectory. Most Drupal Core plugins use this method of discovery.
+ * - Hook: Plugin modules need to implement a hook to tell the manager about
+ *   their plugins.
+ * - YAML: Plugins are listd in YAML files. Drupal Core uses this method for
+ *   discovering local tasks and local actions. This is mainly useful if all
+ *   plugins use the same class, so it is kind of like a global derivative.
+ * - Static: Plugin classes are registered within the plugin manager class
+ *   itself. Static discovery is only useful if modules cannot define new
+ *   plugins of this type (if the list of available plugins is static).
+ *
+ * It is also possible to define your own custom discovery mechanism or mix
+ * methods together. And there are many more details, such as annotation
+ * decorators, that apply to some of the discovery methods. See
+ * https://drupal.org/developing/api/8/plugins for more details.
+ *
+ * The remainder of this documentation will assume Annotation-based discovery,
+ * since this is the most common method.
+ *
+ * @subsection sub_manager Defining a plugin manager class and service
+ * To define an annotation-based plugin manager:
+ * - Choose a namespace subdirectory for your plugin. For example, search page
+ *   plugins go in directory Plugin/Search under the module namespace.
+ * - Define an annotation class for your plugin type. This class should extend
+ *   \Drupal\Component\Annotation\Plugin, and for most plugin types, it should
+ *   contain member variables corresponding to the annotations plugins will
+ *   need to provide. All plugins have at least $id: a unique string
+ *   identifier.
+ * - Define an alter hook for altering the discovered plugin definitions. You
+ *   should document the hook in a *.api.php file.
+ * - Define a plugin manager class. This class should implement
+ *   \Drupal\Component\Plugin\PluginManagerInterface; most plugin managers do
+ *   this by extending \Drupal\Core\Plugin\DefaultPluginManager. If you do
+ *   extend the default plugin manager, the only method you will probably need
+ *   to define is the class constructor, which will need to call the parent
+ *   constructor to provide information about the annotation class and plugin
+ *   namespace for discovery, set up the alter hook, and possibly set up
+ *   caching. See classes that extend DefaultPluginManager for examples.
+ * - Define a service for your plugin manager. See the
+ *   @link container Services topic for more information. @endlink Your service
+ *   definition should look something like this, referencing your manager
+ *   class and the parent (default) plugin manager service to inherit
+ *   constructor arguments:
+ *   @code
+ *   plugin.manager.mymodule:
+ *     class: Drupal\mymodule\MyPluginManager
+ *     parent: default_plugin_manager
+ *   @endcode
+ * - If your plugin is configurable, you will also need to define the
+ *   configuration schema and possibly a configuration entity type. See the
+ *   @link config_api Configuration API topic @endlink for more information.
+ *
+ * @subsection sub_bag Defining a plugin bag
+ * Some configurable plugin types allow administrators to create zero or more
+ * instances of each plugin, each with its own configuration. For example,
+ * a single block plugin can be configured several times, to display in
+ * different regions of a theme, with different visibility settings, a
+ * different title, or other plugin-specific settings. To make this possible,
+ * a plugin type can make use of what's known as a plugin bag.
+ *
+ * A plugin bag is a class that extends \Drupal\Component\Plugin\PluginBag or
+ * one of its subclasses; there are several examples in Drupal Core. If your
+ * plugin type uses a plugin bag, it will usually also have a configuration
+ * entity, and the entity class should implement
+ * \Drupal\Core\Entity\EntityWithPluginBagsInterface. Again,
+ * there are several examples in Drupal Core; see also the
+ * @link config_api Configuration API topic @endlink for more information about
+ * configuration entities.
+ *
+ * @section sec_create Creating a plugin of an existing type
+ * Assuming the plugin type uses annotation-based discovery, in order to create
+ * a plugin of an existing type, you will be creating a class. This class must:
+ * - Implement the plugin interface, so that it has the required methods
+ *   defined. Usually, you'll want to extend the plugin base class, if one has
+ *   been provided.
+ * - Have the right annotation in its documentation header. See the
+ *   @link annotation Annotation topic @endlink for more information about
+ *   annotation.
+ * - Be in the right plugin namespace, in order to be discovered.
+ * Often, the easiest way to make sure this happens is to find an existing
+ * example of a working plugin class of the desired type, and copy it into your
+ * module as a starting point.
+ *
+ * You can also create a plugin derivative, which allows your plugin class
+ * to present itself to the user interface as multiple plugins. To do this,
+ * in addition to the plugin class, you'll need to create a separate plugin
+ * derivative class implementing
+ * \Drupal\Component\Plugin\Derivative\DerivativeInterface. The classes
+ * \Drupal\system\Plugin\Block\SystemMenuBlock (plugin class) and
+ * \Drupal\system\Plugin\Derivative\SystemMenuBlock (derivative class) are a
+ * good example to look at.
+ *
+ * @sec sec_use Performing tasks involving plugins
+ * Here are the steps to follow to perform a task that involves plugins:
+ * - Locate the machine name of the plugin manager service, and instantiate the
+ *   service. See the @link container Services topic @endlink for more
+ *   information on how to do this.
+ * - On the plugin manager class, use methods like getDefinition(),
+ *   getDefinitions(), or other methods specific to particular plugin managers
+ *   to retrieve information about either specific plugins or the entire list of
+ *   defined plugins.
+ * - Call the createInstance() method on the plugin manager to instantiate
+ *   individual plugin objects.
+ * - Call methods on the plugin objects to perform the desired tasks.
  *
  * @see annotation
  * @}
@@ -752,16 +1485,33 @@
  * @{
  * PSR-4, namespaces, class naming, and other conventions.
  *
- * @todo write this
- *
- * Additional documentation paragraphs need to be written, and functions,
- * classes, and interfaces need to be added to this topic.
- *
- * See https://drupal.org/node/608152 and links therein for references. This
- * should be an overview and link to details. It needs to cover: PSR-*,
- * namespaces, link to reference on OO, class naming conventions (base classes,
- * etc.), and other things developers should know related to object-oriented
- * coding.
+ * A lot of the PHP code in Drupal is object oriented (OO), making use of
+ * @link http://php.net/manual/language.oop5.php PHP classes, interfaces, and traits @endlink
+ * (which are loosely referred to as "classes" in the rest of this topic). The
+ * following conventions and standards apply to this version of Drupal:
+ * - Each class must be in its own file.
+ * - Classes must be namespaced. If a module defines a class, the namespace
+ *   must start with \Drupal\module_name. If it is defined by Drupal Core for
+ *   use across many modules, the namespace should be \Drupal\Core or
+ *   \Drupal\Component, with the exception of the global class \Drupal. See
+ *   https://www.drupal.org/node/1353118 for more about namespaces.
+ * - In order for the PSR-4-based class auto-loader to find the class, it must
+ *   be located in a directory corresponding to the namespace. For
+ *   module-defined classes, if the namespace is \Drupal\module_name\foo\bar,
+ *   then the class goes under the main module directory in directory
+ *   src/foo/bar. For Drupal-wide classes, if the namespace is
+ *   \Drupal\Core\foo\bar, then it goes in directory
+ *   core/lib/Drupal/Core/foo/bar. See https://www.drupal.org/node/2156625 for
+ *   more information about PSR-4.
+ * - Some classes have annotations added to their documentation headers. See
+ *   the @link annotation Annotation topic @endlink for more information.
+ * - Standard plugin discovery requires particular namespaces and annotation
+ *   for most plugin classes. See the
+ *   @link plugin_api Plugin API topic @endlink for more information.
+ * - There are project-wide coding standards for OO code, including naming:
+ *   https://drupal.org/node/608152
+ * - Documentation standards for classes are covered on:
+ *   https://www.drupal.org/coding-standards/docs#classes
  * @}
  */
 
@@ -809,4 +1559,26 @@
  * @see transliteration
  * @see validation
  * @}
+ */
+
+/**
+ * @addtogroup hooks
+ * @{
+ */
+
+/**
+ * Alter display variant plugin definitions.
+ *
+ * @param array $definitions
+ *   The array of display variant definitions, keyed by plugin ID.
+ *
+ * @see \Drupal\Core\Display\VariantManager
+ * @see \Drupal\Core\Display\Annotation\DisplayVariant
+ */
+function hook_display_variant_plugin_alter(array &$definitions) {
+  $definitions['full_page']['admin_label'] = t('Block layout');
+}
+
+/**
+ * @} End of "addtogroup hooks".
  */

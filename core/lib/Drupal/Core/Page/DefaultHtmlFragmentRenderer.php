@@ -62,9 +62,9 @@ class DefaultHtmlFragmentRenderer implements HtmlFragmentRendererInterface {
     if ($fragment instanceof CacheableInterface) {
       // Collect cache tags for all the content in all the regions on the page.
       $tags = $page_array['#cache']['tags'];
-      // Enforce the generic "content" cache tag on all pages.
-      // @todo Remove the "content" cache tag. @see https://drupal.org/node/2124957
-      $tags['content'] = TRUE;
+      // Tag every render cache item with the "rendered" cache tag. This allows us
+      // to invalidate the entire render cache, regardless of the cache bin.
+      $tags['rendered'] = TRUE;
       $page->setCacheTags($tags);
     }
 
@@ -127,9 +127,7 @@ class DefaultHtmlFragmentRenderer implements HtmlFragmentRendererInterface {
     )));
 
     // Display the html.html.twig's default mobile metatags for responsive design.
-    $page->addMetaElement(new MetaElement(NULL, array('name' => 'MobileOptimized', 'content' => 'width')));
-    $page->addMetaElement(new MetaElement(NULL, array('name' => 'HandheldFriendly', 'content' => 'true')));
-    $page->addMetaElement(new MetaElement(NULL, array('name' => 'viewport', 'content' => 'width=device-width')));
+    $page->addMetaElement(new MetaElement(NULL, array('name' => 'viewport', 'content' => 'width=device-width, initial-scale=1.0')));
   }
 
 }

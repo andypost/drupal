@@ -7,12 +7,17 @@
 
 namespace Drupal\color\Tests;
 
-use Drupal\config\Tests\ConfigSchemaTestBase;
+use Drupal\config\Tests\SchemaCheckTestTrait;
+use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the Color config schema.
+ * Ensures the color config schema is correct.
+ *
+ * @group color
  */
-class ColorConfigSchemaTest extends ConfigSchemaTestBase {
+class ColorConfigSchemaTest extends WebTestBase {
+
+  use SchemaCheckTestTrait;
 
   /**
    * Modules to enable.
@@ -27,14 +32,6 @@ class ColorConfigSchemaTest extends ConfigSchemaTestBase {
    * @var \Drupal\user\UserInterface
    */
   protected $adminUser;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Color config schema',
-      'description' => 'Ensures the color config schema is correct.',
-      'group' => 'Color',
-    );
-  }
 
   /**
    * {@inheritdoc}

@@ -8,7 +8,9 @@
 namespace Drupal\node\Tests;
 
 /**
- * Tests basic options of multi-step node forms.
+ * Tests the persistence of basic options through multiple steps.
+ *
+ * @group node
  */
 class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
 
@@ -18,14 +20,6 @@ class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
    * @var string
    */
   protected $field_name;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Multistep node form basic options',
-      'description' => 'Test the persistence of basic options through multiple steps.',
-      'group' => 'Node',
-    );
-  }
 
   /**
    * Tests changing the default values of basic options to ensure they persist.
@@ -37,7 +31,7 @@ class MultiStepNodeFormBasicOptionsTest extends NodeTestBase {
 
     // Create an unlimited cardinality field.
     $this->field_name = drupal_strtolower($this->randomName());
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => 'node',
       'type' => 'text',

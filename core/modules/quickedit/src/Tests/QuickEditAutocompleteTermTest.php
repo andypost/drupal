@@ -8,12 +8,14 @@
 namespace Drupal\quickedit\Tests;
 
 use Drupal\Component\Serialization\Json;
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests using in-place editing for an autocomplete entity reference widget.
+ * Tests in-place editing of autocomplete tags.
+ *
+ * @group quickedit
  */
 class QuickEditAutocompleteTermTest extends WebTestBase {
 
@@ -59,14 +61,6 @@ class QuickEditAutocompleteTermTest extends WebTestBase {
    */
   protected $field_name;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'In-place editing of autocomplete tags',
-      'description' => 'Tests in-place editing of autocomplete tags.',
-      'group' => 'Quick Edit',
-    );
-  }
-
   protected function setUp() {
     parent::setUp();
 
@@ -80,12 +74,12 @@ class QuickEditAutocompleteTermTest extends WebTestBase {
     ));
     $this->vocabulary->save();
     $this->field_name = 'field_' . $this->vocabulary->id();
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',
       // Set cardinality to unlimited for tagging.
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(
@@ -95,7 +89,7 @@ class QuickEditAutocompleteTermTest extends WebTestBase {
         ),
       ),
     ))->save();
-    $instance = entity_create('field_instance_config', array(
+    entity_create('field_instance_config', array(
       'field_name' => $this->field_name,
       'entity_type' => 'node',
       'label' => 'Tags',

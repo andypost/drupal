@@ -104,6 +104,13 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
   protected $typedDataManager;
 
   /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  /**
    * Static cache of bundle information.
    *
    * @var array
@@ -147,9 +154,10 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
   public function __construct(\Traversable $namespaces, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache, LanguageManagerInterface $language_manager, TranslationInterface $translation_manager, ClassResolverInterface $class_resolver, TypedDataManager $typed_data_manager) {
     parent::__construct('Entity', $namespaces, $module_handler, 'Drupal\Core\Entity\Annotation\EntityType');
 
-    $this->setCacheBackend($cache, $language_manager, 'entity_type:', array('entity_types' => TRUE));
+    $this->setCacheBackend($cache, 'entity_type', array('entity_types' => TRUE));
     $this->alterInfo('entity_type');
 
+    $this->languageManager = $language_manager;
     $this->translationManager = $translation_manager;
     $this->classResolver = $class_resolver;
     $this->typedDataManager = $typed_data_manager;
@@ -378,7 +386,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
         foreach ($module_definitions as $field_name => $definition) {
           // @todo Remove this check once FieldDefinitionInterface exposes a
           //  proper provider setter. See https://drupal.org/node/2225961.
-          if ($definition instanceof FieldDefinition) {
+          if ($definition instanceof FieldDefinition && $definition->getProvider() == NULL) {
             $definition->setProvider($module);
           }
           $base_field_definitions[$field_name] = $definition;
@@ -386,11 +394,13 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
       }
     }
 
-    // Automatically set the field name for non-configurable fields.
+    // Automatically set the field name, target entity type and bundle
+    // for non-configurable fields.
     foreach ($base_field_definitions as $field_name => $base_field_definition) {
       if ($base_field_definition instanceof FieldDefinition) {
         $base_field_definition->setName($field_name);
         $base_field_definition->setTargetEntityTypeId($entity_type_id);
+        $base_field_definition->setBundle(NULL);
       }
     }
 
@@ -483,11 +493,13 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
       }
     }
 
-    // Automatically set the field name for non-configurable fields.
+    // Automatically set the field name, target entity type and bundle
+    // for non-configurable fields.
     foreach ($bundle_field_definitions as $field_name => $field_definition) {
       if ($field_definition instanceof FieldDefinition) {
         $field_definition->setName($field_name);
         $field_definition->setTargetEntityTypeId($entity_type_id);
+        $field_definition->setBundle($bundle);
       }
     }
 
@@ -805,7 +817,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
         $this->displayModeInfo[$display_type] = array();
         foreach ($this->getStorage($display_type)->loadMultiple() as $display_mode) {
           list($display_mode_entity_type, $display_mode_name) = explode('.', $display_mode->id(), 2);
-          $this->displayModeInfo[$display_type][$display_mode_entity_type][$display_mode_name] = (array) $display_mode;
+          $this->displayModeInfo[$display_type][$display_mode_entity_type][$display_mode_name] = $display_mode->toArray();
         }
         $this->moduleHandler->alter($key, $this->displayModeInfo[$display_type]);
         $this->cacheBackend->set("$key:$langcode", $this->displayModeInfo[$display_type], CacheBackendInterface::CACHE_PERMANENT, array('entity_types' => TRUE, 'entity_field_info' => TRUE));

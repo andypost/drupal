@@ -10,6 +10,7 @@ namespace Drupal\views_ui\Tests;
 /**
  * Tests the UI for feed display plugin.
  *
+ * @group views_ui
  * @see \Drupal\views\Plugin\views\display\Feed
  */
 class DisplayFeedTest extends UITestBase {
@@ -28,19 +29,11 @@ class DisplayFeedTest extends UITestBase {
    */
   public static $modules = array('views_ui', 'aggregator');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Display: Feed',
-      'description' => 'Tests the UI for Feed display plugin.',
-      'group' => 'Views UI',
-    );
-  }
-
   /**
    * Tests feed display admin UI.
    */
   public function testFeedUI() {
-    // Test both RSS and OMPL feeds.
+    // Test both RSS and OPML feeds.
     foreach (self::$testViews as $view_name) {
       $this->checkFeedViewUi($view_name);
     }

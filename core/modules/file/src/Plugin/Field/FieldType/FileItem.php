@@ -32,8 +32,8 @@ class FileItem extends EntityReferenceItem {
   public static function defaultSettings() {
     return array(
       'target_type' => 'file',
-      'display_field' => 0,
-      'display_default' => 0,
+      'display_field' => FALSE,
+      'display_default' => FALSE,
       'uri_scheme' => file_default_scheme(),
     ) + parent::defaultSettings();
   }
@@ -106,7 +106,7 @@ class FileItem extends EntityReferenceItem {
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, array &$form_state, $has_data) {
+  public function settingsForm(array &$form, array &$form_state, $has_data) {
     $element = array();
 
     $element['#attached']['library'][] = 'file/drupal.file';
@@ -170,6 +170,7 @@ class FileItem extends EntityReferenceItem {
       '#description' => t('Separate extensions with a space or comma and do not include the leading dot.'),
       '#element_validate' => array(array(get_class($this), 'validateExtensions')),
       '#weight' => 1,
+      '#maxlength' => 256,
       // By making this field required, we prevent a potential security issue
       // that would allow files of any type to be uploaded.
       '#required' => TRUE,

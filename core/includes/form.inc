@@ -7,6 +7,7 @@
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\Number;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Xss;
@@ -16,24 +17,6 @@ use Drupal\Core\Render\Element;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Utility\Color;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-
-/**
- * @defgroup forms Form builder functions
- * @{
- * Functions that build an abstract representation of a HTML form.
- *
- * All modules should declare their form builder functions to be in this
- * group and each builder function should reference its validate and submit
- * functions using \@see. Conversely, validate and submit functions should
- * reference the form builder function using \@see. For examples, of this see
- * system_modules_uninstall() or user_pass(), the latter of which has the
- * following in its doxygen documentation:
- * - \@ingroup forms
- * - \@see user_pass_validate()
- * - \@see user_pass_submit()
- *
- * @}
- */
 
 /**
  * @defgroup form_api Form generation
@@ -149,54 +132,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
  */
 
 /**
- * Returns a renderable form array for a given form ID.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->getForm().
- *
- * @see \Drupal\Core\Form\FormBuilderInterface::getForm().
- */
-function drupal_get_form($form_arg) {
-  return call_user_func_array(array(\Drupal::formBuilder(), 'getForm'), func_get_args());
-}
-
-/**
- * Builds and processes a form for a given form ID.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->buildForm().
- *
- * @see \Drupal\Core\Form\FormBuilderInterface::buildForm().
- */
-function drupal_build_form($form_id, &$form_state) {
-  return \Drupal::formBuilder()->buildForm($form_id, $form_state);
-}
-
-/**
- * Retrieves default values for the $form_state array.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->getFormStateDefaults().
- *
- * @see \Drupal\Core\Form\FormBuilderInterface::getFormStateDefaults().
- */
-function form_state_defaults() {
-  return \Drupal::formBuilder()->getFormStateDefaults();
-}
-
-/**
- * Constructs a new $form from the information in $form_state.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->rebuildForm().
- *
- * @see \Drupal\Core\Form\FormBuilderInterface::rebuildForm().
- */
-function drupal_rebuild_form($form_id, &$form_state, $old_form = NULL) {
-  return \Drupal::formBuilder()->rebuildForm($form_id, $form_state, $old_form);
-}
-
-/**
  * Fetches a form from the cache.
  *
  * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
@@ -306,30 +241,6 @@ function drupal_process_form($form_id, &$form, &$form_state) {
 }
 
 /**
- * Prepares a structured form array.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->prepareForm().
- *
- * @see \Drupal\Core\Form\FormBuilderInterface::prepareForm().
- */
-function drupal_prepare_form($form_id, &$form, &$form_state) {
-  \Drupal::formBuilder()->prepareForm($form_id, $form, $form_state);
-}
-
-/**
- * Validates user-submitted form data in the $form_state array.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->validateForm().
- *
- * @see \Drupal\Core\Form\FormValidatorInterface::validateForm().
- */
-function drupal_validate_form($form_id, &$form, &$form_state) {
-  \Drupal::formBuilder()->validateForm($form_id, $form, $form_state);
-}
-
-/**
  * Redirects the user to a URL after a form has been processed.
  *
  * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
@@ -370,18 +281,6 @@ function form_execute_handlers($type, &$form, &$form_state) {
  */
 function form_set_error($name, array &$form_state, $message = '') {
   \Drupal::formBuilder()->setErrorByName($name, $form_state, $message);
-}
-
-/**
- * Clears all errors against all form elements made by form_set_error().
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::formBuilder()->clearErrors().
- *
- * @see \Drupal\Core\Form\FormBuilderInterface::clearErrors().
- */
-function form_clear_error(array &$form_state) {
-  \Drupal::formBuilder()->clearErrors($form_state);
 }
 
 /**
@@ -978,7 +877,7 @@ function form_select_options($element, $choices = NULL) {
   $options = '';
   foreach ($choices as $key => $choice) {
     if (is_array($choice)) {
-      $options .= '<optgroup label="' . $key . '">';
+      $options .= '<optgroup label="' . String::checkPlain($key) . '">';
       $options .= form_select_options($element, $choice);
       $options .= '</optgroup>';
     }
@@ -997,7 +896,7 @@ function form_select_options($element, $choices = NULL) {
       $options .= '<option value="' . String::checkPlain($key) . '"' . $selected . '>' . String::checkPlain($choice) . '</option>';
     }
   }
-  return $options;
+  return SafeMarkup::set($options);
 }
 
 /**
@@ -1232,29 +1131,32 @@ function password_confirm_validate($element, &$element_state) {
 }
 
 /**
- * Returns HTML for an #date form element.
+ * Adds form-specific attributes to a 'date' #type element.
  *
  * Supports HTML5 types of 'date', 'datetime', 'datetime-local', and 'time'.
  * Falls back to a plain textfield. Used as a sub-element by the datetime
  * element type.
  *
- * @param array $variables
- *   An associative array containing:
- *   - element: An associative array containing the properties of the element.
- *     Properties used: #title, #value, #options, #description, #required,
- *     #attributes, #id, #name, #type, #min, #max, #step, #value, #size.
+ * @param array $element
+ *   An associative array containing the properties of the element.
+ *   Properties used: #title, #value, #options, #description, #required,
+ *   #attributes, #id, #name, #type, #min, #max, #step, #value, #size.
  *
- * @ingroup themeable
+ * Note: The input "name" attribute needs to be sanitized before output, which
+ *       is currently done by initializing Drupal\Core\Template\Attribute with
+ *       all the attributes.
+ *
+ * @return array
+ *   The $element with prepared variables ready for #theme 'input__date'.
  */
-function theme_date($variables) {
-  $element = $variables['element'];
-  if (empty($element['attribute']['type'])) {
-    $element['attribute']['type'] = 'date';
+function form_pre_render_date($element) {
+  if (empty($element['#attributes']['type'])) {
+    $element['#attributes']['type'] = 'date';
   }
   Element::setAttributes($element, array('id', 'name', 'type', 'min', 'max', 'step', 'value', 'size'));
-  _form_set_attributes($element, array('form-' . $element['attribute']['type']));
+  _form_set_attributes($element, array('form-' . $element['#attributes']['type']));
 
-  return '<input' . new Attribute($element['#attributes']) . ' />';
+  return $element;
 }
 
 /**
@@ -1662,7 +1564,7 @@ function theme_tableselect($variables) {
           // A header can span over multiple cells and in this case the cells
           // are passed in an array. The order of this array determines the
           // order in which they are added.
-          if (!isset($element['#options'][$key][$fieldname]['data']) && is_array($element['#options'][$key][$fieldname])) {
+          if (is_array($element['#options'][$key][$fieldname]) && !isset($element['#options'][$key][$fieldname]['data'])) {
             foreach ($element['#options'][$key][$fieldname] as $cell) {
               $row['data'][] = $cell;
             }
@@ -2008,13 +1910,13 @@ function form_process_machine_name($element, &$form_state) {
   $element['#machine_name']['suffix'] = '#' . $suffix_id;
 
   if ($element['#machine_name']['standalone']) {
-    $element['#suffix'] .= ' <small id="' . $suffix_id . '">&nbsp;</small>';
+    $element['#suffix'] = SafeMarkup::set($element['#suffix'] . ' <small id="' . $suffix_id . '">&nbsp;</small>');
   }
   else {
     // Append a field suffix to the source form element, which will contain
     // the live preview of the machine name.
     $source += array('#field_suffix' => '');
-    $source['#field_suffix'] .= ' <small id="' . $suffix_id . '">&nbsp;</small>';
+    $source['#field_suffix'] = SafeMarkup::set($source['#field_suffix'] . ' <small id="' . $suffix_id . '">&nbsp;</small>');
 
     $parents = array_merge($element['#machine_name']['source'], array('#field_suffix'));
     NestedArray::setValue($form_state['complete_form'], $parents, $source['#field_suffix']);
@@ -2323,31 +2225,18 @@ function form_process_autocomplete($element, &$form_state) {
 }
 
 /**
- * Preprocesses variables for theme_input().
+ * Prepares variables for input templates.
  *
- * @param array $variables
- *   An associative array containing:
- *   - element: An associative array containing the properties of the element.
- */
-function template_preprocess_input(&$variables) {
-  $element = $variables['element'];
-  $variables['attributes'] = new Attribute($element['#attributes']);
-}
-
-/**
- * Returns HTML for an input form element.
+ * Default template: input.html.twig.
  *
  * @param array $variables
  *   An associative array containing:
  *   - element: An associative array containing the properties of the element.
  *     Properties used: #attributes.
- *
- * @ingroup themeable
  */
-function theme_input($variables) {
+function template_preprocess_input(&$variables) {
   $element = $variables['element'];
-  $attributes = $variables['attributes'];
-  return '<input' . $attributes . ' />' . drupal_render_children($element);
+  $variables['children'] = $element['#children'];
 }
 
 /**
@@ -2924,6 +2813,11 @@ function template_preprocess_form_element(&$variables) {
   if (!isset($element['#title'])) {
     $element['#title_display'] = 'none';
   }
+  // If #title_dislay is not some of the visible options, add a CSS class.
+  if ($element['#title_display'] != 'before' && $element['#title_display'] != 'after') {
+    $variables['attributes']['class'][] = 'form-no-label';
+  }
+
   $variables['prefix'] = isset($element['#field_prefix']) ? $element['#field_prefix'] : NULL;
   $variables['suffix'] = isset($element['#field_suffix']) ? $element['#field_suffix'] : NULL;
 
@@ -2946,7 +2840,7 @@ function template_preprocess_form_element(&$variables) {
 }
 
 /**
- * Returns HTML for a form element label and required marker.
+ * Prepares variables for form label templates.
  *
  * Form element labels include the #title and a #required marker. The label is
  * associated with the element itself by the element #id. Labels may appear
@@ -2961,53 +2855,46 @@ function template_preprocess_form_element(&$variables) {
  * required. That is especially important for screenreader users to know
  * which field is required.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - element: An associative array containing the properties of the element.
  *     Properties used: #required, #title, #id, #value, #description.
- *
- * @ingroup themeable
  */
-function theme_form_element_label($variables) {
+function template_preprocess_form_element_label(&$variables) {
   $element = $variables['element'];
   // If title and required marker are both empty, output no label.
-  if ((!isset($element['#title']) || $element['#title'] === '') && empty($element['#required'])) {
-    return '';
-  }
-
-  $title = Xss::filterAdmin($element['#title']);
-
-  $attributes = array();
+  $variables['title'] = (isset($element['#title']) && $element['#title'] !== '') ? Xss::filterAdmin($element['#title']) : '';
+  $variables['attributes'] = array();
   // Style the label as class option to display inline with the element.
   if ($element['#title_display'] == 'after') {
-    $attributes['class'][] = 'option';
+    $variables['attributes']['class'][] = 'option';
   }
   // Show label only to screen readers to avoid disruption in visual flows.
   elseif ($element['#title_display'] == 'invisible') {
-    $attributes['class'][] = 'visually-hidden';
+    $variables['attributes']['class'][] = 'visually-hidden';
   }
 
   // A #for property of a dedicated #type 'label' element as precedence.
   if (!empty($element['#for'])) {
-    $attributes['for'] = $element['#for'];
+    $variables['attributes']['for'] = $element['#for'];
     // A custom #id allows the referenced form input element to refer back to
     // the label element; e.g., in the 'aria-labelledby' attribute.
     if (!empty($element['#id'])) {
-      $attributes['id'] = $element['#id'];
+      $variables['attributes']['id'] = $element['#id'];
     }
   }
   // Otherwise, point to the #id of the form input element.
   elseif (!empty($element['#id'])) {
-    $attributes['for'] = $element['#id'];
+    $variables['attributes']['for'] = $element['#id'];
   }
 
   // For required elements a 'form-required' class is appended to the
   // label attributes.
+  $variables['required'] = FALSE;
   if (!empty($element['#required'])) {
-    $attributes['class'][] = 'form-required';
+    $variables['required'] = TRUE;
+    $variables['attributes']['class'][] = 'form-required';
   }
-
-  return '<label' . new Attribute($attributes) . '>' . $title . '</label>';
 }
 
 /**
@@ -3206,6 +3093,8 @@ function _form_set_attributes(&$element, $class = array()) {
  *   - css: Array of paths to CSS files to be used on the progress page.
  *   - url_options: options passed to url() when constructing redirect URLs for
  *     the batch.
+ *   - safe_strings: Internal use only. Used to store and retrieve strings
+ *     marked as safe between requests.
  */
 function batch_set($batch_definition) {
   if ($batch_definition) {
@@ -3328,6 +3217,11 @@ function batch_process($redirect = NULL, $url = 'batch', $redirect_callback = NU
         $batch['destination'] = $request->query->get('destination');
         $request->query->remove('destination');
       }
+
+      // Store safe strings.
+      // @todo Ensure we are not storing an excessively large string list in:
+      //   https://www.drupal.org/node/2295823
+      $batch['safe_strings'] = SafeMarkup::getAll();
 
       // Store the batch.
       \Drupal::service('batch.storage')->create($batch);

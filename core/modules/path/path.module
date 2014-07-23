@@ -9,12 +9,12 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\FieldDefinition;
-use Symfony\Component\HttpFoundation\Request;
+use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
  * Implements hook_help().
  */
-function path_help($route_name, Request $request) {
+function path_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.path':
       $output = '';
@@ -86,7 +86,8 @@ function path_entity_base_field_info(EntityTypeInterface $entity_type) {
         'type' => 'path',
         'weight' => 30,
       ))
-      ->setDisplayConfigurable('form', TRUE);
+      ->setDisplayConfigurable('form', TRUE)
+      ->setCustomStorage(TRUE);
 
     return $fields;
   }

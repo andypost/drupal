@@ -13,7 +13,9 @@ use Drupal\Core\Render\Element;
 use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
- * Tests drupal_render().
+ * Performs functional tests on drupal_render().
+ *
+ * @group Common
  */
 class RenderTest extends DrupalUnitTestBase {
 
@@ -23,14 +25,6 @@ class RenderTest extends DrupalUnitTestBase {
    * @var array
    */
   public static $modules = array('system', 'common_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'drupal_render()',
-      'description' => 'Performs functional tests on drupal_render().',
-      'group' => 'Common',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -500,7 +494,7 @@ class RenderTest extends DrupalUnitTestBase {
       '#markup' => '<p>#cache enabled, GET</p>',
       '#attached' => $test_element['#attached'],
       '#post_render_cache' => $test_element['#post_render_cache'],
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
     $this->assertIdentical($cached_element, $expected_element, 'The correct data is cached: the stored #markup and #attached properties are not affected by #post_render_cache callbacks.');
 
@@ -617,7 +611,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context_3,
         )
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
 
     $dom = Html::load($cached_element['#markup']);
@@ -698,7 +692,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context_3,
         )
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
 
     $dom = Html::load($cached_parent_element['#markup']);
@@ -724,7 +718,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context_3,
         )
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
 
     $dom = Html::load($cached_child_element['#markup']);
@@ -833,7 +827,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context
         ),
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
     $this->assertIdentical($cached_element, $expected_element, 'The correct data is cached: the stored #markup and #attached properties are not affected by #post_render_cache callbacks.');
 
@@ -931,7 +925,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context,
         ),
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
     $this->assertIdentical($cached_element, $expected_element, 'The correct data is cached for the child element: the stored #markup and #attached properties are not affected by #post_render_cache callbacks.');
 
@@ -956,7 +950,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context,
         ),
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
     $this->assertIdentical($cached_element, $expected_element, 'The correct data is cached for the parent element: the stored #markup and #attached properties are not affected by #post_render_cache callbacks.');
 
@@ -985,7 +979,7 @@ class RenderTest extends DrupalUnitTestBase {
           $context,
         ),
       ),
-      '#cache' => array('tags' => array()),
+      '#cache' => array('tags' => array('rendered' => TRUE)),
     );
     $this->assertIdentical($cached_element, $expected_element, 'The correct data is cached for the child element: the stored #markup and #attached properties are not affected by #post_render_cache callbacks.');
 

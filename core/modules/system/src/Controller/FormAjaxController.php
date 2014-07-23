@@ -70,7 +70,7 @@ class FormAjaxController {
    * @throws Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
    */
   protected function getForm(Request $request) {
-    $form_state = form_state_defaults();
+    $form_state = \Drupal::formBuilder()->getFormStateDefaults();
     $form_build_id = $request->request->get('form_build_id');
 
     // Get the form from the cache.
@@ -90,7 +90,7 @@ class FormAjaxController {
 
     // When a form is rebuilt after Ajax processing, its #build_id and #action
     // should not change.
-    // @see drupal_rebuild_form()
+    // @see \Drupal\Core\Form\FormBuilderInterface::rebuildForm()
     $form_state['rebuild_info']['copy']['#build_id'] = TRUE;
     $form_state['rebuild_info']['copy']['#action'] = TRUE;
 

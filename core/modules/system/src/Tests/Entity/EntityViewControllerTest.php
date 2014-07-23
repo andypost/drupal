@@ -10,7 +10,9 @@ namespace Drupal\system\Tests\Entity;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests \Drupal\Core\Entity\Controller\EntityViewController.
+ * Tests EntityViewController functionality.
+ *
+ * @group Entity
  */
 class EntityViewControllerTest extends WebTestBase {
 
@@ -27,14 +29,6 @@ class EntityViewControllerTest extends WebTestBase {
    * @var array
    */
   protected $entities = array();
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity View Controller',
-      'description' => 'Tests EntityViewController functionality.',
-      'group' => 'Entity API',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -102,6 +96,8 @@ class EntityViewControllerTest extends WebTestBase {
     // Enable the RDF module to ensure that two modules can add attributes to
     // the same field item.
     \Drupal::moduleHandler()->install(array('rdf'));
+    $this->resetAll();
+
     // Set an RDF mapping for the field_test_text field. This RDF mapping will
     // be turned into RDFa attributes in the field item output.
     $mapping = rdf_get_mapping('entity_test', 'entity_test');

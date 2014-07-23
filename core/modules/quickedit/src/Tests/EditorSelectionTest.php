@@ -12,7 +12,9 @@ use Drupal\quickedit\Plugin\InPlaceEditorManager;
 use Drupal\quickedit\EditorSelector;
 
 /**
- * Test in-place field editor selection.
+ * Tests in-place field editor selection.
+ *
+ * @group quickedit
  */
 class EditorSelectionTest extends QuickEditTestBase {
 
@@ -29,14 +31,6 @@ class EditorSelectionTest extends QuickEditTestBase {
    * @var \Drupal\quickedit\EditorSelectorInterface
    */
   protected $editorSelector;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'In-place field editor selection',
-      'description' => 'Tests in-place field editor selection.',
-      'group' => 'Quick Edit',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -93,8 +87,8 @@ class EditorSelectionTest extends QuickEditTestBase {
     $this->assertEqual('plain_text', $this->getSelectedEditor($this->entity->id(), $field_name), "Without text processing again, cardinality 1, the 'plain_text' editor is selected.");
 
     // Editor selection without text processing, cardinality >1
-    $this->field_text_field->cardinality = 2;
-    $this->field_text_field->save();
+    $this->field_text_field_storage->cardinality = 2;
+    $this->field_text_field_storage->save();
     $this->assertEqual('form', $this->getSelectedEditor($this->entity->id(), $field_name), "Without text processing, cardinality >1, the 'form' editor is selected.");
 
     // Editor selection with text processing, cardinality >1
@@ -142,8 +136,8 @@ class EditorSelectionTest extends QuickEditTestBase {
     $this->assertEqual('wysiwyg', $this->getSelectedEditor($this->entity->id(), $field_name), "With cardinality 1, and the full_html text format, the 'wysiwyg' editor is selected.");
 
     // Editor selection with text processing, cardinality >1
-    $this->field_textarea_field->cardinality = 2;
-    $this->field_textarea_field->save();
+    $this->field_textarea_field_storage->cardinality = 2;
+    $this->field_textarea_field_storage->save();
     $this->assertEqual('form', $this->getSelectedEditor($this->entity->id(), $field_name), "With cardinality >1, and both items using the full_html text format, the 'form' editor is selected.");
   }
 
@@ -173,8 +167,8 @@ class EditorSelectionTest extends QuickEditTestBase {
     $this->assertEqual('form', $this->getSelectedEditor($this->entity->id(), $field_name), "With cardinality 1, the 'form' editor is selected.");
 
     // Editor selection with cardinality >1.
-    $this->field_nr_field->cardinality = 2;
-    $this->field_nr_field->save();
+    $this->field_nr_field_storage->cardinality = 2;
+    $this->field_nr_field_storage->save();
     $this->assertEqual('form', $this->getSelectedEditor($this->entity->id(), $field_name), "With cardinality >1, the 'form' editor is selected.");
   }
 

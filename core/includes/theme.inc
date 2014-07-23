@@ -8,6 +8,7 @@
  * customized by user themes.
  */
 
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Xss;
@@ -18,11 +19,12 @@ use Drupal\Core\Extension\ExtensionNameLengthException;
 use Drupal\Core\Page\FeedLinkElement;
 use Drupal\Core\Page\LinkElement;
 use Drupal\Core\Page\MetaElement;
+use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Template\Attribute;
-use Drupal\Core\Template\RenderWrapper;
 use Drupal\Core\Theme\ThemeSettings;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Render\Element;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @defgroup content_flags Content markers
@@ -90,8 +92,12 @@ function drupal_theme_access($theme) {
 
 /**
  * Initializes the theme system by loading the theme.
+ *
+ * @param RouteMatch $route_match
+ *   The route match to use for theme initialization.
+// @todo Force calling methods to provide as RouteMatch.
  */
-function drupal_theme_initialize() {
+function drupal_theme_initialize(RouteMatch $route_match = NULL) {
   global $theme, $theme_key;
 
   // If $theme is already set, assume the others are set, too, and do nothing
@@ -101,11 +107,12 @@ function drupal_theme_initialize() {
 
   $themes = list_themes();
 
-  // @todo Let the theme.negotiator listen to the kernel request event.
   // Determine the active theme for the theme negotiator service. This includes
   // the default theme as well as really specific ones like the ajax base theme.
-  $request = \Drupal::request();
-  $theme = \Drupal::service('theme.negotiator')->determineActiveTheme($request);
+  if (!$route_match) {
+    $route_match = \Drupal::routeMatch();
+  }
+  $theme = \Drupal::service('theme.negotiator')->determineActiveTheme($route_match);
 
   // If no theme could be negotiated, or if the negotiated theme is not within
   // the list of enabled themes, fall back to the default theme output of core
@@ -452,7 +459,7 @@ function _theme($hook, $variables = array()) {
       // Only log a message when not trying theme suggestions ($hook being an
       // array).
       if (!isset($candidate)) {
-        watchdog('theme', 'Theme hook %hook not found.', array('%hook' => $hook), WATCHDOG_WARNING);
+        \Drupal::logger('theme')->warning('Theme hook %hook not found.', array('%hook' => $hook));
       }
       // There is no theme implementation for the hook passed. Return FALSE so
       // the function calling _theme() can differentiate between a hook that
@@ -578,7 +585,7 @@ function _theme($hook, $variables = array()) {
   $output = '';
   if (isset($info['function'])) {
     if (function_exists($info['function'])) {
-      $output = $info['function']($variables);
+      $output = SafeMarkup::set($info['function']($variables));
     }
   }
   else {
@@ -1134,8 +1141,8 @@ function template_preprocess_status_messages(&$variables) {
  *     level will default to 'h2'. Headings should be used on navigation menus
  *     and any list of links that consistently appears on multiple pages. To
  *     make the heading invisible use the 'visually-hidden' CSS class. Do not
- *     use 'display:none', which removes it from screen-readers and assistive
- *     technology. Headings allow screen-reader and keyboard only users to
+ *     use 'display:none', which removes it from screen readers and assistive
+ *     technology. Headings allow screen reader and keyboard only users to
  *     navigate to or skip the links. See
  *     http://juicystudio.com/article/screen-readers-display-none.php and
  *     http://www.w3.org/TR/WCAG-TECHS/H42.html for more information.
@@ -1422,32 +1429,32 @@ function drupal_pre_render_table(array $element) {
  *   - header: An array containing the table headers. Each element of the array
  *     can be either a localized string or an associative array with the
  *     following keys:
- *     - "data": The localized title of the table column.
- *     - "field": The database field represented in the table column (required
+ *     - data: The localized title of the table column.
+ *     - field: The database field represented in the table column (required
  *       if user is to be able to sort on this column).
- *     - "sort": A default sort order for this column ("asc" or "desc"). Only
- *        one column should be given a default sort order because table sorting
- *        only applies to one column at a time.
- *     - "class": An array of values for the 'class' attribute. In particular,
- *        the least important columns that can be hidden on narrow and medium
- *        width screens should have a 'priority-low' class, referenced with the
- *        RESPONSIVE_PRIORITY_LOW constant. Columns that should be shown on
- *        medium+ wide screens should be marked up with a class of
- *        'priority-medium', referenced by with the RESPONSIVE_PRIORITY_MEDIUM
- *        constant. Themes may hide columns with one of these two classes on
- *        narrow viewports to save horizontal space.
+ *     - sort: A default sort order for this column ("asc" or "desc"). Only
+ *       one column should be given a default sort order because table sorting
+ *       only applies to one column at a time.
+ *     - class: An array of values for the 'class' attribute. In particular,
+ *       the least important columns that can be hidden on narrow and medium
+ *       width screens should have a 'priority-low' class, referenced with the
+ *       RESPONSIVE_PRIORITY_LOW constant. Columns that should be shown on
+ *       medium+ wide screens should be marked up with a class of
+ *       'priority-medium', referenced by with the RESPONSIVE_PRIORITY_MEDIUM
+ *       constant. Themes may hide columns with one of these two classes on
+ *       narrow viewports to save horizontal space.
  *     - Any HTML attributes, such as "colspan", to apply to the column header
  *       cell.
  *   - rows: An array of table rows. Every row is an array of cells, or an
  *     associative array with the following keys:
- *     - "data": an array of cells
+ *     - data: An array of cells.
  *     - Any HTML attributes, such as "class", to apply to the table row.
- *     - "no_striping": a boolean indicating that the row should receive no
+ *     - no_striping: A Boolean indicating that the row should receive no
  *       'even / odd' styling. Defaults to FALSE.
  *     Each cell can be either a string or an associative array with the
  *     following keys:
- *     - "data": The string to display in the table cell.
- *     - "header": Indicates this cell is a header.
+ *     - data: The string to display in the table cell.
+ *     - header: Indicates this cell is a header.
  *     - Any HTML attributes, such as "colspan", to apply to the table cell.
  *     Here's an example for $rows:
  *     @code
@@ -1459,9 +1466,11 @@ function drupal_pre_render_table(array $element) {
  *       // Row with attributes on the row and some of its cells.
  *       array(
  *         'data' => array('Cell 1', array('data' => 'Cell 2', 'colspan' => 2)), 'class' => array('funky')
- *       )
+ *       ),
  *     );
  *     @endcode
+ *   - footer: An array of table rows which will be printed within a <tfoot>
+ *     tag, in the same format as the rows element (see above).
  *   - attributes: An array of HTML attributes to apply to the table tag.
  *   - caption: A localized string to use for the <caption> tag.
  *   - colgroups: An array of column groups. Each element of the array can be
@@ -1555,7 +1564,13 @@ function template_preprocess_table(&$variables) {
   if (!empty($variables['header'])) {
     $ts = tablesort_init($variables['header']);
 
+    // Use a separate index with responsive classes as headers
+    // may be associative.
+    $responsive_index = -1;
     foreach ($variables['header'] as $col_key => $cell) {
+      // Increase the responsive index.
+      $responsive_index++;
+
       if (!is_array($cell)) {
         $cell_content = $cell;
         $cell_attributes = new Attribute();
@@ -1577,10 +1592,10 @@ function template_preprocess_table(&$variables) {
         // must be transferred to the content cells.
         if (!empty($cell['class']) && is_array($cell['class'])) {
           if (in_array(RESPONSIVE_PRIORITY_MEDIUM, $cell['class'])) {
-            $responsive_classes[$col_key] = RESPONSIVE_PRIORITY_MEDIUM;
+            $responsive_classes[$responsive_index] = RESPONSIVE_PRIORITY_MEDIUM;
           }
           elseif (in_array(RESPONSIVE_PRIORITY_LOW, $cell['class'])) {
-            $responsive_classes[$col_key] = RESPONSIVE_PRIORITY_LOW;
+            $responsive_classes[$responsive_index] = RESPONSIVE_PRIORITY_LOW;
           }
         }
 
@@ -1600,94 +1615,83 @@ function template_preprocess_table(&$variables) {
     }
   }
 
-  if (!empty($variables['rows'])) {
-    $flip = array('even' => 'odd', 'odd' => 'even');
-    $class = 'even';
-    foreach ($variables['rows'] as $row_key => $row) {
-      // Check if we're dealing with a simple or complex row
-      if (isset($row['data'])) {
-        $cells = $row['data'];
-        $no_striping = isset($row['no_striping']) ? $row['no_striping'] : FALSE;
-
-        // Set the attributes array and exclude 'data' and 'no_striping'.
-        $row_attributes = $row;
-        unset($row_attributes['data']);
-        unset($row_attributes['no_striping']);
-      }
-      else {
+  // Rows and footer have the same structure.
+  $sections = array('rows' , 'footer');
+  foreach ($sections as $section) {
+    if (!empty($variables[$section])) {
+      $flip = array('even' => 'odd', 'odd' => 'even');
+      $class = 'even';
+      foreach ($variables[$section] as $row_key => $row) {
         $cells = $row;
         $row_attributes = array();
-        $no_striping = FALSE;
-      }
+        $no_striping = $section === 'footer';
 
-      // Add odd/even class.
-      if (!$no_striping) {
-        $class = $flip[$class];
-        $row_attributes['class'][] = $class;
-      }
+        // Check if we're dealing with a simple or complex row
+        if (isset($row['data'])) {
+          $cells = $row['data'];
+          $no_striping = isset($row['no_striping']) ? $row['no_striping'] : $no_striping;
 
-      // Build row.
-      $variables['rows'][$row_key] = array();
-      $variables['rows'][$row_key]['attributes'] = new Attribute($row_attributes);
-      $variables['rows'][$row_key]['cells'] = array();
-      if (!empty($cells)) {
-        foreach ($cells as $col_key => $cell) {
-          if (!is_array($cell)) {
-            $cell_content = $cell;
-            $cell_attributes = array();
-            $is_header = FALSE;
-          }
-          else {
-            $cell_content = '';
-            if (isset($cell['data'])) {
-              $cell_content = $cell['data'];
-              unset($cell['data']);
+          // Set the attributes array and exclude 'data' and 'no_striping'.
+          $row_attributes = $row;
+          unset($row_attributes['data']);
+          unset($row_attributes['no_striping']);
+        }
+
+        // Add odd/even class.
+        if (!$no_striping) {
+          $class = $flip[$class];
+          $row_attributes['class'][] = $class;
+        }
+
+
+        // Build row.
+        $variables[$section][$row_key] = array();
+        $variables[$section][$row_key]['attributes'] = new Attribute($row_attributes);
+        $variables[$section][$row_key]['cells'] = array();
+        if (!empty($cells)) {
+          // Reset the responsive index.
+          $responsive_index = -1;
+          foreach ($cells as $col_key => $cell) {
+            // Increase the responsive index.
+            $responsive_index++;
+
+            if (!is_array($cell)) {
+              $cell_content = $cell;
+              $cell_attributes = array();
+              $is_header = FALSE;
             }
-            // Flag the cell as a header or not and remove the flag.
-            $is_header = !empty($cell['header']);
-            unset($cell['header']);
+            else {
+              $cell_content = '';
+              if (isset($cell['data'])) {
+                $cell_content = $cell['data'];
+                unset($cell['data']);
+              }
 
-            $cell_attributes = $cell;
+              // Flag the cell as a header or not and remove the flag.
+              $is_header = !empty($cell['header']);
+              unset($cell['header']);
 
-            if (is_array($cell_content)) {
-              $cell_content = drupal_render($cell_content);
+              $cell_attributes = $cell;
+
+              if (is_array($cell_content)) {
+                $cell_content = drupal_render($cell_content);
+              }
             }
+            // Add active class if needed for sortable tables.
+            if (isset($variables['header'][$col_key]['data']) && $variables['header'][$col_key]['data'] == $ts['name'] && !empty($variables['header'][$col_key]['field'])) {
+              $cell_attributes['class'][] = 'active';
+            }
+            // Copy RESPONSIVE_PRIORITY_LOW/RESPONSIVE_PRIORITY_MEDIUM
+            // class from header to cell as needed.
+            if (isset($responsive_classes[$responsive_index])) {
+              $cell_attributes['class'][] = $responsive_classes[$responsive_index];
+            }
+            $variables[$section][$row_key]['cells'][$col_key]['tag'] = $is_header ? 'th' : 'td';
+            $variables[$section][$row_key]['cells'][$col_key]['attributes'] = new Attribute($cell_attributes);
+            $variables[$section][$row_key]['cells'][$col_key]['content'] = $cell_content;
           }
-          // Add active class if needed for sortable tables.
-          if (isset($variables['header'][$col_key]['data']) && $variables['header'][$col_key]['data'] == $ts['name'] && !empty($variables['header'][$col_key]['field'])) {
-            $cell_attributes['class'][] = 'active';
-          }
-          // Copy RESPONSIVE_PRIORITY_LOW/RESPONSIVE_PRIORITY_MEDIUM
-          // class from header to cell as needed.
-          if (isset($responsive_classes[$col_key])) {
-            $cell_attributes['class'][] = $responsive_classes[$col_key];
-          }
-
-          $variables['rows'][$row_key]['cells'][$col_key]['tag'] = $is_header ? 'th' : 'td';
-          $variables['rows'][$row_key]['cells'][$col_key]['attributes'] = new Attribute($cell_attributes);
-          $variables['rows'][$row_key]['cells'][$col_key]['content'] = $cell_content;
         }
       }
-    }
-  }
-}
-
-/**
- * Returns HTML for a marker for new or updated content.
- *
- * @param $variables
- *   An associative array containing:
- *   - type: Number representing the marker type to display. See MARK_NEW,
- *     MARK_UPDATED, MARK_READ.
- */
-function theme_mark($variables) {
-  $type = $variables['status'];
-  if (\Drupal::currentUser()->isAuthenticated()) {
-    if ($type == MARK_NEW) {
-      return ' <span class="marker">' . t('new') . '</span>';
-    }
-    elseif ($type == MARK_UPDATED) {
-      return ' <span class="marker">' . t('updated') . '</span>';
     }
   }
 }
@@ -1963,7 +1967,7 @@ function drupal_pre_render_page(array $element) {
  *   An associative array containing:
  *   - page: A render element representing the page.
  *
- * @see system_elements()
+ * @see system_element_info()
  */
 function template_preprocess_html(&$variables) {
   /** @var $page \Drupal\Core\Page\HtmlPage */
@@ -1971,7 +1975,7 @@ function template_preprocess_html(&$variables) {
 
   $variables['html_attributes'] = $page->getHtmlAttributes();
   $variables['attributes'] = $page->getBodyAttributes();
-  $variables['page'] = $page->getContent();
+  $variables['page'] = $page;
 
   // Compile a list of classes that are going to be applied to the body element.
   // This allows advanced theming based on context (home page, node of certain type, etc.).
@@ -2000,7 +2004,7 @@ function template_preprocess_html(&$variables) {
   // Construct page title.
   if ($page->hasTitle()) {
     $head_title = array(
-      'title' => trim(strip_tags($page->getTitle())),
+      'title' => SafeMarkup::set(trim(strip_tags($page->getTitle()))),
       'name' => String::checkPlain($site_config->get('name')),
     );
   }
@@ -2020,7 +2024,13 @@ function template_preprocess_html(&$variables) {
   }
 
   $variables['head_title_array'] = $head_title;
-  $variables['head_title'] = implode(' | ', $head_title);
+  $output = '';
+  $separator = '';
+  foreach ($head_title as $item) {
+    $output .= $separator . SafeMarkup::escape($item);
+    $separator = ' | ';
+  }
+  $variables['head_title'] = SafeMarkup::set($output);
 
   // @todo Remove drupal_*_html_head() and refactor accordingly.
   $html_heads = drupal_get_html_head(FALSE);
@@ -2041,21 +2051,8 @@ function template_preprocess_html(&$variables) {
       $page->addMetaElement($metatag);
     }
   }
-
   $variables['page_top'][] = array('#markup' => $page->getBodyTop());
   $variables['page_bottom'][] = array('#markup' => $page->getBodyBottom());
-
-  // Add footer scripts as '#markup' so they can be rendered with other
-  // elements in page_bottom.
-  $footer_scripts = new RenderWrapper('drupal_get_js', array('footer'));
-  $variables['page_bottom'][] = array('#markup' => $footer_scripts);
-
-  // Wrap function calls in an object so they can be called when printed.
-  $variables['head'] = new RenderWrapper(function() use ($page) {
-    return implode("\n", $page->getMetaElements()) . implode("\n", $page->getLinkElements());
-  });
-  $variables['styles'] = new RenderWrapper('drupal_get_css');
-  $variables['scripts'] = new RenderWrapper('drupal_get_js');
 }
 
 /**
@@ -2135,6 +2132,7 @@ function template_preprocess_page(&$variables) {
       '#heading' => array(
         'text' => t('Main menu'),
         'class' => array('visually-hidden'),
+        'attributes' => array('id' => 'links__system_main_menu'),
       ),
       '#set_active_class' => TRUE,
     );
@@ -2146,12 +2144,13 @@ function template_preprocess_page(&$variables) {
       '#heading' => array(
         'text' => t('Secondary menu'),
         'class' => array('visually-hidden'),
+        'attributes' => array('id' => 'links__system_secondary_menu'),
       ),
       '#set_active_class' => TRUE,
     );
   }
 
-  if ($node = \Drupal::request()->attributes->get('node')) {
+  if ($node = \Drupal::routeMatch()->getParameter('node')) {
     $variables['node'] = $node;
   }
 
@@ -2169,7 +2168,7 @@ function template_preprocess_page(&$variables) {
   if (!defined('MAINTENANCE_MODE')) {
     $variables['breadcrumb'] = array(
       '#theme' => 'breadcrumb',
-      '#breadcrumb' => \Drupal::service('breadcrumb')->build(\Drupal::request()->attributes->all()),
+      '#breadcrumb' => \Drupal::service('breadcrumb')->build(\Drupal::routeMatch()),
     );
   }
 }
@@ -2386,6 +2385,11 @@ function template_preprocess_field(&$variables, $hook) {
     $variables['attributes']['class'][] = 'clearfix';
   }
 
+  // Hide labels visually, but display them to screenreaders if applicable.
+  if ($element['#label_display'] == 'visually_hidden') {
+    $variables['title_attributes']['class'][] = 'visually-hidden';
+  }
+
   static $default_attributes;
   if (!isset($default_attributes)) {
     $default_attributes = new Attribute;
@@ -2455,7 +2459,7 @@ function template_preprocess_field_multiple_value_form(&$variables) {
         $items[] = &$element[$key];
       }
     }
-    usort($items, '_field_sort_items_value_helper');
+    usort($items, '_field_multiple_value_form_sort_helper');
 
     // Add the items as table rows.
     foreach ($items as $item) {
@@ -2502,6 +2506,17 @@ function template_preprocess_field_multiple_value_form(&$variables) {
       $variables['elements'][] = $element[$key];
     }
   }
+}
+
+/**
+ * Callback for usort() within template_preprocess_field_multiple_value_form().
+ *
+ * Sorts using ['_weight']['#value']
+ */
+function _field_multiple_value_form_sort_helper($a, $b) {
+  $a_weight = (is_array($a) && isset($a['_weight']['#value']) ? $a['_weight']['#value'] : 0);
+  $b_weight = (is_array($b) && isset($b['_weight']['#value']) ? $b['_weight']['#value'] : 0);
+  return $a_weight - $b_weight;
 }
 
 /**
@@ -2559,7 +2574,7 @@ function drupal_common_theme() {
       'template' => 'breadcrumb',
     ),
     'table' => array(
-      'variables' => array('header' => NULL, 'rows' => NULL, 'attributes' => array(), 'caption' => NULL, 'colgroups' => array(), 'sticky' => FALSE, 'responsive' => TRUE, 'empty' => ''),
+      'variables' => array('header' => NULL, 'rows' => NULL, 'footer' => NULL, 'attributes' => array(), 'caption' => NULL, 'colgroups' => array(), 'sticky' => FALSE, 'responsive' => TRUE, 'empty' => ''),
       'template' => 'table',
     ),
     'tablesort_indicator' => array(
@@ -2568,6 +2583,7 @@ function drupal_common_theme() {
     ),
     'mark' => array(
       'variables' => array('status' => MARK_NEW),
+      'template' => 'mark',
     ),
     'item_list' => array(
       'variables' => array('items' => array(), 'title' => '', 'list_type' => 'ul', 'attributes' => array(), 'empty' => NULL),
@@ -2629,6 +2645,7 @@ function drupal_common_theme() {
     // From form.inc.
     'input' => array(
       'render element' => 'element',
+      'template' => 'input',
     ),
     'select' => array(
       'render element' => 'element',
@@ -2645,9 +2662,6 @@ function drupal_common_theme() {
     'radios' => array(
       'render element' => 'element',
       'template' => 'radios',
-    ),
-    'date' => array(
-      'render element' => 'element',
     ),
     'checkboxes' => array(
       'render element' => 'element',
@@ -2670,6 +2684,7 @@ function drupal_common_theme() {
     ),
     'form_element_label' => array(
       'render element' => 'element',
+      'template' => 'form-element-label',
     ),
     'vertical_tabs' => array(
       'render element' => 'element',

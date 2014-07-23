@@ -11,7 +11,7 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Config\Entity\ImportableEntityStorageInterface;
-use Drupal\Core\DependencyInjection\DependencySerialization;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -37,8 +37,9 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  *
  * @see \Drupal\Core\Config\ConfigImporterEvent
  */
-class ConfigImporter extends DependencySerialization {
+class ConfigImporter {
   use StringTranslationTrait;
+  use DependencySerializationTrait;
 
   /**
    * The name used to identify the lock.
@@ -539,6 +540,7 @@ class ConfigImporter extends DependencySerialization {
     // We have extensions to process.
     if ($this->totalExtensionsToProcess > 0) {
       $sync_steps[] = 'processExtensions';
+      $sync_steps[] = 'flush';
     }
     $sync_steps[] = 'processConfigurations';
 
@@ -546,6 +548,20 @@ class ConfigImporter extends DependencySerialization {
     $this->moduleHandler->alter('config_import_steps', $sync_steps, $this);
     $sync_steps[] = 'finish';
     return $sync_steps;
+  }
+
+  /**
+   * Flushes Drupal's caches.
+   */
+  public function flush(array &$context) {
+    // Rebuild the container and flush Drupal's caches. If the container is not
+    // rebuilt first the entity types are not discovered correctly due to using
+    // an entity manager that has the incorrect container namespaces injected.
+    \Drupal::service('kernel')->rebuildContainer(TRUE);
+    drupal_flush_all_caches();
+    $this->reInjectMe();
+    $context['message'] = $this->t('Flushed all caches.');
+    $context['finished'] = 1;
   }
 
   /**

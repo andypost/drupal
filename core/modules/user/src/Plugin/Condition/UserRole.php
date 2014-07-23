@@ -8,6 +8,7 @@
 namespace Drupal\user\Plugin\Condition;
 
 use Drupal\Core\Condition\ConditionPluginBase;
+use Drupal\Core\Plugin\Context\ContextDefinition;
 
 /**
  * Provides a 'User Role' condition.
@@ -16,11 +17,10 @@ use Drupal\Core\Condition\ConditionPluginBase;
  *   id = "user_role",
  *   label = @Translation("User Role"),
  *   context = {
- *     "user" = {
- *       "type" = "entity:user"
- *     }
+ *     "user" = @ContextDefinition("entity:user", label = @Translation("User"))
  *   }
  * )
+ *
  */
 class UserRole extends ConditionPluginBase {
 
@@ -28,16 +28,14 @@ class UserRole extends ConditionPluginBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, array &$form_state) {
-    $form = parent::buildConfigurationForm($form, $form_state);
     $form['roles'] = array(
       '#type' => 'checkboxes',
       '#title' => $this->t('When the user has the following roles'),
       '#default_value' => $this->configuration['roles'],
       '#options' => array_map('\Drupal\Component\Utility\String::checkPlain', user_role_names()),
       '#description' => $this->t('If you select no roles, the condition will evaluate to TRUE for all users.'),
-      '#required' => TRUE,
     );
-    return $form;
+    return parent::buildConfigurationForm($form, $form_state);
   }
 
   /**
@@ -46,7 +44,7 @@ class UserRole extends ConditionPluginBase {
   public function defaultConfiguration() {
     return array(
       'roles' => array(),
-    );
+    ) + parent::defaultConfiguration();
   }
 
   /**
@@ -81,6 +79,9 @@ class UserRole extends ConditionPluginBase {
    * {@inheritdoc}
    */
   public function evaluate() {
+    if (empty($this->configuration['roles']) && !$this->isNegated()) {
+      return TRUE;
+    }
     $user = $this->getContextValue('user');
     return (bool) array_intersect($this->configuration['roles'], $user->getRoles());
   }

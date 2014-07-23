@@ -14,6 +14,8 @@ use Drupal\Component\Utility\String;
 
 /**
  * Ensure that when running under HTTPS two session cookies are generated.
+ *
+ * @group Session
  */
 class SessionHttpsTest extends WebTestBase {
 
@@ -24,28 +26,20 @@ class SessionHttpsTest extends WebTestBase {
    */
   public static $modules = array('session_test');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Session HTTPS handling',
-      'description' => 'Ensure that when running under HTTPS two session cookies are generated.',
-      'group' => 'Session'
-    );
-  }
-
   public function setUp() {
     parent::setUp();
     $this->request = Request::createFromGlobals();
-    $this->container->set('request', $this->request);
+    $this->container->get('request_stack')->push($this->request);
   }
 
   protected function testHttpsSession() {
     if ($this->request->isSecure()) {
-      $secure_session_name = session_name();
-      $insecure_session_name = substr(session_name(), 1);
+      $secure_session_name = $this->getSessionName();
+      $insecure_session_name = substr($this->getSessionName(), 1);
     }
     else {
-      $secure_session_name = 'S' . session_name();
-      $insecure_session_name = session_name();
+      $secure_session_name = 'S' . $this->getSessionName();
+      $insecure_session_name = $this->getSessionName();
     }
 
     $user = $this->drupalCreateUser(array('access administration pages'));
@@ -124,8 +118,8 @@ class SessionHttpsTest extends WebTestBase {
       return;
     }
     else {
-      $secure_session_name = 'S' . session_name();
-      $insecure_session_name = session_name();
+      $secure_session_name = 'S' . $this->getSessionName();
+      $insecure_session_name = $this->getSessionName();
     }
 
     // Enable secure pages.
@@ -231,12 +225,12 @@ class SessionHttpsTest extends WebTestBase {
    */
   protected function testCsrfTokenWithMixedModeSsl() {
     if ($this->request->isSecure()) {
-      $secure_session_name = session_name();
-      $insecure_session_name = substr(session_name(), 1);
+      $secure_session_name = $this->getSessionName();
+      $insecure_session_name = substr($this->getSessionName(), 1);
     }
     else {
-      $secure_session_name = 'S' . session_name();
-      $insecure_session_name = session_name();
+      $secure_session_name = 'S' . $this->getSessionName();
+      $insecure_session_name = $this->getSessionName();
     }
 
     // Enable mixed mode SSL.

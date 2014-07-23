@@ -7,11 +7,13 @@
 
 namespace Drupal\user\Tests;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests user registration.
+ * Tests registration of user under different configurations.
+ *
+ * @group user
  */
 class UserRegistrationTest extends WebTestBase {
 
@@ -21,14 +23,6 @@ class UserRegistrationTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('field_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'User registration',
-      'description' => 'Test registration of user under different configurations.',
-      'group' => 'User'
-    );
-  }
 
   function testRegistrationWithEmailVerification() {
     $config = \Drupal::config('user.settings');
@@ -198,15 +192,15 @@ class UserRegistrationTest extends WebTestBase {
    */
   function testRegistrationWithUserFields() {
     // Create a field, and an instance on 'user' entity type.
-    $field = entity_create('field_config', array(
+    $field_storage = entity_create('field_storage_config', array(
       'name' => 'test_user_field',
       'entity_type' => 'user',
       'type' => 'test_field',
       'cardinality' => 1,
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'label' => 'Some user field',
       'bundle' => 'user',
       'required' => TRUE,
@@ -253,8 +247,8 @@ class UserRegistrationTest extends WebTestBase {
     $this->assertEqual($new_user->test_user_field->value, $value, 'The field value was correclty saved.');
 
     // Check that the 'add more' button works.
-    $field->cardinality = FieldDefinitionInterface::CARDINALITY_UNLIMITED;
-    $field->save();
+    $field_storage->cardinality = FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED;
+    $field_storage->save();
     foreach (array('js', 'nojs') as $js) {
       $this->drupalGet('user/register');
       // Add two inputs.
@@ -283,4 +277,5 @@ class UserRegistrationTest extends WebTestBase {
       $this->assertEqual($new_user->test_user_field[2]->value, $value + 2, format_string('@js : The field value was correclty saved.', array('@js' => $js)));
     }
   }
+
 }

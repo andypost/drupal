@@ -10,7 +10,9 @@ namespace Drupal\user\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Test case for user signatures.
+ * Tests case for user signatures.
+ *
+ * @group user
  */
 class UserSignatureTest extends WebTestBase {
 
@@ -20,14 +22,6 @@ class UserSignatureTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('node', 'comment');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'User signatures',
-      'description' => 'Test user signatures.',
-      'group' => 'User',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -112,7 +106,7 @@ class UserSignatureTest extends WebTestBase {
 
     // Create a comment.
     $edit = array();
-    $edit['subject'] = $this->randomName(8);
+    $edit['subject[0][value]'] = $this->randomName(8);
     $edit['comment_body[0][value]'] = $this->randomName(16);
     $this->drupalPostForm('comment/reply/node/' . $node->id() .'/comment', $edit, t('Preview'));
     $this->drupalPostForm(NULL, array(), t('Save'));

@@ -21,7 +21,9 @@ use Drupal\field\Entity\FieldInstanceConfig;
 use Drupal\node\Entity\NodeType;
 
 /**
- * Tests Entity API base functionality.
+ * Tests the Entity Field API.
+ *
+ * @group Entity
  */
 class EntityFieldTest extends EntityUnitTestBase  {
 
@@ -31,14 +33,6 @@ class EntityFieldTest extends EntityUnitTestBase  {
    * @var array
    */
   public static $modules = array('filter', 'text', 'node', 'user');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity Field API',
-      'description' => 'Tests the Entity Field API',
-      'group' => 'Entity API',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -399,7 +393,7 @@ class EntityFieldTest extends EntityUnitTestBase  {
     $this->assertEqual($userref_properties['target_id']->getDataType(), 'integer', $entity_type .': Entity id property of the user found.');
     $this->assertEqual($userref_properties['entity']->getDataType(), 'entity_reference', $entity_type .': Entity reference property of the user found.');
 
-    $textfield_properties = $entity->field_test_text->getFieldDefinition()->getPropertyDefinitions();
+    $textfield_properties = $entity->field_test_text->getFieldDefinition()->getFieldStorageDefinition()->getPropertyDefinitions();
     $this->assertEqual($textfield_properties['value']->getDataType(), 'string', $entity_type .': String value property of the test-text field found.');
     $this->assertEqual($textfield_properties['format']->getDataType(), 'filter_format', $entity_type .': String format field of the test-text field found.');
     $this->assertEqual($textfield_properties['processed']->getDataType(), 'string', $entity_type .': String processed property of the test-text field found.');

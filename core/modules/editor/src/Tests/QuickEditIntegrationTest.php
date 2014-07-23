@@ -19,6 +19,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Tests Edit module integration (Editor module's inline editing support).
+ *
+ * @group editor
  */
 class QuickEditIntegrationTest extends QuickEditTestBase {
 
@@ -56,14 +58,6 @@ class QuickEditIntegrationTest extends QuickEditTestBase {
    * @var string
    */
   protected $field_name;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'In-place text editors (Quick Edit module integration)',
-      'description' => 'Tests Edit module integration (Editor module\'s inline editing support).',
-      'group' => 'Text Editor',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -150,8 +144,8 @@ class QuickEditIntegrationTest extends QuickEditTestBase {
     $this->assertEqual('editor', $this->getSelectedEditor($this->entity->id(), $this->field_name), "With cardinality 1, and the full_html text format, the 'editor' editor is selected.");
 
     // Editor selection with text processing, cardinality >1
-    $this->field_textarea_field->cardinality = 2;
-    $this->field_textarea_field->save();
+    $this->field_textarea_field_storage->cardinality = 2;
+    $this->field_textarea_field_storage->save();
     $this->assertEqual('form', $this->getSelectedEditor($this->entity->id(), $this->field_name), "With cardinality >1, and both items using the full_html text format, the 'form' editor is selected.");
   }
 

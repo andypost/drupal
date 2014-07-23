@@ -7,10 +7,13 @@
 
 namespace Drupal\system\Tests\Common;
 
+use Drupal\Component\Utility\String;
 use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
- * Tests the Drupal CSS system.
+ * Tests adding various cascading stylesheets to the page.
+ *
+ * @group Common
  */
 class CascadingStylesheetsTest extends DrupalUnitTestBase {
 
@@ -20,14 +23,6 @@ class CascadingStylesheetsTest extends DrupalUnitTestBase {
    * @var array
    */
   public static $modules = array('language', 'system');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Cascading stylesheets',
-      'description' => 'Tests adding various cascading stylesheets to the page.',
-      'group' => 'Common',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -78,7 +73,7 @@ class CascadingStylesheetsTest extends DrupalUnitTestBase {
     $this->assertTrue(strpos($styles, $css) > 0, 'Rendered CSS includes the added stylesheet.');
     // Verify that newlines are properly added inside style tags.
     $query_string = $this->container->get('state')->get('system.css_js_query_string') ?: '0';
-    $css_processed = '<link rel="stylesheet" href="' . check_plain(file_create_url($css)) . "?" . $query_string . '" media="all" />';
+    $css_processed = '<link rel="stylesheet" href="' . String::checkPlain(file_create_url($css)) . "?" . $query_string . '" media="all" />';
     $this->assertEqual(trim($styles), $css_processed, 'Rendered CSS includes newlines inside style tags for JavaScript use.');
   }
 

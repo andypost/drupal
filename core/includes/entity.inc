@@ -57,16 +57,22 @@ function entity_get_bundles($entity_type = NULL) {
  *   NULL.
  */
 function entity_invoke_bundle_hook($hook, $entity_type, $bundle, $bundle_new = NULL) {
-  \Drupal::entityManager()->clearCachedBundles();
+  $entity_manager = \Drupal::entityManager();
+
+  $entity_manager->clearCachedBundles();
 
   // Notify the entity storage.
   $method = 'onBundle' . ucfirst($hook);
-  $storage = \Drupal::entityManager()->getStorage($entity_type);
+  $storage = $entity_manager->getStorage($entity_type);
   if (method_exists($storage, $method)) {
     $storage->$method($bundle, $bundle_new);
   }
   // Invoke hook_entity_bundle_*() hooks.
   \Drupal::moduleHandler()->invokeAll('entity_bundle_' . $hook, array($entity_type, $bundle, $bundle_new));
+  // Clear the cached field definitions (not needed in case of 'create').
+  if ($hook == 'rename' || $hook == 'delete') {
+    $entity_manager->clearCachedFieldDefinitions();
+  }
 }
 
 /**
@@ -79,8 +85,8 @@ function entity_invoke_bundle_hook($hook, $entity_type, $bundle, $bundle_new = N
  * @param bool $reset
  *   Whether to reset the internal cache for the requested entity type.
  *
- * @return \Drupal\Core\Entity\EntityInterface
- *   The entity object, or NULL if there is no entity with the given id.
+ * @return \Drupal\Core\Entity\EntityInterface|null
+ *   The entity object, or NULL if there is no entity with the given ID.
  *
  * @see \Drupal\Core\Entity\EntityManagerInterface
  * @see \Drupal\Core\Entity\EntityStorageInterface
@@ -182,7 +188,7 @@ function entity_load_by_uuid($entity_type_id, $uuid) {
  *   Whether to reset the internal cache for the requested entity type.
  *
  * @return array
- *   An array of entity objects indexed by their ids.
+ *   An array of entity objects indexed by their IDs.
  *
  * @see \Drupal\Core\Entity\EntityManagerInterface
  * @see \Drupal\Core\Entity\EntityStorageInterface
@@ -207,7 +213,8 @@ function entity_load_multiple($entity_type, array $ids = NULL, $reset = FALSE) {
  *   values are the values those properties must have.
  *
  * @return array
- *   An array of entity objects indexed by their ids.
+ *   An array of entity objects indexed by their IDs. Returns an empty array if
+ *   no matching entities found.
  */
 function entity_load_multiple_by_properties($entity_type, array $values) {
   return \Drupal::entityManager()

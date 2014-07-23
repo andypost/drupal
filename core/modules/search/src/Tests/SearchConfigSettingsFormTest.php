@@ -8,7 +8,9 @@
 namespace Drupal\search\Tests;
 
 /**
- * Test config page.
+ * Verify the search config settings form.
+ *
+ * @group search
  */
 class SearchConfigSettingsFormTest extends SearchTestBase {
 
@@ -33,19 +35,11 @@ class SearchConfigSettingsFormTest extends SearchTestBase {
    */
   public $search_node;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Config settings form',
-      'description' => 'Verify the search config settings form.',
-      'group' => 'Search',
-    );
-  }
-
   function setUp() {
     parent::setUp();
 
     // Login as a user that can create and search content.
-    $this->search_user = $this->drupalCreateUser(array('search content', 'administer search', 'administer nodes', 'bypass node access', 'access user profiles', 'administer users', 'administer blocks'));
+    $this->search_user = $this->drupalCreateUser(array('search content', 'administer search', 'administer nodes', 'bypass node access', 'access user profiles', 'administer users', 'administer blocks', 'access site reports'));
     $this->drupalLogin($this->search_user);
 
     // Add a single piece of content and index it.
@@ -91,6 +85,21 @@ class SearchConfigSettingsFormTest extends SearchTestBase {
     );
     $this->drupalPostForm('admin/config/search/pages', $edit, t('Save configuration'));
     $this->assertNoText(t('The configuration options have been saved.'), 'Form does not save with an invalid word length.');
+
+    // Test logging setting. It should be off by default.
+    $text = $this->randomName(5);
+    $this->drupalPostForm('search/node', array('keys' => $text), t('Search'));
+    $this->drupalGet('admin/reports/dblog');
+    $this->assertNoLink('Searched Content for ' . $text . '.', 'Search was not logged');
+
+    // Turn on logging.
+    $edit = array('logging' => TRUE);
+    $this->drupalPostForm('admin/config/search/pages', $edit, t('Save configuration'));
+    $text = $this->randomName(5);
+    $this->drupalPostForm('search/node', array('keys' => $text), t('Search'));
+    $this->drupalGet('admin/reports/dblog');
+    $this->assertLink('Searched Content for ' . $text . '.', 0, 'Search was logged');
+
   }
 
   /**

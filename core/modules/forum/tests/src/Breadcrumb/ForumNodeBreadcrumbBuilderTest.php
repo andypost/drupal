@@ -11,39 +11,25 @@ use Drupal\Tests\UnitTestCase;
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 
 /**
- * Tests the listing class for forum breadcrumbs.
- *
- * @group Forum
- * @group Drupal
- *
- * @see \Drupal\forum\ForumNodeBreadcrumbBuilder
  * @coversDefaultClass \Drupal\forum\Breadcrumb\ForumNodeBreadcrumbBuilder
+ * @group forum
  */
 class ForumNodeBreadcrumbBuilderTest extends UnitTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Forum Breadcrumb Node Test',
-      'description' => 'Tests the node class for forum breadcrumbs.',
-      'group' => 'Forum',
-    );
-  }
 
   /**
    * Tests ForumNodeBreadcrumbBuilder::applies().
    *
    * @param bool $expected
    *   ForumNodeBreadcrumbBuilder::applies() expected result.
-   * @param array $attributes
-   *   ForumNodeBreadcrumbBuilder::applies() $attributes parameter.
+   * @param string|null $route_name
+   *   (optional) A route name.
+   * @param array $parameter_map
+   *   (optional) An array of parameter names and values.
    *
    * @dataProvider providerTestApplies
    * @covers ::applies
    */
-  public function testApplies($expected, $attributes) {
+  public function testApplies($expected, $route_name = NULL, $parameter_map = array()) {
     // Make some test doubles.
     $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
     $config_factory = $this->getConfigFactoryStub(array());
@@ -65,7 +51,15 @@ class ForumNodeBreadcrumbBuilderTest extends UnitTestCase {
       ->setMethods(NULL)
       ->getMock();
 
-    $this->assertEquals($expected, $builder->applies($attributes));
+    $route_match = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $route_match->expects($this->once())
+      ->method('getRouteName')
+      ->will($this->returnValue($route_name));
+    $route_match->expects($this->any())
+      ->method('getParameter')
+      ->will($this->returnValueMap($parameter_map));
+
+    $this->assertEquals($expected, $builder->applies($route_match));
   }
 
   /**
@@ -87,33 +81,24 @@ class ForumNodeBreadcrumbBuilderTest extends UnitTestCase {
     return array(
       array(
         FALSE,
-        array(),
       ),
       array(
         FALSE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'NOT.node.view',
-        ),
+        'NOT.node.view',
       ),
       array(
         FALSE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'node.view',
-        ),
+        'node.view',
       ),
       array(
         FALSE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'node.view',
-          'node' => NULL,
-        ),
+        'node.view',
+        array(array('node', NULL)),
       ),
       array(
         TRUE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'node.view',
-          'node' => $mock_node,
-        ),
+        'node.view',
+        array(array('node', $mock_node)),
       ),
     );
   }
@@ -216,9 +201,11 @@ class ForumNodeBreadcrumbBuilderTest extends UnitTestCase {
       ->getMock();
 
     // Our data set.
-    $attributes = array(
-      'node' => $forum_node,
-    );
+    $route_match = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $route_match->expects($this->exactly(2))
+      ->method('getParameter')
+      ->with('node')
+      ->will($this->returnValue($forum_node));
 
     // First test.
     $expected1 = array(
@@ -226,7 +213,7 @@ class ForumNodeBreadcrumbBuilderTest extends UnitTestCase {
       'Forums',
       'Something',
     );
-    $this->assertSame($expected1, $breadcrumb_builder->build($attributes));
+    $this->assertSame($expected1, $breadcrumb_builder->build($route_match));
 
     // Second test.
     $expected2 = array(
@@ -235,7 +222,7 @@ class ForumNodeBreadcrumbBuilderTest extends UnitTestCase {
       'Something else',
       'Something',
     );
-    $this->assertSame($expected2, $breadcrumb_builder->build($attributes));
+    $this->assertSame($expected2, $breadcrumb_builder->build($route_match));
   }
 
 }

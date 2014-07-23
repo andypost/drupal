@@ -9,9 +9,12 @@ namespace Drupal\locale\Tests;
 
 use Drupal\simpletest\WebTestBase;
 use Drupal\locale\LocaleTypedConfig;
+use Drupal\core\language\languageInterface;
 
 /**
- * Tests Metadata for configuration objects.
+ * Tests translation of configuration strings.
+ *
+ * @group locale
  */
 class LocaleConfigTranslationTest extends WebTestBase {
 
@@ -22,14 +25,9 @@ class LocaleConfigTranslationTest extends WebTestBase {
    */
   public static $modules = array('locale', 'contact');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Configuration translation',
-      'description' => 'Tests translation of configuration strings.',
-      'group' => 'Locale',
-    );
-  }
-
+  /**
+   * {@inheritdoc}
+   */
   public function setUp() {
     parent::setUp();
     // Add a default locale storage for all these tests.
@@ -45,7 +43,7 @@ class LocaleConfigTranslationTest extends WebTestBase {
   /**
    * Tests basic configuration translation.
    */
-  function testConfigTranslation() {
+  public function testConfigTranslation() {
     // Add custom language.
     $langcode = 'xx';
     $admin_user = $this->drupalCreateUser(array('administer languages', 'access administration pages', 'translate interface', 'administer modules', 'access site-wide contact form', 'administer contact forms'));
@@ -55,11 +53,11 @@ class LocaleConfigTranslationTest extends WebTestBase {
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
       'name' => $name,
-      'direction' => '0',
+      'direction' => LanguageInterface::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
     // Set path prefix.
-    $edit = array( "prefix[$langcode]" => $langcode );
+    $edit = array("prefix[$langcode]" => $langcode);
     $this->drupalPostForm('admin/config/regional/language/detection/url', $edit, t('Save configuration'));
 
     // Check site name string exists and create translation for it.

@@ -15,11 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Tests the form submission handler.
- *
  * @coversDefaultClass \Drupal\Core\Form\FormSubmitter
- *
- * @group Drupal
  * @group Form
  */
 class FormSubmitterTest extends UnitTestCase {
@@ -30,17 +26,6 @@ class FormSubmitterTest extends UnitTestCase {
    * @var \PHPUnit_Framework_MockObject_MockObject|\Drupal\Core\Routing\UrlGeneratorInterface
    */
   protected $urlGenerator;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Form submission test',
-      'description' => 'Tests the form submission handler.',
-      'group' => 'Form API',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -116,7 +101,7 @@ class FormSubmitterTest extends UnitTestCase {
    *
    * @dataProvider providerTestRedirectWithResult
    */
-  public function testRedirectWithResult($form_state, $result, $status = 302) {
+  public function testRedirectWithResult($form_state, $result, $status = 303) {
     $form_submitter = $this->getFormSubmitter();
     $this->urlGenerator->expects($this->once())
       ->method('generateFromPath')
@@ -141,7 +126,7 @@ class FormSubmitterTest extends UnitTestCase {
    *
    * @dataProvider providerTestRedirectWithRouteWithResult
    */
-  public function testRedirectWithRouteWithResult($form_state, $result, $status = 302) {
+  public function testRedirectWithRouteWithResult($form_state, $result, $status = 303) {
     $container = new ContainerBuilder();
     $container->set('url_generator', $this->urlGenerator);
     \Drupal::setContainer($container);

@@ -12,7 +12,9 @@ use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageInterface;
 
 /**
- * Functional tests for the language list configuration forms.
+ * Adds a new language and tests changing its status and the default language.
+ *
+ * @group language
  */
 class LanguageListTest extends WebTestBase {
 
@@ -22,14 +24,6 @@ class LanguageListTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('language');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Language list configuration',
-      'description' => 'Adds a new language and tests changing its status and the default language.',
-      'group' => 'Language',
-    );
-  }
 
   /**
    * Functional tests for adding, editing and deleting languages.
@@ -55,7 +49,7 @@ class LanguageListTest extends WebTestBase {
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
       'name' => $name,
-      'direction' => '0',
+      'direction' => Language::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
     $this->assertEqual($this->getUrl(), url('admin/config/regional/language', array('absolute' => TRUE)), 'Correct page redirection.');
@@ -139,7 +133,7 @@ class LanguageListTest extends WebTestBase {
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
       'name' => $name,
-      'direction' => '0',
+      'direction' => Language::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
     $this->assertEqual($this->getUrl(), url('admin/config/regional/language', array('absolute' => TRUE)), 'Correct page redirection.');

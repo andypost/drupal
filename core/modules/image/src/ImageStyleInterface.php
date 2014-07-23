@@ -36,7 +36,7 @@ interface ImageStyleInterface extends ConfigEntityInterface {
    * @param string $name
    *   The name of the image style.
    *
-   * @return \Drupal\image\ImageEffectInterface
+   * @return \Drupal\image\ImageStyleInterface
    *   The class instance this method is called on.
    */
   public function setName($name);
@@ -95,8 +95,7 @@ interface ImageStyleInterface extends ConfigEntityInterface {
    *   (optional) The original image path or URI. If it's supplied, only this
    *   image derivative will be flushed.
    *
-   * @return self
-   *   This image style.
+   * @return $this
    */
   public function flush($path = NULL);
 
@@ -167,8 +166,7 @@ interface ImageStyleInterface extends ConfigEntityInterface {
    * @param \Drupal\image\ImageEffectInterface $effect
    *   The image effect object.
    *
-   * @return self
-   *   This image style.
+   * @return $this
    */
   public function deleteImageEffect(ImageEffectInterface $effect);
 

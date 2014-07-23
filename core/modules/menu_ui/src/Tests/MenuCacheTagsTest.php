@@ -11,6 +11,8 @@ use Drupal\system\Tests\Cache\PageCacheTagsTestBase;
 
 /**
  * Tests the Menu and Menu Link entities' cache tags.
+ *
+ * @group menu_ui
  */
 class MenuCacheTagsTest extends PageCacheTagsTestBase {
 
@@ -18,17 +20,6 @@ class MenuCacheTagsTest extends PageCacheTagsTestBase {
    * {@inheritdoc}
    */
   public static $modules = array('menu_ui', 'block', 'test_page_test');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => "Menu & Menu link entities cache tags",
-      'description' => "Test the Menu & Menu link entities' cache tags.",
-      'group' => 'Menu',
-    );
-  }
 
   /**
    * Tests cache tags presence and invalidation of the Menu entity.
@@ -61,7 +52,7 @@ class MenuCacheTagsTest extends PageCacheTagsTestBase {
     $expected_tags = array(
       'theme:stark',
       'theme_global_settings:1',
-      'content:1',
+      'rendered:1',
       'block_view:1',
       'block:' . $block->id(),
       'block_plugin:system_menu_block__llama',
@@ -119,7 +110,7 @@ class MenuCacheTagsTest extends PageCacheTagsTestBase {
     $this->verifyPageCache($path, 'MISS');
 
     // Verify a cache hit.
-    $this->verifyPageCache($path, 'HIT', array('content:1', 'theme:stark', 'theme_global_settings:1'));
+    $this->verifyPageCache($path, 'HIT', array('rendered:1', 'theme:stark', 'theme_global_settings:1'));
   }
 
 }

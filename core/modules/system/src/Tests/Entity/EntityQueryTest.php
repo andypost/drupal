@@ -12,7 +12,9 @@ use Drupal\Core\Language\Language;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Tests the basic Entity API.
+ * Tests Entity Query functionality.
+ *
+ * @group Entity
  */
 class EntityQueryTest extends EntityUnitTestBase {
 
@@ -47,14 +49,6 @@ class EntityQueryTest extends EntityUnitTestBase {
    */
   public $figures;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity Query',
-      'description' => 'Tests Entity Query functionality.',
-      'group' => 'Entity API',
-    );
-  }
-
   function setUp() {
     parent::setUp();
 
@@ -65,15 +59,15 @@ class EntityQueryTest extends EntityUnitTestBase {
     $figures = drupal_strtolower($this->randomName());
     $greetings = drupal_strtolower($this->randomName());
     foreach (array($figures => 'shape', $greetings => 'text') as $field_name => $field_type) {
-      $field = entity_create('field_config', array(
+      $field_storage = entity_create('field_storage_config', array(
         'name' => $field_name,
         'entity_type' => 'entity_test_mulrev',
         'type' => $field_type,
         'cardinality' => 2,
         'translatable' => TRUE,
       ));
-      $field->save();
-      $fields[] = $field;
+      $field_storage->save();
+      $field_storages[] = $field_storage;
     }
     $bundles = array();
     for ($i = 0; $i < 2; $i++) {
@@ -83,9 +77,9 @@ class EntityQueryTest extends EntityUnitTestBase {
         $bundle = $this->randomName();
       } while ($bundles && strtolower($bundles[0]) >= strtolower($bundle));
       entity_test_create_bundle($bundle);
-      foreach ($fields as $field) {
+      foreach ($field_storages as $field_storage) {
         entity_create('field_instance_config', array(
-          'field' => $field,
+          'field_storage' => $field_storage,
           'bundle' => $bundle,
         ))->save();
       }
@@ -356,7 +350,7 @@ class EntityQueryTest extends EntityUnitTestBase {
     $request->query->replace(array(
       'page' => '0,2',
     ));
-    \Drupal::getContainer()->set('request', $request);
+    \Drupal::getContainer()->get('request_stack')->push($request);
     $this->queryResults = $this->factory->get('entity_test_mulrev')
       ->sort("$figures.color")
       ->sort("$greetings.format")
@@ -388,7 +382,7 @@ class EntityQueryTest extends EntityUnitTestBase {
       'sort' => 'asc',
       'order' => 'Type',
     ));
-    \Drupal::getContainer()->set('request', $request);
+    \Drupal::getContainer()->get('request_stack')->push($request);
 
     $header = array(
       'id' => array('data' => 'Id', 'specifier' => 'id'),
@@ -403,7 +397,7 @@ class EntityQueryTest extends EntityUnitTestBase {
     $request->query->add(array(
       'sort' => 'desc',
     ));
-    \Drupal::getContainer()->set('request', $request);
+    \Drupal::getContainer()->get('request_stack')->push($request);
 
     $header = array(
       'id' => array('data' => 'Id', 'specifier' => 'id'),
@@ -418,7 +412,7 @@ class EntityQueryTest extends EntityUnitTestBase {
     $request->query->add(array(
       'order' => 'Id',
     ));
-    \Drupal::getContainer()->set('request', $request);
+    \Drupal::getContainer()->get('request_stack')->push($request);
     $this->queryResults = $this->factory->get('entity_test_mulrev')
       ->tableSort($header)
       ->execute();
@@ -431,17 +425,17 @@ class EntityQueryTest extends EntityUnitTestBase {
   protected function testCount() {
     // Create a field with the same name in a different entity type.
     $field_name = $this->figures;
-    $field = entity_create('field_config', array(
+    $field_storage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'shape',
       'cardinality' => 2,
       'translatable' => TRUE,
     ));
-    $field->save();
+    $field_storage->save();
     $bundle = $this->randomName();
     entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'bundle' => $bundle,
     ))->save();
 

@@ -7,14 +7,16 @@
 
 namespace Drupal\taxonomy\Tests;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
-use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FieldItemInterface;
+use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\field\Tests\FieldUnitTestBase;
 
 /**
  * Tests the new entity API for the taxonomy term reference field type.
+ *
+ * @group taxonomy
  */
 class TaxonomyTermReferenceItemTest extends FieldUnitTestBase {
 
@@ -32,14 +34,6 @@ class TaxonomyTermReferenceItemTest extends FieldUnitTestBase {
    */
   protected $term;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Taxonomy reference field item',
-      'description' => 'Tests using entity fields of the taxonomy term reference field type.',
-      'group' => 'Taxonomy',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
     $this->installEntitySchema('taxonomy_term');
@@ -51,11 +45,11 @@ class TaxonomyTermReferenceItemTest extends FieldUnitTestBase {
     ));
     $vocabulary->save();
 
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => 'field_test_taxonomy',
       'entity_type' => 'entity_test',
       'type' => 'taxonomy_term_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(

@@ -7,14 +7,18 @@
 
 namespace Drupal\comment;
 
-use Drupal\Core\Breadcrumb\BreadcrumbBuilderBase;
+use Drupal\Core\Breadcrumb\BreadcrumbBuilderInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Routing\LinkGeneratorTrait;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
  * Class to define the comment breadcrumb builder.
  */
-class CommentBreadcrumbBuilder extends BreadcrumbBuilderBase {
+class CommentBreadcrumbBuilder implements BreadcrumbBuilderInterface {
+  use StringTranslationTrait;
+  use LinkGeneratorTrait;
 
   /**
    * Stores the Entity manager service.
@@ -36,23 +40,23 @@ class CommentBreadcrumbBuilder extends BreadcrumbBuilderBase {
   /**
    * {@inheritdoc}
    */
-  public function applies(array $attributes) {
-    return isset($attributes[RouteObjectInterface::ROUTE_NAME]) && $attributes[RouteObjectInterface::ROUTE_NAME] == 'comment.reply'
-    && isset($attributes['entity_type'])
-    && isset($attributes['entity_id'])
-    && isset($attributes['field_name']);
+  public function applies(RouteMatchInterface $route_match) {
+    return $route_match->getRouteName() == 'comment.reply'
+      && $route_match->getParameter('entity_type')
+      && $route_match->getParameter('entity_id')
+      && $route_match->getParameter('field_name');
   }
 
   /**
    * {@inheritdoc}
    */
-  public function build(array $attributes) {
+  public function build(RouteMatchInterface $route_match) {
     $breadcrumb = array();
 
     $breadcrumb[] = $this->l($this->t('Home'), '<front>');
     $entity = $this->entityManager
-      ->getStorage($attributes['entity_type'])
-      ->load($attributes['entity_id']);
+      ->getStorage($route_match->getParameter('entity_type'))
+      ->load($route_match->getParameter('entity_id'));
     $breadcrumb[] = \Drupal::linkGenerator()->generateFromUrl($entity->label(), $entity->urlInfo());
     return $breadcrumb;
   }

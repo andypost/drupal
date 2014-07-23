@@ -11,7 +11,9 @@ use Drupal\migrate\MigrateExecutable;
 use Drupal\migrate_drupal\Tests\MigrateDrupalTestBase;
 
 /**
- * Tests migration of field instances.
+ * Migrate field widget settings.
+ *
+ * @group migrate_drupal
  */
 class MigrateFieldWidgetSettingsTest extends MigrateDrupalTestBase {
 
@@ -29,17 +31,6 @@ class MigrateFieldWidgetSettingsTest extends MigrateDrupalTestBase {
     'datetime',
     'node',
   );
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Migrate field widget settings to entity.form_display.*.*.default.yml',
-      'description' => 'Migrate field widget settings.',
-      'group' => 'Migrate Drupal',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -92,6 +83,7 @@ class MigrateFieldWidgetSettingsTest extends MigrateDrupalTestBase {
     $component = $form_display->getComponent('field_test');
     $expected = array('weight' => 1, 'type' => 'text_textfield');
     $expected['settings'] = array('size' => 60, 'placeholder' => '');
+    $expected['third_party_settings'] = array();
     $this->assertEqual($component, $expected, 'Text field settings are correct.');
 
     // Integer field.

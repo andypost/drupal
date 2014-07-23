@@ -7,7 +7,6 @@
 
 namespace Drupal\field\Tests;
 
-use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\simpletest\DrupalUnitTestBase;
@@ -23,13 +22,6 @@ abstract class FieldUnitTestBase extends DrupalUnitTestBase {
    * @var array
    */
   public static $modules = array('user', 'entity', 'system', 'field', 'text', 'entity_test', 'field_test');
-
-  /**
-   * A string for assert raw and text helper methods.
-   *
-   * @var string
-   */
-  protected $content;
 
   /**
    * Set the default field storage backend for fields created during tests.
@@ -62,22 +54,22 @@ abstract class FieldUnitTestBase extends DrupalUnitTestBase {
       $bundle = $entity_type;
     }
     $field_name = 'field_name' . $suffix;
-    $field = 'field' . $suffix;
-    $field_id = 'field_id' . $suffix;
+    $field_storage = 'field_storage' . $suffix;
+    $field_storage_uuid = 'field_storage_uuid' . $suffix;
     $instance = 'instance' . $suffix;
     $instance_definition = 'instance_definition' . $suffix;
 
     $this->$field_name = drupal_strtolower($this->randomName() . '_field_name' . $suffix);
-    $this->$field = entity_create('field_config', array(
+    $this->$field_storage = entity_create('field_storage_config', array(
       'name' => $this->$field_name,
       'entity_type' => $entity_type,
       'type' => 'test_field',
       'cardinality' => 4,
     ));
-    $this->$field->save();
-    $this->$field_id = $this->{$field}->uuid();
+    $this->$field_storage->save();
+    $this->$field_storage_uuid = $this->{$field_storage}->uuid();
     $this->$instance_definition = array(
-      'field' => $this->$field,
+      'field_storage' => $this->$field_storage,
       'bundle' => $bundle,
       'label' => $this->randomName() . '_label',
       'description' => $this->randomName() . '_description',
@@ -162,104 +154,4 @@ abstract class FieldUnitTestBase extends DrupalUnitTestBase {
     }
   }
 
-  /**
-   * Pass if the raw text IS found in set string.
-   *
-   * @param $raw
-   *   Raw (HTML) string to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertRaw($raw, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = t('Raw "@raw" found', array('@raw' => $raw));
-    }
-    return $this->assert(strpos($this->content, $raw) !== FALSE, $message, $group);
-  }
-
-
-  /**
-   * Pass if the raw text IS NOT found in set string.
-   *
-   * @param $raw
-   *   Raw (HTML) string to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoRaw($raw, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = t('Raw "@raw" found', array('@raw' => $raw));
-    }
-    return $this->assert(strpos($this->content, $raw) === FALSE, $message, $group);
-  }
-
-  /**
-   * Pass if the text IS found in set string.
-   *
-   * @param $text
-   *   Text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertText($text, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = t('Raw "@raw" found', array('@raw' => $text));
-    }
-    return $this->assert(strpos(Xss::filter($this->content, array()), $text) !== FALSE, $message, $group);
-  }
-
-  /**
-   * Pass if the text IS NOT found in set string.
-   *
-   * @param $text
-   *   Text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoText($text, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = t('Raw "@raw" not found', array('@raw' => $text));
-    }
-    return $this->assert(strpos(Xss::filter($this->content, array()), $text) === FALSE, $message, $group);
-  }
 }

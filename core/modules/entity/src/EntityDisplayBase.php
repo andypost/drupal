@@ -59,7 +59,7 @@ abstract class EntityDisplayBase extends ConfigEntityBase implements EntityDispl
    *
    * @var boolean
    */
-  public $status;
+  protected $status;
 
   /**
    * List of component display options, keyed by component name.
@@ -177,6 +177,12 @@ abstract class EntityDisplayBase extends ConfigEntityBase implements EntityDispl
       if (isset($component['type']) && $definition = $this->pluginManager->getDefinition($component['type'], FALSE)) {
         $this->addDependency('module', $definition['provider']);
       }
+      // Create dependencies on any modules providing third party settings.
+      if (isset($component['third_party_settings'])) {
+        foreach($component['third_party_settings'] as $module => $settings) {
+          $this->addDependency('module', $module);
+        }
+      }
     }
     // Depend on configured modes.
     if ($this->mode != 'default') {
@@ -200,23 +206,7 @@ abstract class EntityDisplayBase extends ConfigEntityBase implements EntityDispl
    * {@inheritdoc}
    */
   public function toArray() {
-    $names = array(
-      'uuid',
-      'targetEntityType',
-      'bundle',
-      'mode',
-      'content',
-      'hidden',
-      'status',
-      'dependencies'
-    );
-    $properties = array(
-      'id' => $this->id(),
-    );
-    foreach ($names as $name) {
-      $properties[$name] = $this->get($name);
-    }
-
+    $properties = parent::toArray();
     // Do not store options for fields whose display is not set to be
     // configurable.
     foreach ($this->getFieldDefinitions() as $field_name => $definition) {

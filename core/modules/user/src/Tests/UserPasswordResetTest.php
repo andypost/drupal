@@ -10,7 +10,9 @@ namespace Drupal\user\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests resetting a user password.
+ * Ensure that password reset methods work as expected.
+ *
+ * @group user
  */
 class UserPasswordResetTest extends WebTestBase {
   /**
@@ -19,14 +21,6 @@ class UserPasswordResetTest extends WebTestBase {
    * @var \Drupal\user\UserInterface
    */
   protected $account;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Reset password',
-      'description' => 'Ensure that password reset methods work as expected.',
-      'group' => 'User',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -112,6 +106,13 @@ class UserPasswordResetTest extends WebTestBase {
     $_uid = $this->account->id();
     $this->drupalGet("user/reset/$_uid/$bogus_timestamp/" . user_pass_rehash($this->account->getPassword(), $bogus_timestamp, $this->account->getLastLoginTime()));
     $this->assertText(t('You have tried to use a one-time login link that has expired. Please request a new one using the form below.'), 'Expired password reset request rejected.');
+
+    // Create a user, block the account, and verify that a login link is denied.
+    $timestamp = REQUEST_TIME - 1;
+    $blocked_account = $this->drupalCreateUser()->block();
+    $blocked_account->save();
+    $this->drupalGet("user/reset/" . $blocked_account->id() . "/$timestamp/" . user_pass_rehash($blocked_account->getPassword(), $timestamp, $blocked_account->getLastLoginTime()));
+    $this->assertResponse(403);
   }
 
   /**

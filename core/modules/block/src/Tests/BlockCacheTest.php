@@ -11,7 +11,9 @@ use Drupal\Core\Cache\Cache;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Test block caching.
+ * Tests block caching.
+ *
+ * @group block
  */
 class BlockCacheTest extends WebTestBase {
 
@@ -20,7 +22,7 @@ class BlockCacheTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('block', 'block_test');
+  public static $modules = array('block', 'block_test', 'test_page_test');
 
   protected $admin_user;
   protected $normal_user;
@@ -32,14 +34,6 @@ class BlockCacheTest extends WebTestBase {
    * @var \Drupal\block\BlockInterface
    */
   protected $block;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Block caching',
-      'description' => 'Test block caching.',
-      'group' => 'Block',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -84,7 +78,7 @@ class BlockCacheTest extends WebTestBase {
     $this->assertText($old_content, 'Block is served from the cache.');
 
     // Clear the cache and verify that the stale data is no longer there.
-    Cache::invalidateTags(array('content' => TRUE));
+    Cache::invalidateTags(array('block_view' => TRUE));
     $this->drupalGet('');
     $this->assertNoText($old_content, 'Block cache clear removes stale cache data.');
     $this->assertText($current_content, 'Fresh block content is displayed after clearing the cache.');
@@ -199,17 +193,19 @@ class BlockCacheTest extends WebTestBase {
     $current_content = $this->randomName();
     \Drupal::state()->set('block_test.content', $current_content);
 
-    $this->drupalGet('node');
-    $this->assertText($current_content, 'Block content displays on the node page.');
+    $this->drupalGet('test-page');
+    $this->assertText($current_content, 'Block content displays on the test page.');
 
     $old_content = $current_content;
     $current_content = $this->randomName();
     \Drupal::state()->set('block_test.content', $current_content);
 
     $this->drupalGet('user');
-    $this->assertNoText($old_content, 'Block content cached for the node page does not show up for the user page.');
-    $this->drupalGet('node');
-    $this->assertText($old_content, 'Block content cached for the node page.');
+    $this->assertResponse(200);
+    $this->assertNoText($old_content, 'Block content cached for the test page does not show up for the user page.');
+    $this->drupalGet('test-page');
+    $this->assertResponse(200);
+    $this->assertText($old_content, 'Block content cached for the test page.');
   }
 
   /**

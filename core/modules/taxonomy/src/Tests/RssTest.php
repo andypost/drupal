@@ -7,10 +7,13 @@
 
 namespace Drupal\taxonomy\Tests;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
- * Tests the rendering of term reference fields in RSS feeds.
+ * Ensure that data added as terms appears in RSS feeds if "RSS Category" format
+ * is selected.
+ *
+ * @group taxonomy
  */
 class RssTest extends TaxonomyTestBase {
 
@@ -21,14 +24,6 @@ class RssTest extends TaxonomyTestBase {
    */
   public static $modules = array('node', 'field_ui', 'views');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Taxonomy RSS Content.',
-      'description' => 'Ensure that data added as terms appears in RSS feeds if "RSS Category" format is selected.',
-      'group' => 'Taxonomy',
-    );
-  }
-
   function setUp() {
     parent::setUp();
 
@@ -37,11 +32,11 @@ class RssTest extends TaxonomyTestBase {
     $this->vocabulary = $this->createVocabulary();
     $this->field_name = 'taxonomy_' . $this->vocabulary->id();
 
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(
@@ -51,9 +46,9 @@ class RssTest extends TaxonomyTestBase {
         ),
       ),
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
     entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'bundle' => 'article',
     ))->save();
     entity_get_form_display('node', 'article', 'default')

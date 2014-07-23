@@ -12,7 +12,10 @@ use Drupal\dblog\Controller\DbLogController;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests logging messages to the database.
+ * Generate events and verify dblog entries; verify user access to log reports
+ * based on persmissions.
+ *
+ * @group dblog
  */
 class DbLogTest extends WebTestBase {
 
@@ -36,14 +39,6 @@ class DbLogTest extends WebTestBase {
    * @var object
    */
   protected $any_user;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'DbLog functionality',
-      'description' => 'Generate events and verify dblog entries; verify user access to log reports based on persmissions.',
-      'group' => 'DbLog',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -138,7 +133,7 @@ class DbLogTest extends WebTestBase {
       'user'        => $this->big_user,
       'uid'         => $this->big_user->id(),
       'request_uri' => $base_root . request_uri(),
-      'referer'     => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '',
+      'referer'     => \Drupal::request()->server->get('HTTP_REFERER'),
       'ip'          => '127.0.0.1',
       'timestamp'   => REQUEST_TIME,
       );
@@ -433,7 +428,7 @@ class DbLogTest extends WebTestBase {
       'user'        => $this->big_user,
       'uid'         => $this->big_user->id(),
       'request_uri' => $base_root . request_uri(),
-      'referer'     => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '',
+      'referer'     => \Drupal::request()->server->get('HTTP_REFERER'),
       'ip'          => '127.0.0.1',
       'timestamp'   => REQUEST_TIME,
     );
@@ -445,6 +440,8 @@ class DbLogTest extends WebTestBase {
     $this->drupalLogin($this->big_user);
     // Post in order to clear the database table.
     $this->drupalPostForm('admin/reports/dblog', array(), t('Clear log messages'));
+    // Confirm that the logs should be cleared.
+    $this->drupalPostForm(NULL, array(), 'Confirm');
     // Count the rows in watchdog that previously related to the deleted user.
     $count = db_query('SELECT COUNT(*) FROM {watchdog}')->fetchField();
     $this->assertEqual($count, 0, format_string('DBLog contains :count records after a clear.', array(':count' => $count)));
@@ -523,6 +520,8 @@ class DbLogTest extends WebTestBase {
 
     // Clear all logs and make sure the confirmation message is found.
     $this->drupalPostForm('admin/reports/dblog', array(), t('Clear log messages'));
+    // Confirm that the logs should be cleared.
+    $this->drupalPostForm(NULL, array(), 'Confirm');
     $this->assertText(t('Database log cleared.'), 'Confirmation message found');
   }
 

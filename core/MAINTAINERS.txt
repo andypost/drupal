@@ -36,7 +36,6 @@ Authentication and authorization system
 Base system
 - Damien Tournoud 'DamZ' http://drupal.org/user/22211
 - Moshe Weitzman 'moshe weitzman' http://drupal.org/user/23
-- Kat Bailey 'katbailey' http://drupal.org/user/172987
 
 Batch system
 - Yves Chedemois 'yched' http://drupal.org/user/39567
@@ -236,6 +235,9 @@ Block module
 - Tim Plunkett 'tim.plunkett' http://drupal.org/user/241634
 - Ben Dougherty 'benjy' http://drupal.org/user/1852732
 
+Block Content module
+- Lee Rowlands 'larowlan' http://drupal.org/user/395439
+
 Book module
 - Peter Wolanin 'pwolanin' http://drupal.org/user/49851
 
@@ -262,16 +264,14 @@ Configuration Translation module
 - Vijayachandran Mani 'vijaycs85' https://drupal.org/user/93488
 
 Contact module
-- ?
+- Lee Rowlands 'larowlan' http://drupal.org/user/395439
+- Tim Eisenhuth 'tim-e' https://www.drupal.org/user/1439114
 
 Content Translation module
 - Francesco Placella 'plach' http://drupal.org/user/183211
 
 Contextual module
 - Daniel F. Kudwien 'sun' http://drupal.org/user/54136
-
-Custom block module
-- Lee Rowlands 'larowlan' http://drupal.org/user/395439
 
 Database Logging module
 - Khalid Baheyeldin 'kbahey' http://drupal.org/user/4063

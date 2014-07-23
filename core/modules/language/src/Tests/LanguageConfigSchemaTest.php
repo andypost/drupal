@@ -7,12 +7,17 @@
 
 namespace Drupal\language\Tests;
 
-use Drupal\config\Tests\ConfigSchemaTestBase;
+use Drupal\config\Tests\SchemaCheckTestTrait;
+use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the language config schema.
+ * Ensures the language config schema is correct.
+ *
+ * @group language
  */
-class LanguageConfigSchemaTest extends ConfigSchemaTestBase {
+class LanguageConfigSchemaTest extends WebTestBase {
+
+  use SchemaCheckTestTrait;
 
   /**
    * Modules to enable.
@@ -27,14 +32,6 @@ class LanguageConfigSchemaTest extends ConfigSchemaTestBase {
    * @var \Drupal\user\UserInterface
    */
   protected $adminUser;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Language config schema',
-      'description' => 'Ensures the language config schema is correct.',
-      'group' => 'Language',
-    );
-  }
 
   /**
    * {@inheritdoc}

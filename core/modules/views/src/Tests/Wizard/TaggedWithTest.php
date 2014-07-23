@@ -7,10 +7,12 @@
 
 namespace Drupal\views\Tests\Wizard;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
  * Tests the ability of the views wizard to create views filtered by taxonomy.
+ *
+ * @group views
  */
 class TaggedWithTest extends WizardTestBase {
 
@@ -31,14 +33,6 @@ class TaggedWithTest extends WizardTestBase {
 
   protected $tag_instance;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Taxonomy functionality',
-      'description' => 'Test the ability of the views wizard to create views filtered by taxonomy.',
-      'group' => 'Views Wizard',
-    );
-  }
-
   function setUp() {
     parent::setUp();
 
@@ -55,11 +49,12 @@ class TaggedWithTest extends WizardTestBase {
     $this->tag_vocabulary->save();
 
     // Create the tag field itself.
-    $this->tag_field = entity_create('field_config', array(
-      'name' => 'field_views_testing_tags',
+    $this->tag_field_name = 'field_views_testing_tags';
+    $this->tag_field_storage = entity_create('field_storage_config', array(
+      'name' => $this->tag_field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(
@@ -69,12 +64,12 @@ class TaggedWithTest extends WizardTestBase {
         ),
       ),
     ));
-    $this->tag_field->save();
+    $this->tag_field_storage->save();
 
     // Create an instance of the tag field on one of the content types, and
     // configure it to display an autocomplete widget.
     $this->tag_instance = array(
-      'field' => $this->tag_field,
+      'field_storage' => $this->tag_field_storage,
       'bundle' => $this->node_type_with_tags->type,
     );
     entity_create('field_instance_config', $this->tag_instance)->save();
@@ -110,11 +105,11 @@ class TaggedWithTest extends WizardTestBase {
     // Create three nodes, with different tags.
     $edit = array();
     $edit['title[0][value]'] = $node_tag1_title = $this->randomName();
-    $edit[$this->tag_field->name] = 'tag1';
+    $edit[$this->tag_field_name] = 'tag1';
     $this->drupalPostForm($node_add_path, $edit, t('Save'));
     $edit = array();
     $edit['title[0][value]'] = $node_tag1_tag2_title = $this->randomName();
-    $edit[$this->tag_field->name] = 'tag1, tag2';
+    $edit[$this->tag_field_name] = 'tag1, tag2';
     $this->drupalPostForm($node_add_path, $edit, t('Save'));
     $edit = array();
     $edit['title[0][value]'] = $node_no_tags_title = $this->randomName();

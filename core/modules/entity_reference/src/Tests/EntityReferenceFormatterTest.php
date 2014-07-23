@@ -10,7 +10,9 @@ namespace Drupal\entity_reference\Tests;
 use Drupal\system\Tests\Entity\EntityUnitTestBase;
 
 /**
- * Tests Entity Reference formatters.
+ * Tests the formatters functionality.
+ *
+ * @group entity_reference
  */
 class EntityReferenceFormatterTest extends EntityUnitTestBase {
 
@@ -49,14 +51,6 @@ class EntityReferenceFormatterTest extends EntityUnitTestBase {
    */
   public static $modules = array('entity_reference');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity reference formatters',
-      'description' => 'Tests the formatters functionality.',
-      'group' => 'Entity Reference',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
 
@@ -64,7 +58,7 @@ class EntityReferenceFormatterTest extends EntityUnitTestBase {
 
     // Set up a field, so that the entity that'll be referenced bubbles up a
     // cache tag when rendering it entirely.
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => 'body',
       'entity_type' => $this->entityType,
       'type' => 'text',

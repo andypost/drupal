@@ -9,6 +9,7 @@ use Drupal\Component\Utility\Tags;
 use Drupal\Core\Entity\ContentEntityDatabaseStorage;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\file\FileInterface;
 use Drupal\node\Entity\Node;
@@ -16,7 +17,6 @@ use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\taxonomy\VocabularyInterface;
 use Drupal\Component\Utility\String;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Denotes that no term in the vocabulary has a parent.
@@ -44,7 +44,7 @@ const TAXONOMY_HIERARCHY_MULTIPLE = 2;
 /**
  * Implements hook_help().
  */
-function taxonomy_help($route_name, Request $request) {
+function taxonomy_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.taxonomy':
       $output = '';
@@ -79,7 +79,7 @@ function taxonomy_help($route_name, Request $request) {
       return $output;
 
     case 'taxonomy.overview_terms':
-      $vocabulary = $request->attributes->get('taxonomy_vocabulary');
+      $vocabulary = $route_match->getParameter('taxonomy_vocabulary');
       switch ($vocabulary->hierarchy) {
         case TAXONOMY_HIERARCHY_DISABLED:
           return '<p>' . t('You can reorganize the terms in %capital_name using their drag-and-drop handles, and group terms under a parent term by sliding them under and to the right of the parent.', array('%capital_name' => drupal_ucfirst($vocabulary->name), '%name' => $vocabulary->name)) . '</p>';
@@ -323,9 +323,7 @@ function template_preprocess_taxonomy_term(&$variables) {
  *   A taxonomy term entity.
  */
 function taxonomy_term_is_page(Term $term) {
-  $request = \Drupal::request();
-  if ($request->attributes->has('taxonomy_term')) {
-    $page_term = $request->attributes->get('taxonomy_term');
+  if ($page_term = \Drupal::routeMatch()->getParameter('taxonomy_term')) {
     return $page_term->id() == $term->id();
   }
   return FALSE;
@@ -739,7 +737,7 @@ function taxonomy_autocomplete_validate($element, &$form_state) {
  */
 
 /**
- * Implements hook_node_insert().
+ * Implements hook_ENTITY_TYPE_insert() for node entities.
  */
 function taxonomy_node_insert(EntityInterface $node) {
   // Add taxonomy index entries for the node.
@@ -793,7 +791,7 @@ function taxonomy_build_node_index($node) {
 }
 
 /**
- * Implements hook_node_update().
+ * Implements hook_ENTITY_TYPE_update() for node entities.
  */
 function taxonomy_node_update(EntityInterface $node) {
   // Always rebuild the node's taxonomy index entries on node save.
@@ -802,7 +800,7 @@ function taxonomy_node_update(EntityInterface $node) {
 }
 
 /**
- * Implements hook_node_predelete().
+ * Implements hook_ENTITY_TYPE_predelete() for node entities.
  */
 function taxonomy_node_predelete(EntityInterface $node) {
   // Clean up the {taxonomy_index} table when nodes are deleted.
@@ -822,7 +820,7 @@ function taxonomy_delete_node_index(EntityInterface $node) {
 }
 
 /**
- * Implements hook_taxonomy_term_delete().
+ * Implements hook_ENTITY_TYPE_delete() for taxonomy_term entities.
  */
 function taxonomy_taxonomy_term_delete(Term $term) {
   if (\Drupal::config('taxonomy.settings')->get('maintain_index_table')) {

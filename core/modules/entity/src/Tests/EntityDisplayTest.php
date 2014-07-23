@@ -11,18 +11,12 @@ use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
  * Tests the entity display configuration entities.
+ *
+ * @group entity
  */
 class EntityDisplayTest extends DrupalUnitTestBase {
 
   public static $modules = array('entity', 'field', 'entity_test', 'user', 'text', 'entity_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity display configuration entities',
-      'description' => 'Tests the entity display configuration entities.',
-      'group' => 'Entity API',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -69,6 +63,7 @@ class EntityDisplayTest extends DrupalUnitTestBase {
       'type' => 'string',
       'weight' => -5,
       'settings' => array(),
+      'third_party_settings' => array(),
     );
     $this->assertEqual($display->getComponents(), $expected);
 
@@ -145,15 +140,15 @@ class EntityDisplayTest extends DrupalUnitTestBase {
     $this->enableModules(array('field_test'));
 
     $field_name = 'test_field';
-    // Create a field and an instance.
-    $field = entity_create('field_config', array(
+    // Create a field storage and an instance.
+    $field_storage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'test_field'
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'bundle' => 'entity_test',
     ));
     $instance->save();
@@ -166,7 +161,7 @@ class EntityDisplayTest extends DrupalUnitTestBase {
 
     // Check that providing no options results in default values being used.
     $display->setComponent($field_name);
-    $field_type_info = \Drupal::service('plugin.manager.field.field_type')->getDefinition($field->type);
+    $field_type_info = \Drupal::service('plugin.manager.field.field_type')->getDefinition($field_storage->type);
     $default_formatter = $field_type_info['default_formatter'];
     $formatter_settings =  \Drupal::service('plugin.manager.field.formatter')->getDefaultSettings($default_formatter);
     $expected = array(
@@ -174,6 +169,7 @@ class EntityDisplayTest extends DrupalUnitTestBase {
       'label' => 'above',
       'type' => $default_formatter,
       'settings' => $formatter_settings,
+      'third_party_settings' => array(),
     );
     $this->assertEqual($display->getComponent($field_name), $expected);
 
@@ -221,12 +217,14 @@ class EntityDisplayTest extends DrupalUnitTestBase {
         'label' => 'above',
         'type' => 'text_default',
         'settings' => $formatter_settings,
+        'third_party_settings' => array(),
         'weight' => 10,
       ),
       'test_display_non_configurable' => array(
         'label' => 'above',
         'type' => 'text_default',
         'settings' => $formatter_settings,
+        'third_party_settings' => array(),
         'weight' => 11,
       ),
     );
@@ -319,15 +317,15 @@ class EntityDisplayTest extends DrupalUnitTestBase {
     $this->enableModules(array('field_test'));
 
     $field_name = 'test_field';
-    // Create a field and an instance.
-    $field = entity_create('field_config', array(
+    // Create a field storage and an instance.
+    $field_storage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'test_field'
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'bundle' => 'entity_test',
     ));
     $instance->save();

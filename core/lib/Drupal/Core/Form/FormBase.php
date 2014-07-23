@@ -9,43 +9,40 @@ namespace Drupal\Core\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\DependencyInjection\DependencySerialization;
-use Drupal\Core\Routing\UrlGeneratorInterface;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
+use Drupal\Core\Routing\LinkGeneratorTrait;
+use Drupal\Core\Routing\UrlGeneratorTrait;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Provides a base class for forms.
  */
-abstract class FormBase extends DependencySerialization implements FormInterface, ContainerInjectionInterface {
+abstract class FormBase implements FormInterface, ContainerInjectionInterface {
   use StringTranslationTrait;
+  use DependencySerializationTrait;
+  use LinkGeneratorTrait;
+  use UrlGeneratorTrait;
 
   /**
-   * The current request.
+   * The request stack.
    *
-   * @var \Symfony\Component\HttpFoundation\Request
+   * @var \Symfony\Component\HttpFoundation\RequestStack
    */
-  protected $request;
-
-  /**
-   * The URL generator.
-   *
-   * @var \Drupal\Core\Routing\UrlGeneratorInterface
-   */
-  protected $urlGenerator;
+  protected $requestStack;
 
   /**
    * The config factory.
    *
-   * This is marked private in order to force subclasses to use the
-   * self::config() method, which may be overridden to address specific needs
-   * when loading config. See \Drupal\Core\Form\ConfigFormBase::config() for an
-   * example of this.
+   * Subclasses should use the self::config() method, which may be overridden to
+   * address specific needs when loading config, rather than this property
+   * directly. See \Drupal\Core\Form\ConfigFormBase::config() for an example of
+   * this.
    *
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
-  private $configFactory;
+  protected $configFactory;
 
   /**
    * The form error handler.
@@ -66,19 +63,6 @@ abstract class FormBase extends DependencySerialization implements FormInterface
    */
   public function validateForm(array &$form, array &$form_state) {
     // Validation is optional.
-  }
-
-  /**
-   * Generates a URL or path for a specific route based on the given parameters.
-   *
-   * @see \Drupal\Core\Routing\UrlGeneratorInterface::generateFromRoute() for
-   *   details on the arguments, usage, and possible exceptions.
-   *
-   * @return string
-   *   The generated URL for the given route.
-   */
-  public function url($route_name, $route_parameters = array(), $options = array()) {
-    return $this->urlGenerator()->generateFromRoute($route_name, $route_parameters, $options);
   }
 
   /**
@@ -143,22 +127,22 @@ abstract class FormBase extends DependencySerialization implements FormInterface
    *   The request object.
    */
   protected function getRequest() {
-    if (!$this->request) {
-      $this->request = $this->container()->get('request');
+    if (!$this->requestStack) {
+      $this->requestStack = \Drupal::service('request_stack');
     }
-    return $this->request;
+    return $this->requestStack->getCurrentRequest();
   }
 
   /**
-   * Sets the request object to use.
+   * Sets the request stack object to use.
    *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request object.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack object.
    *
    * @return $this
    */
-  public function setRequest(Request $request) {
-    $this->request = $request;
+  public function setRequestStack(RequestStack $request_stack) {
+    $this->requestStack = $request_stack;
     return $this;
   }
 
@@ -170,32 +154,6 @@ abstract class FormBase extends DependencySerialization implements FormInterface
    */
   protected function currentUser() {
     return \Drupal::currentUser();
-  }
-
-  /**
-   * Gets the URL generator.
-   *
-   * @return \Drupal\Core\Routing\UrlGeneratorInterface
-   *   The URL generator.
-   */
-  protected function urlGenerator() {
-    if (!$this->urlGenerator) {
-      $this->urlGenerator = \Drupal::urlGenerator();
-    }
-    return $this->urlGenerator;
-  }
-
-  /**
-   * Sets the URL generator.
-   *
-   * @param \Drupal\Core\Routing\UrlGeneratorInterface
-   *   The URL generator.
-   *
-   * @return $this
-   */
-  public function setUrlGenerator(UrlGeneratorInterface $url_generator) {
-    $this->urlGenerator = $url_generator;
-    return $this;
   }
 
   /**

@@ -8,7 +8,9 @@
 namespace Drupal\node\Tests;
 
 /**
- * Tests node title functionality.
+ * Tests node title.
+ *
+ * @group node
  */
 class NodeTitleTest extends NodeTestBase {
 
@@ -20,14 +22,6 @@ class NodeTitleTest extends NodeTestBase {
   public static $modules = array('comment', 'views');
 
   protected $admin_user;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Node title',
-      'description' => 'Test node title.',
-      'group' => 'Node'
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -66,5 +60,17 @@ class NodeTitleTest extends NodeTestBase {
     // Test node title is clickable on teaser list (/node).
     $this->drupalGet('node');
     $this->clickLink($node->label());
+
+    // Test edge case where node title is set to 0.
+    $settings = array(
+      'title' => 0,
+    );
+    $node = $this->drupalCreateNode($settings);
+    // Test that 0 appears as <title>.
+    $this->drupalGet('node/' . $node->id());
+    $this->assertTitle(0 . ' | Drupal', 'Page title is equal to 0.', 'Node');
+    // Test that 0 appears in the template <h1>.
+    $xpath = '//h1';
+    $this->assertEqual(current($this->xpath($xpath)), 0, 'Node title is displayed as 0.', 'Node');
   }
 }

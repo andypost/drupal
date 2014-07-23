@@ -13,6 +13,7 @@ use Drupal\views\Views;
 /**
  * Tests fields from within a UI.
  *
+ * @group views
  * @see \Drupal\views\Plugin\views\field\FieldPluginBase
  */
 class FieldWebTest extends HandlerTestBase {
@@ -27,14 +28,6 @@ class FieldWebTest extends HandlerTestBase {
   protected $column_map = array(
     'views_test_data_name' => 'name',
   );
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Field: Web Test',
-      'description' => 'Tests fields from within a UI.',
-      'group' => 'Views Handlers',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -559,10 +552,10 @@ class FieldWebTest extends HandlerTestBase {
     $row->views_test_data_name = $this->randomName(8);
     $name_field->options['alter']['max_length'] = 5;
     $output = $name_field->advancedRender($row);
-    $this->assertSubString($output, '...', 'An ellipsis should appear if the output is trimmed');
+    $this->assertSubString($output, '…', 'An ellipsis should appear if the output is trimmed');
     $name_field->options['alter']['max_length'] = 10;
     $output = $name_field->advancedRender($row);
-    $this->assertNotSubString($output, '...', 'No ellipsis should appear if the output is not trimmed');
+    $this->assertNotSubString($output, '…', 'No ellipsis should appear if the output is not trimmed');
   }
 
 }

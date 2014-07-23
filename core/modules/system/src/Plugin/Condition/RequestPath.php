@@ -87,7 +87,7 @@ class RequestPath extends ConditionPluginBase implements ContainerFactoryPluginI
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return array('pages' => '');
+    return array('pages' => '') + parent::defaultConfiguration();
   }
 
   /**
@@ -134,12 +134,18 @@ class RequestPath extends ConditionPluginBase implements ContainerFactoryPluginI
     // Convert path to lowercase. This allows comparison of the same path
     // with different case. Ex: /Page, /page, /PAGE.
     $pages = Unicode::strtolower($this->configuration['pages']);
+    if (!$pages) {
+      return TRUE;
+    }
 
     $request = $this->requestStack->getCurrentRequest();
     // Compare the lowercase path alias (if any) and internal path.
+    // @todo Remove dependency on the internal _system_path attribute:
+    //   https://www.drupal.org/node/2293581.
     $path = $request->attributes->get('_system_path');
     $path_alias = Unicode::strtolower($this->aliasManager->getAliasByPath($path));
 
     return $this->pathMatcher->matchPath($path_alias, $pages) || (($path != $path_alias) && $this->pathMatcher->matchPath($path, $pages));
   }
+
 }

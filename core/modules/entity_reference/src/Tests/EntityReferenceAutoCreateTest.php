@@ -7,21 +7,15 @@
 
 namespace Drupal\entity_reference\Tests;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the Entity Reference auto-creation feature.
+ * Tests creating new entity (e.g. taxonomy-term) from an autocomplete widget.
+ *
+ * @group entity_reference
  */
 class EntityReferenceAutoCreateTest extends WebTestBase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity Reference auto-create and autocomplete UI',
-      'description' => 'Tests creating new entity (e.g. taxonomy-term) from an autocomplete widget.',
-      'group' => 'Entity Reference',
-    );
-  }
 
   public static $modules = array('entity_reference', 'node');
 
@@ -35,7 +29,7 @@ class EntityReferenceAutoCreateTest extends WebTestBase {
     $referenced = $this->drupalCreateContentType();
     $this->referenced_type = $referenced->type;
 
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => 'test_field',
       'entity_type' => 'node',
       'translatable' => FALSE,
@@ -44,7 +38,7 @@ class EntityReferenceAutoCreateTest extends WebTestBase {
         'target_type' => 'node',
       ),
       'type' => 'entity_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
     ))->save();
 
     entity_create('field_instance_config', array(

@@ -11,39 +11,25 @@ use Drupal\Tests\UnitTestCase;
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 
 /**
- * Tests the listing class for forum breadcrumbs.
- *
  * @coversDefaultClass \Drupal\forum\Breadcrumb\ForumListingBreadcrumbBuilder
- * @group Forum
- * @group Drupal
- *
- * @see \Drupal\forum\ForumListingBreadcrumbBuilder
+ * @group forum
  */
 class ForumListingBreadcrumbBuilderTest extends UnitTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Forum Breadcrumb Listing Test',
-      'description' => 'Tests the listing class for forum breadcrumbs.',
-      'group' => 'Forum',
-    );
-  }
 
   /**
    * Tests ForumListingBreadcrumbBuilder::applies().
    *
    * @param bool $expected
    *   ForumListingBreadcrumbBuilder::applies() expected result.
-   * @param array $attributes
-   *   ForumListingBreadcrumbBuilder::applies() $attributes parameter.
+   * @param string|null $route_name
+   *   (optional) A route name.
+   * @param array $parameter_map
+   *   (optional) An array of parameter names and values.
    *
    * @dataProvider providerTestApplies
    * @covers ::applies
    */
-  public function testApplies($expected, $attributes) {
+  public function testApplies($expected, $route_name = NULL, $parameter_map = array()) {
     // Make some test doubles.
     $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
     $config_factory = $this->getConfigFactoryStub(array());
@@ -59,7 +45,15 @@ class ForumListingBreadcrumbBuilderTest extends UnitTestCase {
       ->setMethods(NULL)
       ->getMock();
 
-    $this->assertEquals($expected, $builder->applies($attributes));
+    $route_match = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $route_match->expects($this->once())
+      ->method('getRouteName')
+      ->will($this->returnValue($route_name));
+    $route_match->expects($this->any())
+      ->method('getParameter')
+      ->will($this->returnValueMap($parameter_map));
+
+    $this->assertEquals($expected, $builder->applies($route_match));
   }
 
   /**
@@ -79,33 +73,24 @@ class ForumListingBreadcrumbBuilderTest extends UnitTestCase {
     return array(
       array(
         FALSE,
-        array(),
       ),
       array(
         FALSE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'NOT.forum.page',
-        ),
+        'NOT.forum.page',
       ),
       array(
         FALSE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'forum.page',
-        ),
+        'forum.page',
       ),
       array(
         TRUE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'forum.page',
-          'taxonomy_term' => 'anything',
-        ),
+        'forum.page',
+        array(array('taxonomy_term', 'anything')),
       ),
       array(
         TRUE,
-        array(
-          RouteObjectInterface::ROUTE_NAME => 'forum.page',
-          'taxonomy_term' => $mock_term,
-        ),
+        'forum.page',
+        array(array('taxonomy_term', $mock_term)),
       ),
     );
   }
@@ -212,9 +197,11 @@ class ForumListingBreadcrumbBuilderTest extends UnitTestCase {
       ->will($this->returnValue('You_should_not_see_this'));
 
     // Our data set.
-    $attributes = array(
-      'taxonomy_term' => $forum_listing,
-    );
+    $route_match = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $route_match->expects($this->exactly(2))
+      ->method('getParameter')
+      ->with('taxonomy_term')
+      ->will($this->returnValue($forum_listing));
 
     // First test.
     $expected1 = array(
@@ -222,7 +209,7 @@ class ForumListingBreadcrumbBuilderTest extends UnitTestCase {
       'Fora_is_the_plural_of_forum',
       'Something',
     );
-    $this->assertSame($expected1, $breadcrumb_builder->build($attributes));
+    $this->assertSame($expected1, $breadcrumb_builder->build($route_match));
 
     // Second test.
     $expected2 = array(
@@ -231,7 +218,7 @@ class ForumListingBreadcrumbBuilderTest extends UnitTestCase {
       'Something else',
       'Something',
     );
-    $this->assertSame($expected2, $breadcrumb_builder->build($attributes));
+    $this->assertSame($expected2, $breadcrumb_builder->build($route_match));
   }
 
 }

@@ -119,6 +119,12 @@ user.role.*:
   type: config_entity
   label: 'User role settings'
   mapping:
+    id:
+      type: string
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
     weight:
       type: integer
       label: 'User role weight'
@@ -160,5 +166,11 @@ action.configuration.user_unblock_user_action:
 search.plugin.user_search:
   type: sequence
   label: 'User search'
-  sequence:
-    - type: undefined
+
+condition.plugin.user_role:
+  type: condition.plugin
+  mapping:
+    roles:
+      type: sequence
+      sequence:
+        - type: string

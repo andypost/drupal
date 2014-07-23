@@ -6,7 +6,6 @@
  */
 
 use Drupal\Component\Utility\NestedArray;
-use Drupal\field\FieldConfigUpdateForbiddenException;
 
 /**
  * @defgroup field_types Field Types API
@@ -18,6 +17,15 @@ use Drupal\field\FieldConfigUpdateForbiddenException;
  * and so on. The data type(s) accepted by a field are defined in
  * hook_field_schema().
  *
+ * Field types are plugins annotated with class
+ * \Drupal\Core\Entity\Annotation\FieldType, and implement plugin interface
+ * \Drupal\Core\Field\FieldItemInterface. Field Type plugins are managed by the
+ * \Drupal\Core\Field\FieldTypePluginManager class. Field type classes usually
+ * extend base class \Drupal\Core\Field\FieldItemBase. Field-type plugins need
+ * to be in the namespace \Drupal\{your_module}\Plugin\Field\FieldType. See the
+ * @link plugin_api Plugin API topic @endlink for more information on how to
+ * define plugins.
+ *
  * The Field Types API also defines two kinds of pluggable handlers: widgets
  * and formatters. @link field_widget Widgets @endlink specify how the field
  * appears in edit forms, while @link field_formatter formatters @endlink
@@ -25,6 +33,11 @@ use Drupal\field\FieldConfigUpdateForbiddenException;
  *
  * See @link field Field API @endlink for information about the other parts of
  * the Field API.
+ *
+ * @see field
+ * @see field_widget
+ * @see field_formatter
+ * @see plugin_api
  */
 
 
@@ -57,11 +70,11 @@ function hook_field_info_alter(&$info) {
  * which widget to use.
  *
  * Widgets are Plugins managed by the
- * Drupal\Core\Field\WidgetPluginManager class. A widget is
- * implemented by providing a class that implements
- * Drupal\Core\Field\WidgetInterface (in most cases, by
- * subclassing Drupal\Core\Field\WidgetBase), and provides the
- * proper annotation block.
+ * \Drupal\Core\Field\WidgetPluginManager class. A widget is a plugin annotated
+ * with class \Drupal\Core\Entity\Annotation\FieldWidget that implements
+ * \Drupal\Core\Field\WidgetInterface (in most cases, by
+ * subclassing \Drupal\Core\Field\WidgetBase). Widget plugins need to be in the
+ * namespace \Drupal\{your_module}\Plugin\Field\FieldWidget.
  *
  * Widgets are @link forms_api_reference.html Form API @endlink
  * elements with additional processing capabilities. The methods of the
@@ -71,6 +84,7 @@ function hook_field_info_alter(&$info) {
  * @see field
  * @see field_types
  * @see field_formatter
+ * @see plugin_api
  */
 
 /**
@@ -157,15 +171,16 @@ function hook_field_widget_WIDGET_TYPE_form_alter(&$element, &$form_state, $cont
  * choose which formatter to use.
  *
  * Formatters are Plugins managed by the
- * Drupal\Core\Field\FormatterPluginManager class. A formatter
- * is implemented by providing a class that implements
- * Drupal\Core\Field\FormatterInterface (in most cases, by
- * subclassing Drupal\Core\Field\FormatterBase), and provides
- * the proper annotation block.
+ * \Drupal\Core\Field\FormatterPluginManager class. A formatter is a plugin
+ * annotated with class \Drupal\Core\Entity\Annotation\FieldFormatter that
+ * implements \Drupal\Core\Field\FormatterInterface (in most cases, by
+ * subclassing \Drupal\Core\Field\FormatterBase). Formatter plugins need to be
+ * in the namespace \Drupal\{your_module}\Plugin\Field\FieldFormatter.
  *
  * @see field
  * @see field_types
  * @see field_widget
+ * @see plugin_api
  */
 
 /**
@@ -217,12 +232,12 @@ function hook_field_info_max_weight($entity_type, $bundle, $context, $context_mo
 }
 
 /**
- * @addtogroup field_crud
+ * @addtogroup field_purge
  * @{
  */
 
 /**
- * Forbid a field update from occurring.
+ * Forbid a field storage update from occurring.
  *
  * Any module may forbid any update for any reason. For example, the
  * field's storage module might forbid an update if it would change
@@ -232,47 +247,49 @@ function hook_field_info_max_weight($entity_type, $bundle, $context, $context_mo
  * that cannot be updated.
  *
  * To forbid the update from occurring, throw a
- * Drupal\field\FieldConfigUpdateForbiddenException.
+ * \Drupal\Core\Entity\Exception\StorageDefinitionUpdateForbiddenException.
  *
- * @param \Drupal\field\FieldConfigInterface $field
- *   The field as it will be post-update.
- * @param \Drupal\field\FieldConfigInterface $prior_field
- *   The field as it is pre-update.
+ * @param \Drupal\field\FieldStorageConfigInterface $field_storage
+ *   The field storage as it will be post-update.
+ * @param \Drupal\field\FieldStorageConfigInterface $prior_field_storage
+ *   The field storage as it is pre-update.
+ *
+ * @see entity_crud
  */
-function hook_field_config_update_forbid(\Drupal\field\FieldConfigInterface $field, \Drupal\field\FieldConfigInterface $prior_field) {
+function hook_field_storage_config_update_forbid(\Drupal\field\FieldStorageConfigInterface $field_storage, \Drupal\field\FieldStorageConfigInterface $prior_field_storage) {
   // A 'list' field stores integer keys mapped to display values. If
   // the new field will have fewer values, and any data exists for the
   // abandoned keys, the field will have no way to display them. So,
   // forbid such an update.
-  if ($field->hasData() && count($field['settings']['allowed_values']) < count($prior_field['settings']['allowed_values'])) {
+  if ($field_storage->hasData() && count($field_storage['settings']['allowed_values']) < count($prior_field_storage['settings']['allowed_values'])) {
     // Identify the keys that will be lost.
-    $lost_keys = array_diff(array_keys($field['settings']['allowed_values']), array_keys($prior_field['settings']['allowed_values']));
+    $lost_keys = array_diff(array_keys($field_storage['settings']['allowed_values']), array_keys($prior_field_storage['settings']['allowed_values']));
     // If any data exist for those keys, forbid the update.
     $query = new EntityFieldQuery();
     $found = $query
-      ->fieldCondition($prior_field['field_name'], 'value', $lost_keys)
+      ->fieldCondition($prior_field_storage['field_name'], 'value', $lost_keys)
       ->range(0, 1)
       ->execute();
     if ($found) {
-      throw new FieldConfigUpdateForbiddenException("Cannot update a list field not to include keys with existing data");
+      throw new \Drupal\Core\Entity\Exception\FieldStorageDefinitionUpdateForbiddenException("Cannot update a list field storage not to include keys with existing data");
     }
   }
 }
 
 /**
- * Acts when a field record is being purged.
+ * Acts when a field storage definition is being purged.
  *
- * In field_purge_field(), after the field definition has been removed from the
- * the system, the entity storage has purged stored field data, and the field
- * info cache has been cleared, this hook is invoked on all modules to allow
- * them to respond to the field being purged.
+ * In field_purge_field_storage(), after the storage definition has been removed
+ * from the system, the entity storage has purged stored field data, and the
+ * field definitions cache has been cleared, this hook is invoked on all modules
+ * to allow them to respond to the field storage being purged.
  *
- * @param $field
- *   The field being purged.
+ * @param $field_storage \Drupal\field\Entity\FieldStorageConfig
+ *   The field storage being purged.
  */
-function hook_field_purge_field($field) {
-  db_delete('my_module_field_info')
-    ->condition('id', $field['id'])
+function hook_field_purge_field_storage(\Drupal\field\Entity\FieldStorageConfig $field_storage) {
+  db_delete('my_module_field_storage_info')
+    ->condition('uuid', $field_storage->uuid())
     ->execute();
 }
 
@@ -294,7 +311,7 @@ function hook_field_purge_instance($instance) {
 }
 
 /**
- * @} End of "addtogroup field_crud".
+ * @} End of "addtogroup field_purge".
  */
 
 /**

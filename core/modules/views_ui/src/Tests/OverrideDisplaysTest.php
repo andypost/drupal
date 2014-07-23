@@ -9,16 +9,10 @@ namespace Drupal\views_ui\Tests;
 
 /**
  * Tests that displays can be correctly overridden via the user interface.
+ *
+ * @group views_ui
  */
 class OverrideDisplaysTest extends UITestBase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Overridden displays functionality',
-      'description' => 'Test that displays can be correctly overridden via the user interface.',
-      'group' => 'Views UI',
-    );
-  }
 
   /**
    * Tests that displays can be overridden via the UI.
@@ -120,9 +114,9 @@ class OverrideDisplaysTest extends UITestBase {
     // presence/absence of the view's title in both the page and the block).
     $this->drupalPlaceBlock("views_block:{$view['id']}-block_1", array(
       'visibility' => array(
-        'path' => array(
-          'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+        'request_path' => array(
           'pages' => $view['page[path]'],
+          'negate' => TRUE,
         ),
       ),
     ));

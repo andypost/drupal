@@ -12,7 +12,9 @@ use Drupal\simpletest\WebTestBase;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Test that URL rewriting works as expected.
+ * Tests that URL rewriting works as expected.
+ *
+ * @group language
  */
 class LanguageUrlRewritingTest extends WebTestBase {
 
@@ -22,14 +24,6 @@ class LanguageUrlRewritingTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('language', 'language_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'URL rewriting',
-      'description' => 'Test that URL rewriting works as expected.',
-      'group' => 'Language',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -47,6 +41,9 @@ class LanguageUrlRewritingTest extends WebTestBase {
     $edit = array('language_interface[enabled][language-url]' => 1);
     $this->drupalPostForm('admin/config/regional/language/detection', $edit, t('Save settings'));
 
+    // Check that drupalSettings contains path prefix.
+    $this->drupalGet('fr/admin/config/regional/language/detection');
+    $this->assertRaw('"pathPrefix":"fr\/"', 'drupalSettings path prefix contains language code.');
   }
 
   /**

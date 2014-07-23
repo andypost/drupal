@@ -13,6 +13,7 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\KeyValueStore\KeyValueMemoryFactory;
 use Drupal\Core\Language\Language;
+use Drupal\Core\Site\Settings;
 use Drupal\Core\Entity\Schema\EntitySchemaProviderInterface;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,8 +31,12 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * @see \Drupal\simpletest\KernelTestBase::$modules
  * @see \Drupal\simpletest\KernelTestBase::enableModules()
+ *
+ * @ingroup testing
  */
 abstract class KernelTestBase extends UnitTestBase {
+
+  use AssertContentTrait;
 
   /**
    * Modules to enable.
@@ -103,6 +108,10 @@ abstract class KernelTestBase extends UnitTestBase {
    * Create and set new configuration directories.
    *
    * @see config_get_config_directory()
+   *
+   * @throws \RuntimeException
+   *   Thrown when CONFIG_ACTIVE_DIRECTORY or CONFIG_STAGING_DIRECTORY cannot
+   *   be created or made writable.
    */
   protected function prepareConfigDirectories() {
     $this->configDirectories = array();
@@ -138,22 +147,29 @@ abstract class KernelTestBase extends UnitTestBase {
     // Create and set new configuration directories.
     $this->prepareConfigDirectories();
 
-    // Build a minimal, partially mocked environment for unit tests.
-    $this->containerBuild(\Drupal::getContainer());
-    // Make sure it survives kernel rebuilds.
+    // Add this test class as a service provider.
+    // @todo Remove the indirection; implement ServiceProviderInterface instead.
     $GLOBALS['conf']['container_service_providers']['TestServiceProvider'] = 'Drupal\simpletest\TestServiceProvider';
 
-    \Drupal::state()->set('system.module.files', $this->moduleFiles);
-    \Drupal::state()->set('system.theme.files', $this->themeFiles);
-
-    // Bootstrap the kernel.
-    // No need to dump it; this test runs in-memory.
-    $this->kernel = new DrupalKernel('unit_testing', drupal_classloader(), FALSE);
+    // Back up settings from TestBase::prepareEnvironment().
+    $settings = Settings::getAll();
+    // Bootstrap a new kernel. Don't use createFromRequest so we don't mess with settings.
+    $this->kernel = new DrupalKernel('testing', drupal_classloader(), FALSE);
+    $request = Request::create('/');
+    $this->kernel->setSitePath(DrupalKernel::findSitePath($request));
     $this->kernel->boot();
 
-    $request = Request::create('/');
-    $this->container->set('request', $request);
+    // Restore and merge settings.
+    // DrupalKernel::boot() initializes new Settings, and the containerBuild()
+    // method sets additional settings.
+    new Settings($settings + Settings::getAll());
+
+    // Set the request scope.
+    $this->container = $this->kernel->getContainer();
     $this->container->get('request_stack')->push($request);
+
+    $this->container->get('state')->set('system.module.files', $this->moduleFiles);
+    $this->container->get('state')->set('system.theme.files', $this->themeFiles);
 
     // Create a minimal core.extension configuration object so that the list of
     // enabled modules can be maintained allowing
@@ -284,7 +300,7 @@ abstract class KernelTestBase extends UnitTestBase {
     }
 
     $request = Request::create('/');
-    $this->container->set('request', $request);
+    $container->get('request_stack')->push($request);
   }
 
   /**
@@ -292,6 +308,9 @@ abstract class KernelTestBase extends UnitTestBase {
    *
    * @param array $modules
    *   A list of modules for which to install default configuration.
+   *
+   * @throws \RuntimeException
+   *   Thrown when any module listed in $modules is not enabled.
    */
   protected function installConfig(array $modules) {
     foreach ($modules as $module) {
@@ -314,6 +333,10 @@ abstract class KernelTestBase extends UnitTestBase {
    *   The name of the module that defines the table's schema.
    * @param string|array $tables
    *   The name or an array of the names of the tables to install.
+   *
+   * @throws \RuntimeException
+   *   Thrown when $module is not enabled or when the table schema cannot be
+   *   found in the module specified.
    */
   protected function installSchema($module, $tables) {
     // drupal_get_schema_unprocessed() is technically able to install a schema
@@ -354,6 +377,9 @@ abstract class KernelTestBase extends UnitTestBase {
    *
    * @param string $entity_type_id
    *   The ID of the entity type.
+   *
+   * @throws \RuntimeException
+   *   Thrown when the entity type does not support automatic schema installation.
    */
   protected function installEntitySchema($entity_type_id) {
     /** @var \Drupal\Core\Entity\EntityManagerInterface $entity_manager */
@@ -411,8 +437,7 @@ abstract class KernelTestBase extends UnitTestBase {
     // Ensure isLoaded() is TRUE in order to make _theme() work.
     // Note that the kernel has rebuilt the container; this $module_handler is
     // no longer the $module_handler instance from above.
-    $module_handler = $this->container->get('module_handler');
-    $module_handler->reload();
+    $this->container->get('module_handler')->reload();
     $this->pass(format_string('Enabled modules: %modules.', array(
       '%modules' => implode(', ', $modules),
     )));
@@ -465,7 +490,7 @@ abstract class KernelTestBase extends UnitTestBase {
    */
   protected function registerStreamWrapper($scheme, $class, $type = STREAM_WRAPPERS_LOCAL_NORMAL) {
     if (isset($this->streamWrappers[$scheme])) {
-      $this->unregisterStreamWrapper($scheme);
+      $this->unregisterStreamWrapper($scheme, $this->streamWrappers[$scheme]);
     }
     $this->streamWrappers[$scheme] = $type;
     if (($type & STREAM_WRAPPERS_LOCAL) == STREAM_WRAPPERS_LOCAL) {
@@ -508,6 +533,22 @@ abstract class KernelTestBase extends UnitTestBase {
         unset($wrappers[$filter][$scheme]);
       }
     }
+  }
+
+  /**
+   * Renders a render array.
+   *
+   * @param array $elements
+   *   The elements to render.
+   *
+   * @return string
+   *   The rendered string output (typically HTML).
+   */
+  protected function render(array $elements) {
+    $content = drupal_render($elements);
+    $this->setRawContent($content);
+    $this->verbose('<pre style="white-space: pre-wrap">' . String::checkPlain($content));
+    return $content;
   }
 
 }

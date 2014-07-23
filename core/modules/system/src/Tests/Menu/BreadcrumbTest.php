@@ -7,10 +7,13 @@
 
 namespace Drupal\system\Tests\Menu;
 
+use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Unicode;
 
 /**
- * Menu breadcrumbs related tests.
+ * Tests breadcrumbs functionality.
+ *
+ * @group Menu
  */
 class BreadcrumbTest extends MenuTestBase {
 
@@ -25,14 +28,6 @@ class BreadcrumbTest extends MenuTestBase {
    * Test paths in the Standard profile.
    */
   protected $profile = 'standard';
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Breadcrumbs',
-      'description' => 'Tests breadcrumbs functionality.',
-      'group' => 'Menu',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -272,7 +267,7 @@ class BreadcrumbTest extends MenuTestBase {
         $link['link_path'] => $link['link_title'],
       );
       $this->assertBreadcrumb($link['link_path'], $trail, $term->getName(), $tree);
-      $this->assertRaw(check_plain($parent->getTitle()), 'Tagged node found.');
+      $this->assertRaw(String::checkPlain($parent->getTitle()), 'Tagged node found.');
 
       // Additionally make sure that this link appears only once; i.e., the
       // untranslated menu links automatically generated from menu router items

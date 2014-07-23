@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Definition of Drupal\system\Tests\System\AdminTest.
+ * Contains \Drupal\system\Tests\System\AdminTest.
  */
 
 namespace Drupal\system\Tests\System;
@@ -10,9 +10,25 @@ namespace Drupal\system\Tests\System;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests administrative overview pages.
+ * Tests output on administrative pages and compact mode functionality.
+ *
+ * @group system
  */
 class AdminTest extends WebTestBase {
+
+  /**
+   * User account with all available permissions
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $admin_user;
+
+  /**
+   * User account with limited access to administration pages.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $web_user;
 
   /**
    * Modules to enable.
@@ -20,14 +36,6 @@ class AdminTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('locale');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Administrative pages',
-      'description' => 'Tests output on administrative pages and compact mode functionality.',
-      'group' => 'System',
-    );
-  }
 
   function setUp() {
     // testAdminPages() requires Locale module.

@@ -169,7 +169,10 @@ class FormSubmitter implements FormSubmitterInterface {
       }
 
       $form_state['redirect_route']->setAbsolute();
-      return new RedirectResponse($form_state['redirect_route']->toString());
+      // According to RFC 7231, 303 See Other status code must be used
+      // to redirect user agent (and not default 302 Found).
+      // @see http://tools.ietf.org/html/rfc7231#section-6.4.4
+      return new RedirectResponse($form_state['redirect_route']->toString(), Response::HTTP_SEE_OTHER);
     }
 
     // Only invoke a redirection if redirect value was not set to FALSE.
@@ -188,7 +191,7 @@ class FormSubmitter implements FormSubmitterInterface {
             $status_code = $form_state['redirect'][2];
           }
           else {
-            $status_code = 302;
+            $status_code = Response::HTTP_SEE_OTHER;
           }
           return new RedirectResponse($this->urlGenerator->generateFromPath($form_state['redirect'][0], $options), $status_code);
         }
@@ -200,16 +203,18 @@ class FormSubmitter implements FormSubmitterInterface {
             install_goto($form_state['redirect']);
           }
           else {
-            return new RedirectResponse($this->urlGenerator->generateFromPath($form_state['redirect'], array('absolute' => TRUE)));
+            return new RedirectResponse($this->urlGenerator->generateFromPath($form_state['redirect'], array('absolute' => TRUE)), Response::HTTP_SEE_OTHER);
           }
         }
       }
       $request = $this->requestStack->getCurrentRequest();
+      // @todo Remove dependency on the internal _system_path attribute:
+      //   https://www.drupal.org/node/2293521.
       $url = $this->urlGenerator->generateFromPath($request->attributes->get('_system_path'), array(
         'query' => $request->query->all(),
         'absolute' => TRUE,
       ));
-      return new RedirectResponse($url);
+      return new RedirectResponse($url, Response::HTTP_SEE_OTHER);
     }
   }
 

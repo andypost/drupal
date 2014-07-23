@@ -8,7 +8,6 @@
 namespace Drupal\image_test\Plugin\ImageToolkit;
 
 use Drupal\Component\Utility\Unicode;
-use Drupal\Core\Image\ImageInterface;
 use Drupal\Core\ImageToolkit\ImageToolkitBase;
 
 /**
@@ -46,7 +45,7 @@ class TestToolkit extends ImageToolkitBase {
    * {@inheritdoc}
    */
   public function settingsForm() {
-    $this->logCall('settings', array());
+    $this->logCall('settings', func_get_args());
     $form['test_parameter'] = array(
       '#type' => 'number',
       '#title' => $this->t('Test toolkit parameter'),
@@ -70,9 +69,9 @@ class TestToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function parseFile(ImageInterface $image) {
-    $this->logCall('parseFile', array($image));
-    $data = @getimagesize($image->getSource());
+  public function parseFile() {
+    $this->logCall('parseFile', func_get_args());
+    $data = @getimagesize($this->getImage()->getSource());
     if ($data && in_array($data[2], static::supportedTypes())) {
       $this->setType($data[2]);
       $this->width = $data[0];
@@ -85,67 +84,18 @@ class TestToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function save(ImageInterface $image, $destination) {
-    $this->logCall('save', array($image, $destination));
+  public function save($destination) {
+    $this->logCall('save', func_get_args());
     // Return false so that image_save() doesn't try to chmod the destination
     // file that we didn't bother to create.
     return FALSE;
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public function crop(ImageInterface $image, $x, $y, $width, $height) {
-    $this->logCall('crop', array($image, $x, $y, $width, $height));
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function resize(ImageInterface $image, $width, $height) {
-    $this->logCall('resize', array($image, $width, $height));
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function rotate(ImageInterface $image, $degrees, $background = NULL) {
-    $this->logCall('rotate', array($image, $degrees, $background));
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function desaturate(ImageInterface $image) {
-    $this->logCall('desaturate', array($image));
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function scale(ImageInterface $image, $width = NULL, $height = NULL, $upscale = FALSE) {
-    $this->logCall('scale', array($image, $width, $height, $upscale));
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function scaleAndCrop(ImageInterface $image, $width, $height) {
-    $this->logCall('scaleAndCrop', array($image, $width, $height));
-    return TRUE;
-  }
-
-  /**
    * Stores the values passed to a toolkit call.
    *
    * @param string $op
-   *   One of the image toolkit operations: 'parseFile', 'save', 'settings',
-   *   'resize', 'rotate', 'crop', 'desaturate'.
+   *   One of the toolkit methods 'parseFile', 'save', 'settings', or 'apply'.
    * @param array $args
    *   Values passed to hook.
    *
@@ -155,20 +105,27 @@ class TestToolkit extends ImageToolkitBase {
   protected function logCall($op, $args) {
     $results = \Drupal::state()->get('image_test.results') ?: array();
     $results[$op][] = $args;
+    // A call to apply is also logged under its operation name whereby the
+    // array of arguments are logged as separate arguments, this because at the
+    // ImageInterface level we still have methods named after the operations.
+    if ($op === 'apply') {
+      $operation = array_shift($args);
+      $results[$operation][] = array_values(reset($args));
+    }
     \Drupal::state()->set('image_test.results', $results);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getWidth(ImageInterface $image) {
+  public function getWidth() {
     return $this->width;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getHeight(ImageInterface $image) {
+  public function getHeight() {
     return $this->height;
   }
 
@@ -190,7 +147,7 @@ class TestToolkit extends ImageToolkitBase {
    *   The image type represented by a PHP IMAGETYPE_* constant (e.g.
    *   IMAGETYPE_JPEG).
    *
-   * @return this
+   * @return $this
    */
   public function setType($type) {
     if (in_array($type, static::supportedTypes())) {
@@ -202,7 +159,7 @@ class TestToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function getMimeType(ImageInterface $image) {
+  public function getMimeType() {
     return $this->getType() ? image_type_to_mime_type($this->getType()) : '';
   }
 
@@ -233,6 +190,14 @@ class TestToolkit extends ImageToolkitBase {
    */
   protected static function supportedTypes() {
     return array(IMAGETYPE_PNG, IMAGETYPE_JPEG, IMAGETYPE_GIF);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function apply($operation, array $arguments = array()) {
+    $this->logCall('apply', func_get_args());
+    return TRUE;
   }
 
 }

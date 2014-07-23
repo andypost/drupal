@@ -14,6 +14,7 @@ use Drupal\views\Views;
 /**
  * Tests the generic entity area handler.
  *
+ * @group views
  * @see \Drupal\views\Plugin\views\area\Entity
  */
 class AreaEntityTest extends ViewTestBase {
@@ -31,14 +32,6 @@ class AreaEntityTest extends ViewTestBase {
    * @var array
    */
   public static $testViews = array('test_entity_area');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Area: Entity',
-      'description' => 'Tests the generic entity area handler.',
-      'group' => 'Views Handlers',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -103,7 +96,7 @@ class AreaEntityTest extends ViewTestBase {
 
     // Mark entity_test test view_mode as customizable.
     $view_mode = \Drupal::entityManager()->getStorage('view_mode')->load('entity_test.test');
-    $view_mode->status = TRUE;
+    $view_mode->enable();
     $view_mode->save();
 
     // Change the view mode of the area handler.

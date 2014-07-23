@@ -9,6 +9,8 @@ namespace Drupal\node\Tests;
 
 /**
  * Tests the interaction of the node access system with fields.
+ *
+ * @group node
  */
 class NodeAccessFieldTest extends NodeTestBase {
 
@@ -40,14 +42,6 @@ class NodeAccessFieldTest extends NodeTestBase {
    */
   protected $field_name;
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Node access and fields',
-      'description' => 'Tests the interaction of the node access system with fields.',
-      'group' => 'Node',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
 
@@ -59,7 +53,7 @@ class NodeAccessFieldTest extends NodeTestBase {
 
     // Add a custom field to the page content type.
     $this->field_name = drupal_strtolower($this->randomName() . '_field_name');
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => 'node',
       'type' => 'text'

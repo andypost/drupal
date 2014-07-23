@@ -13,6 +13,8 @@ use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests administration of CKEditor.
+ *
+ * @group ckeditor
  */
 class CKEditorAdminTest extends WebTestBase {
 
@@ -22,14 +24,6 @@ class CKEditorAdminTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('filter', 'editor', 'ckeditor');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'CKEditor administration',
-      'description' => 'Tests administration of CKEditor.',
-      'group' => 'CKEditor',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -167,7 +161,7 @@ class CKEditorAdminTest extends WebTestBase {
     // Now enable the ckeditor_test module, which provides one configurable
     // CKEditor plugin — this should not affect the Editor config entity.
     \Drupal::moduleHandler()->install(array('ckeditor_test'));
-    $this->rebuildContainer();
+    $this->resetAll();
     $this->container->get('plugin.manager.ckeditor.plugin')->clearCachedDefinitions();
     $this->drupalGet('admin/config/content/formats/manage/filtered_html');
     $ultra_llama_mode_checkbox = $this->xpath('//input[@type="checkbox" and @name="editor[settings][plugins][llama_contextual_and_button][ultra_llama_mode]" and not(@checked)]');

@@ -25,7 +25,7 @@ use Symfony\Component\DependencyInjection\Reference;
 // Change the directory to the Drupal root.
 chdir('..');
 
-require_once __DIR__ . '/vendor/autoload.php';
+$autoloader = require_once __DIR__ . '/vendor/autoload.php';
 
 // Exit early if an incompatible PHP version would cause fatal errors.
 // The minimum version is specified explicitly, as DRUPAL_MINIMUM_PHP is not
@@ -69,7 +69,7 @@ function update_helpful_links() {
     'title' => t('Front page'),
     'href' => '<front>',
   );
-  if (user_access('access administration pages')) {
+  if (\Drupal::currentUser()->hasPermission('access administration pages')) {
     $links['admin-pages'] = array(
       'title' => t('Administration pages'),
       'href' => 'admin',
@@ -97,7 +97,7 @@ function update_flush_all_caches() {
  */
 function update_results_page() {
   // Report end result.
-  if (\Drupal::moduleHandler()->moduleExists('dblog') && user_access('access site reports')) {
+  if (\Drupal::moduleHandler()->moduleExists('dblog') && \Drupal::currentUser()->hasPermission('access site reports')) {
     $log_message = ' All errors have been <a href="' . base_path() . '?q=admin/reports/dblog">logged</a>.';
   }
   else {
@@ -197,7 +197,7 @@ function update_info_page() {
   $keyvalue->get('update')->deleteAll();
   $keyvalue->get('update_available_release')->deleteAll();
 
-  $token = drupal_get_token('update');
+  $token = \Drupal::csrfToken()->get('update');
   $output = '<p>Use this utility to update your database whenever a new release of Drupal or a module is installed.</p><p>For more detailed information, see the <a href="http://drupal.org/upgrade">upgrading handbook</a>. If you are unsure what these terms mean you should probably contact your hosting provider.</p>';
   $output .= "<ol>\n";
   $output .= "<li><strong>Back up your code</strong>. Hint: when backing up module code, do not leave that backup in the 'modules' or 'sites/*/modules' directories as this may confuse Drupal's auto-discovery mechanism.</li>\n";
@@ -226,7 +226,7 @@ function update_info_page() {
 function update_access_denied_page() {
   drupal_add_http_header('Status', '403 Forbidden');
   header(\Drupal::request()->server->get('SERVER_PROTOCOL') . ' 403 Forbidden');
-  watchdog('access denied', 'update.php', array(), WATCHDOG_WARNING);
+  \Drupal::logger('access denied')->warning('update.php');
   $output = '<p>Access denied. You are not authorized to access this page. Log in using either an account with the <em>administer software updates</em> permission or the site maintenance account (the account you created during installation). If you cannot log in, you will have to edit <code>settings.php</code> to bypass this access check. To do this:</p>
 <ol>
  <li>With a text editor find the settings.php file on your system. From the main Drupal directory that you installed all the files into, go to <code>sites/your_site_name</code> if such directory exists, or else to <code>sites/default</code> which applies otherwise.</li>
@@ -249,25 +249,7 @@ function update_access_denied_page() {
  *   TRUE if the current user should be granted access, or FALSE otherwise.
  */
 function update_access_allowed() {
-  $user = \Drupal::currentUser();
-
-  // Allow the global variable in settings.php to override the access check.
-  if (Settings::get('update_free_access')) {
-    return TRUE;
-  }
-  // Calls to user_access() might fail during the Drupal 6 to 7 update process,
-  // so we fall back on requiring that the user be logged in as user #1.
-  try {
-    $module_handler = \Drupal::moduleHandler();
-    $module_handler->addModule('user', 'core/modules/user');
-    $module_handler->reload();
-    $module_filenames = $module_handler->getModuleList();
-    \Drupal::service('kernel')->updateModules($module_filenames, $module_filenames);
-    return user_access('administer software updates');
-  }
-  catch (\Exception $e) {
-    return ($user->id() == 1);
-  }
+  return Settings::get('update_free_access') || \Drupal::currentUser()->hasPermission('administer software updates');
 }
 
 /**
@@ -297,18 +279,17 @@ ini_set('display_errors', FALSE);
 
 // We prepare a minimal bootstrap for the update requirements check to avoid
 // reaching the PHP memory limit.
-require_once __DIR__ . '/includes/bootstrap.inc';
 require_once __DIR__ . '/includes/update.inc';
-require_once __DIR__ . '/includes/common.inc';
-require_once __DIR__ . '/includes/file.inc';
-require_once __DIR__ . '/includes/unicode.inc';
 require_once __DIR__ . '/includes/install.inc';
-require_once __DIR__ . '/includes/schema.inc';
-// Bootstrap to configuration.
-drupal_bootstrap(DRUPAL_BOOTSTRAP_CONFIGURATION);
 
-// Bootstrap the database.
-require_once __DIR__ . '/includes/database.inc';
+$request = Request::createFromGlobals();
+$kernel = DrupalKernel::createFromRequest($request, $autoloader, 'update', FALSE);
+
+// Enable UpdateServiceProvider service overrides.
+// @see update_flush_all_caches()
+$GLOBALS['conf']['container_service_providers']['UpdateServiceProvider'] = 'Drupal\Core\DependencyInjection\UpdateServiceProvider';
+$GLOBALS['conf']['update_service_provider_overrides'] = TRUE;
+$kernel->boot();
 
 // Updating from a site schema version prior to 8000 should block the update
 // process. Ensure that the site is not attempting to update a database
@@ -321,28 +302,10 @@ if (db_table_exists('system')) {
   }
 }
 
-// Enable UpdateServiceProvider service overrides.
-// @see update_flush_all_caches()
-$GLOBALS['conf']['container_service_providers']['UpdateServiceProvider'] = 'Drupal\Core\DependencyInjection\UpdateServiceProvider';
-$GLOBALS['conf']['update_service_provider_overrides'] = TRUE;
-
-// module.inc is not yet loaded but there are calls to module_config_sort()
-// below.
-require_once __DIR__ . '/includes/module.inc';
-
-$settings = Settings::getAll();
-new Settings($settings);
-$kernel = new DrupalKernel('update', drupal_classloader(), FALSE);
-$kernel->boot();
-$request = Request::createFromGlobals();
-$container = \Drupal::getContainer();
-$container->set('request', $request);
-$container->get('request_stack')->push($request);
+$kernel->prepareLegacyRequest($request);
 
 // Determine if the current user has access to run update.php.
-drupal_bootstrap(DRUPAL_BOOTSTRAP_PAGE_CACHE);
-
-\Drupal::service('session_manager')->initialize();
+\Drupal::service('session_manager')->startLazy();
 
 // Ensure that URLs generated for the home and admin pages don't have 'update.php'
 // in them.
@@ -378,7 +341,6 @@ if (is_null($op) && update_access_allowed()) {
   install_goto('core/update.php?op=info');
 }
 
-drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 drupal_maintenance_theme();
 
 // Turn error reporting back on. From now on, only fatal errors (which are
@@ -409,7 +371,7 @@ if (update_access_allowed()) {
 
     case 'selection':
       $token = $request->query->get('token');
-      if (isset($token) && drupal_valid_token($token, 'update')) {
+      if (isset($token) && \Drupal::csrfToken()->validate($token, 'update')) {
         $regions['sidebar_first'] = update_task_list('select');
         $output = update_selection_page();
         break;
@@ -417,7 +379,7 @@ if (update_access_allowed()) {
 
     case 'Apply pending updates':
       $token = $request->query->get('token');
-      if (isset($token) && drupal_valid_token($token, 'update')) {
+      if (isset($token) && \Drupal::csrfToken()->validate($token, 'update')) {
         $regions['sidebar_first'] = update_task_list('run');
         // Generate absolute URLs for the batch processing (using $base_root),
         // since the batch API will pass them to url() which does not handle

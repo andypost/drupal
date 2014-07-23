@@ -64,7 +64,8 @@ label.option {
   font-weight: normal;
 }
 .form-composite > legend,
-h4.label {
+.label {
+  display:inline;
   font-size: inherit;
   font-weight: bold;
   margin: 0;
@@ -85,7 +86,7 @@ h4.label {
 
 .form-required:after {
   color: #e00;
-  /* Use a Unicode symbol to prevent screen-readers from announcing the text. */
+  /* Use a Unicode symbol to prevent screen readers from announcing the text. */
   content: " \204E ";
   line-height: 1;
   vertical-align: super;
@@ -114,7 +115,8 @@ abbr.ajax-changed {
 /**
  * Inline items.
  */
-.container-inline label:after {
+.container-inline label:after,
+.container-inline .label:after {
   content: ':';
 }
 .form-type-radios .container-inline label:after {
@@ -565,9 +567,6 @@ ul.tabs {
   box-shadow: 8px 0 0 #77b259;
   margin-right: 8px;
 }
-.no-svg .messages--status {
-  background-image: url(../../../misc/icons/73b355/check.png);
-}
 .messages--status,
 .ok {
   color: #325e1c;
@@ -586,9 +585,6 @@ table tr.ok {
   border-color: #f4daa6 transparent #f4daa6 #f4daa6;
   box-shadow: 8px 0 0 #e09600;
 }
-.no-svg .messages--warning {
-  background-image: url(../../../misc/icons/e29700/warning.png);
-}
 .messages--warning,
 .warning {
   color: #734c00;
@@ -606,9 +602,6 @@ table tr.warning {
 [dir="rtl"] .messages--error {
   border-color: #f9c9bf transparent #f9c9bf #f9c9bf;
   box-shadow: -8px 0 0 #e62600;
-}
-.no-svg .messages--error {
-  background-image: url(../../../misc/icons/ea2800/error.png);
 }
 .messages--error,
 .error {

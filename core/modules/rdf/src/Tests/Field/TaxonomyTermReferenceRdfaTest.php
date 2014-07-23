@@ -6,12 +6,15 @@
 
 namespace Drupal\rdf\Tests\Field;
 
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\rdf\Tests\Field\FieldRdfaTestBase;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
 
 /**
  * Tests the RDFa output of the taxonomy term reference field formatter.
+ *
+ * @group rdf
  */
 class TaxonomyTermReferenceRdfaTest extends FieldRdfaTestBase {
 
@@ -39,14 +42,6 @@ class TaxonomyTermReferenceRdfaTest extends FieldRdfaTestBase {
    */
   public static $modules = array('taxonomy', 'options', 'text', 'filter');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Field formatter: taxonomy term reference',
-      'description' => 'Tests RDFa output by taxonomy term reference field formatters.',
-      'group' => 'RDF',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
 
@@ -59,11 +54,11 @@ class TaxonomyTermReferenceRdfaTest extends FieldRdfaTestBase {
     ));
     $vocabulary->save();
 
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $this->fieldName,
       'entity_type' => 'entity_test',
       'type' => 'taxonomy_term_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(

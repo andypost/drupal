@@ -152,7 +152,7 @@ class AggregatorController extends ControllerBase {
       '#type' => 'table',
       '#header' => $header,
       '#rows' => $rows,
-      '#empty' => $this->t('No feeds available. <a href="@link">Add feed</a>.', array('@link' => $this->urlGenerator()->generate('aggregator.feed_add'))),
+      '#empty' => $this->t('No feeds available. <a href="@link">Add feed</a>.', array('@link' => $this->url('aggregator.feed_add'))),
     );
 
     return $build;
@@ -206,6 +206,9 @@ class AggregatorController extends ControllerBase {
         '#theme' => 'aggregator_summary_items',
         '#summary_items' => $summary_items,
         '#source' => $feed,
+        '#cache' => array(
+          'tags' => $feed->getCacheTag(),
+        ),
       );
     }
     $build['feed_icon'] = array(

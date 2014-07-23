@@ -7,6 +7,7 @@
 
 namespace Drupal\search\Controller;
 
+use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\search\SearchPageInterface;
 use Drupal\search\SearchPageRepositoryInterface;
@@ -75,7 +76,9 @@ class SearchController extends ControllerBase {
     if ($request->query->has('keys')) {
       if ($plugin->isSearchExecutable()) {
         // Log the search.
-        watchdog('search', 'Searched %type for %keys.', array('%keys' => $keys, '%type' => $entity->label()), WATCHDOG_NOTICE);
+        if ($this->config('search.settings')->get('logging')) {
+          watchdog('search', 'Searched %type for %keys.', array('%keys' => $keys, '%type' => $entity->label()), WATCHDOG_NOTICE);
+        }
 
         // Collect the search results.
         $results = $plugin->buildResults();

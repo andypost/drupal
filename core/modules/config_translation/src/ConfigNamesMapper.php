@@ -8,6 +8,7 @@
 namespace Drupal\config_translation;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Plugin\PluginBase;
@@ -33,6 +34,13 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
   protected $configFactory;
 
   /**
+   * The typed config manager.
+   *
+   * @var \Drupal\Core\Config\TypedConfigManagerInterface
+   */
+  protected $typedConfigManager;
+
+  /**
    * The typed configuration manager.
    *
    * @var \Drupal\locale\LocaleConfigManager
@@ -45,6 +53,13 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    * @var \Drupal\config_translation\ConfigMapperManagerInterface
    */
   protected $configMapperManager;
+
+  /**
+   * The route provider.
+   *
+   * @var \Drupal\Core\Routing\RouteProviderInterface
+   */
+  protected $routeProvider;
 
   /**
    * The base route object that the mapper is attached to.
@@ -84,6 +99,8 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    *     generate lists of this type of configuration.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typed_config
+   *   The typed configuration manager.
    * @param \Drupal\locale\LocaleConfigManager $locale_config_manager
    *   The locale configuration manager.
    * @param \Drupal\config_translation\ConfigMapperManagerInterface $config_mapper_manager
@@ -97,12 +114,13 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    *   Throws an exception if the route specified by the 'base_route_name' in
    *   the plugin definition could not be found by the route provider.
    */
-  public function __construct($plugin_id, $plugin_definition, ConfigFactoryInterface $config_factory, LocaleConfigManager $locale_config_manager, ConfigMapperManagerInterface $config_mapper_manager, RouteProviderInterface $route_provider, TranslationInterface $string_translation) {
+  public function __construct($plugin_id, $plugin_definition, ConfigFactoryInterface $config_factory, TypedConfigManagerInterface $typed_config, LocaleConfigManager $locale_config_manager, ConfigMapperManagerInterface $config_mapper_manager, RouteProviderInterface $route_provider, TranslationInterface $string_translation) {
     $this->pluginId = $plugin_id;
     $this->pluginDefinition = $plugin_definition;
     $this->routeProvider = $route_provider;
 
     $this->configFactory = $config_factory;
+    $this->typedConfigManager = $typed_config;
     $this->localeConfigManager = $locale_config_manager;
     $this->configMapperManager = $config_mapper_manager;
 
@@ -119,6 +137,7 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
       $plugin_id,
       $plugin_definition,
       $container->get('config.factory'),
+      $container->get('config.typed'),
       $container->get('locale.config.typed'),
       $container->get('plugin.manager.config_translation.mapper'),
       $container->get('router.route_provider'),
@@ -169,6 +188,15 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
   }
 
   /**
+   * Allows to process all config translation routes.
+   *
+   * @param \Symfony\Component\Routing\Route $route
+   *   The route object to process.
+   */
+  protected function processRoute(Route $route) {
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getBasePath() {
@@ -193,7 +221,7 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    * {@inheritdoc}
    */
   public function getOverviewRoute() {
-    return new Route(
+    $route = new Route(
       $this->getBaseRoute()->getPath() . '/translate',
       array(
         '_content' => '\Drupal\config_translation\Controller\ConfigTranslationController::itemPage',
@@ -201,6 +229,8 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
       ),
       array('_config_translation_overview_access' => 'TRUE')
     );
+    $this->processRoute($route);
+    return $route;
   }
 
   /**
@@ -232,7 +262,7 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    * {@inheritdoc}
    */
   public function getAddRoute() {
-    return new Route(
+    $route = new Route(
       $this->getBaseRoute()->getPath() . '/translate/{langcode}/add',
       array(
         '_form' => '\Drupal\config_translation\Form\ConfigTranslationAddForm',
@@ -240,6 +270,8 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
       ),
       array('_config_translation_form_access' => 'TRUE')
     );
+    $this->processRoute($route);
+    return $route;
   }
 
   /**
@@ -260,7 +292,7 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    * {@inheritdoc}
    */
   public function getEditRoute() {
-    return new Route(
+    $route = new Route(
       $this->getBaseRoute()->getPath() . '/translate/{langcode}/edit',
       array(
         '_form' => '\Drupal\config_translation\Form\ConfigTranslationEditForm',
@@ -268,6 +300,8 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
       ),
       array('_config_translation_form_access' => 'TRUE')
     );
+    $this->processRoute($route);
+    return $route;
   }
 
   /**
@@ -288,7 +322,7 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    * {@inheritdoc}
    */
   public function getDeleteRoute() {
-    return new Route(
+    $route = new Route(
       $this->getBaseRoute()->getPath() . '/translate/{langcode}/delete',
       array(
         '_form' => '\Drupal\config_translation\Form\ConfigTranslationDeleteForm',
@@ -296,6 +330,8 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
       ),
       array('_config_translation_form_access' => 'TRUE')
     );
+    $this->processRoute($route);
+    return $route;
   }
 
   /**
@@ -411,7 +447,7 @@ class ConfigNamesMapper extends PluginBase implements ConfigMapperInterface, Con
    */
   public function hasSchema() {
     foreach ($this->getConfigNames() as $name) {
-      if (!$this->localeConfigManager->hasConfigSchema($name)) {
+      if (!$this->typedConfigManager->hasConfigSchema($name)) {
         return FALSE;
       }
     }

@@ -6,10 +6,15 @@
  */
 
 namespace Drupal\file\Tests;
+
+use Drupal\comment\Entity\Comment;
 use Drupal\field\Entity\FieldInstanceConfig;
 
 /**
- * Tests file field widget.
+ * Tests the file field widget, single and multi-valued, with and without AJAX,
+ * with public and private files.
+ *
+ * @group file
  */
 class FileFieldWidgetTest extends FileFieldTestBase {
 
@@ -19,14 +24,6 @@ class FileFieldWidgetTest extends FileFieldTestBase {
    * @var array
    */
   public static $modules = array('comment');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'File field widget test',
-      'description' => 'Tests the file field widget, single and multi-valued, with and without AJAX, with public and private files.',
-      'group' => 'File',
-    );
-  }
 
   /**
    * Tests upload and remove buttons for a single-valued File field.
@@ -215,7 +212,7 @@ class FileFieldWidgetTest extends FileFieldTestBase {
 
     // Change the field setting to make its files private, and upload a file.
     $edit = array('field[settings][uri_scheme]' => 'private');
-    $this->drupalPostForm("admin/structure/types/manage/$type_name/fields/$instance->id/field", $edit, t('Save field settings'));
+    $this->drupalPostForm("admin/structure/types/manage/$type_name/fields/$instance->id/storage", $edit, t('Save field settings'));
     $nid = $this->uploadNodeFile($test_file, $field_name, $type_name);
     $node = node_load($nid, TRUE);
     $node_file = file_load($node->{$field_name}->target_id);
@@ -227,12 +224,12 @@ class FileFieldWidgetTest extends FileFieldTestBase {
 
     // Ensure we can't change 'uri_scheme' field settings while there are some
     // entities with uploaded files.
-    $this->drupalGet("admin/structure/types/manage/$type_name/fields/$instance->id/field");
+    $this->drupalGet("admin/structure/types/manage/$type_name/fields/$instance->id/storage");
     $this->assertFieldByXpath('//input[@id="edit-field-settings-uri-scheme-public" and @disabled="disabled"]', 'public', 'Upload destination setting disabled.');
 
     // Delete node and confirm that setting could be changed.
     $node->delete();
-    $this->drupalGet("admin/structure/types/manage/$type_name/fields/$instance->id/field");
+    $this->drupalGet("admin/structure/types/manage/$type_name/fields/$instance->id/storage");
     $this->assertFieldByXpath('//input[@id="edit-field-settings-uri-scheme-public" and not(@disabled)]', 'public', 'Upload destination setting enabled.');
   }
 
@@ -258,7 +255,7 @@ class FileFieldWidgetTest extends FileFieldTestBase {
       'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
       'fields[_add_new_field][type]' => 'file',
     );
-    $this->drupalPostForm('admin/structure/comments/manage/node__comment/fields', $edit, t('Save'));
+    $this->drupalPostForm('admin/structure/comment/manage/comment/fields', $edit, t('Save'));
     $edit = array('field[settings][uri_scheme]' => 'private');
     $this->drupalPostForm(NULL, $edit, t('Save field settings'));
     $this->drupalPostForm(NULL, array(), t('Save settings'));
@@ -288,7 +285,7 @@ class FileFieldWidgetTest extends FileFieldTestBase {
     // Log in as normal user.
     $this->drupalLogin($user);
 
-    $comment = comment_load($cid);
+    $comment = Comment::load($cid);
     $comment_file = $comment->{'field_' . $name}->entity;
     $this->assertFileExists($comment_file, 'New file saved to disk on node creation.');
     // Test authenticated file download.

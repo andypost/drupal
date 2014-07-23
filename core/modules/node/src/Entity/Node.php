@@ -39,7 +39,6 @@ use Drupal\user\UserInterface;
  *   data_table = "node_field_data",
  *   revision_table = "node_revision",
  *   revision_data_table = "node_field_revision",
- *   uri_callback = "node_uri",
  *   fieldable = TRUE,
  *   translatable = TRUE,
  *   entity_keys = {
@@ -357,7 +356,7 @@ class Node extends ContentEntityBase implements NodeInterface {
       ->setRequired(TRUE)
       ->setTranslatable(TRUE)
       ->setRevisionable(TRUE)
-      ->setSetting('default_value', '')
+      ->setDefaultValue('')
       ->setSetting('max_length', 255)
       ->setDisplayOptions('view', array(
         'label' => 'hidden',
@@ -453,11 +452,11 @@ class Node extends ContentEntityBase implements NodeInterface {
 
     $options = $node_type->getModuleSettings('node')['options'];
     $fields['status'] = clone $base_field_definitions['status'];
-    $fields['status']->setSetting('default_value', !empty($options['status']) ? NODE_PUBLISHED : NODE_NOT_PUBLISHED);
+    $fields['status']->setDefaultValue(!empty($options['status']) ? NODE_PUBLISHED : NODE_NOT_PUBLISHED);
     $fields['promote'] = clone $base_field_definitions['promote'];
-    $fields['promote']->setSetting('default_value', !empty($options['promote']) ? NODE_PROMOTED : NODE_NOT_PROMOTED);
+    $fields['promote']->setDefaultValue(!empty($options['promote']) ? NODE_PROMOTED : NODE_NOT_PROMOTED);
     $fields['sticky'] = clone $base_field_definitions['sticky'];
-    $fields['sticky']->setSetting('default_value', !empty($options['sticky']) ? NODE_STICKY : NODE_NOT_STICKY);
+    $fields['sticky']->setDefaultValue(!empty($options['sticky']) ? NODE_STICKY : NODE_NOT_STICKY);
 
     return $fields;
   }

@@ -7,22 +7,17 @@
 
 namespace Drupal\config\Tests;
 
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests language overrides in configuration through the request.
+ * Tests language overrides applied through the website.
+ *
+ * @group config
  */
 class ConfigLanguageOverrideWebTest extends WebTestBase {
 
   public static $modules = array('language', 'system');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Language overrides through the request',
-      'description' => 'Tests language overrides applied through the website.',
-      'group' => 'Configuration',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -42,7 +37,7 @@ class ConfigLanguageOverrideWebTest extends WebTestBase {
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
       'name' => $name,
-      'direction' => '0',
+      'direction' => LanguageInterface::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
     \Drupal::languageManager()

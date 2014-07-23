@@ -7,6 +7,7 @@
 
 namespace Drupal\rest\Tests\Views;
 
+use Drupal\Component\Utility\String;
 use Drupal\views\Views;
 use Drupal\views\Tests\Plugin\PluginTestBase;
 use Drupal\views\Tests\ViewTestData;
@@ -14,6 +15,7 @@ use Drupal\views\Tests\ViewTestData;
 /**
  * Tests the serializer style plugin.
  *
+ * @group rest
  * @see \Drupal\rest\Plugin\views\display\RestExport
  * @see \Drupal\rest\Plugin\views\style\Serializer
  * @see \Drupal\rest\Plugin\views\row\DataEntityRow
@@ -39,14 +41,6 @@ class StyleSerializerTest extends PluginTestBase {
    * A user with administrative privileges to look at test entity and configure views.
    */
   protected $adminUser;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Style: Serializer plugin',
-      'description' => 'Tests the serializer style plugin.',
-      'group' => 'Views Plugins',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -280,7 +274,7 @@ class StyleSerializerTest extends PluginTestBase {
       $entities[] = $row->_entity;
     }
 
-    $expected = check_plain($serializer->serialize($entities, 'json'));
+    $expected = String::checkPlain($serializer->serialize($entities, 'json'));
 
     $view->display_handler->setContentType('json');
     $view->live_preview = TRUE;

@@ -8,10 +8,13 @@ field.settings:
       type: integer
       label: 'Maximum number of field data records to purge'
 
-field.field.*.*:
+field.storage.*.*:
   type: config_entity
   label: 'Field'
   mapping:
+    id:
+      type: string
+      label: 'ID'
     name:
       type: string
       label: 'Name'
@@ -42,16 +45,19 @@ field.field.*.*:
         - type: sequence
           label: 'Indexes'
           sequence:
-            - type: string
-              label: 'Column'
+            - type: ignore
+              label: 'Index'
 
 field.instance.*.*.*:
   type: config_entity
   label: 'Field instance'
   mapping:
-    field_uuid:
+    id:
       type: string
-      label: 'Field UUID'
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
     field_name:
       type: string
       label: 'Field name'
@@ -67,6 +73,9 @@ field.instance.*.*.*:
     required:
       type: boolean
       label: 'Required field'
+    translatable:
+      type: boolean
+      label: 'Translatable'
     default_value:
       type: field.[%parent.field_type].value
     default_value_function:
@@ -87,6 +96,34 @@ entity_form_display.field.hidden:
       label: 'Settings'
       sequence:
         - type: string
+
+# Schema for the configuration files of the Boolean field type.
+field.boolean.settings:
+  type: mapping
+  label: 'Boolean settings'
+  mapping:
+    on_label:
+      type: string
+      label: 'On label'
+    off_label:
+      type: string
+      label: 'Off label'
+
+field.boolean.instance_settings:
+  label: 'Boolean settings'
+  type: mapping
+  mapping: {  }
+
+field.boolean.value:
+  type: sequence
+  label: 'Default value'
+  sequence:
+    - type: mapping
+      label: 'Default'
+      mapping:
+        value:
+          type: integer
+          label: 'Value'
 
 # Schema for the configuration files of the Email field type.
 
@@ -282,3 +319,15 @@ entity_form_display.field.number:
         placeholder:
           type: label
           label: 'Placeholder'
+
+entity_form_display.field.checkbox:
+  type: entity_field_form_display_base
+  label: 'Single on/off checkbox format settings'
+  mapping:
+    settings:
+      type: mapping
+      label: 'Settings'
+      mapping:
+        display_label:
+          type: boolean
+          label: 'Use field label instead of the "On value" as label'

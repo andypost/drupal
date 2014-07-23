@@ -10,10 +10,9 @@ namespace Drupal\migrate_drupal\Tests\source\d6;
 use Drupal\migrate\Tests\MigrateSqlSourceTestCase;
 
 /**
- * Tests the Drupal 6 node type source.
+ * Tests D6 node type source plugin.
  *
  * @group migrate_drupal
- * @group Drupal
  */
 class NodeTypeTest extends MigrateSqlSourceTestCase {
 
@@ -41,7 +40,6 @@ class NodeTypeTest extends MigrateSqlSourceTestCase {
       'module' => 'node',
       'description' => 'A <em>page</em>, similar in form to a <em>story</em>, is a simple method for creating and displaying information that rarely changes, such as an "About us" section of a website. By default, a <em>page</em> entry does not allow visitor comments and is not featured on the site\'s initial home page.',
       'help' => '',
-      'has_title' => 1,
       'title_label' => 'Title',
       'has_body' => 1,
       'body_label' => 'Body',
@@ -57,7 +55,6 @@ class NodeTypeTest extends MigrateSqlSourceTestCase {
       'module' => 'node',
       'description' => 'A <em>story</em>, similar in form to a <em>page</em>, is ideal for creating and displaying content that informs or engages website visitors. Press releases, site announcements, and informal blog-like entries may all be created with a <em>story</em> entry. By default, a <em>story</em> entry is automatically featured on the site\'s initial home page, and provides the ability to post comments.',
       'help' => '',
-      'has_title' => 1,
       'title_label' => 'Title',
       'has_body' => 1,
       'body_label' => 'Body',
@@ -75,17 +72,6 @@ class NodeTypeTest extends MigrateSqlSourceTestCase {
   protected function setUp() {
     $this->databaseContents['node_type'] = $this->expectedResults;
     parent::setUp();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'D6 node type source functionality',
-      'description' => 'Tests D6 node type source plugin.',
-      'group' => 'Migrate Drupal',
-    );
   }
 
 }

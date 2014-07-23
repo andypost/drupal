@@ -129,7 +129,7 @@ abstract class FormTestBase extends UnitTestCase {
   protected $translationManager;
 
   /**
-   * @var \Drupal\Core\HttpKernel|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpKernel\HttpKernel|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $httpKernel;
 
@@ -153,7 +153,7 @@ abstract class FormTestBase extends UnitTestCase {
     $this->csrfToken = $this->getMockBuilder('Drupal\Core\Access\CsrfTokenGenerator')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->httpKernel = $this->getMockBuilder('Drupal\Core\HttpKernel')
+    $this->httpKernel = $this->getMockBuilder('Symfony\Component\HttpKernel\HttpKernel')
       ->disableOriginalConstructor()
       ->getMock();
     $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
@@ -237,7 +237,7 @@ abstract class FormTestBase extends UnitTestCase {
     $form_state['input']['op'] = 'Submit';
     $form_state['programmed'] = $programmed;
     $form_state['submitted'] = TRUE;
-    return $this->formBuilder->buildForm($form_id, $form_state);
+    return $this->formBuilder->buildForm($form_arg, $form_state);
   }
 
   /**

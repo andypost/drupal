@@ -8,7 +8,9 @@
 namespace Drupal\file\Tests;
 
 /**
- * Tests file access on private nodes.
+ * Uploads a test to a private node and checks access.
+ *
+ * @group file
  */
 class FilePrivateTest extends FileFieldTestBase {
 
@@ -19,16 +21,9 @@ class FilePrivateTest extends FileFieldTestBase {
    */
   public static $modules = array('node_access_test', 'field_test');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Private file test',
-      'description' => 'Uploads a test to a private node and checks access.',
-      'group' => 'File',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
+    node_access_test_add_field(entity_load('node_type', 'article'));
     node_access_rebuild();
     \Drupal::state()->set('node_access_test.private', TRUE);
   }

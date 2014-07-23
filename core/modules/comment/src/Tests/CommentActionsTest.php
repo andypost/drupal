@@ -7,10 +7,12 @@
 
 namespace Drupal\comment\Tests;
 
-use Drupal\comment\CommentInterface;
+use Drupal\comment\Entity\Comment;
 
 /**
  * Tests actions provided by the Comment module.
+ *
+ * @group comment
  */
 class CommentActionsTest extends CommentTestBase {
 
@@ -20,14 +22,6 @@ class CommentActionsTest extends CommentTestBase {
    * @var array
    */
   public static $modules = array('dblog', 'action');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment actions',
-      'description' => 'Test actions provided by the comment module.',
-      'group' => 'Comment',
-    );
-  }
 
   /**
    * Tests comment publish and unpublish actions.
@@ -70,7 +64,7 @@ class CommentActionsTest extends CommentTestBase {
     $comment = $this->postComment($this->node, $keyword_2, $this->randomName());
 
     // Load the full comment so that status is available.
-    $comment = comment_load($comment->id());
+    $comment = Comment::load($comment->id());
 
     $this->assertTrue($comment->isPublished() === TRUE, 'The comment status was set to published.');
 

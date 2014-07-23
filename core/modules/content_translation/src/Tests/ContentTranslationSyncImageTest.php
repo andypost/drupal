@@ -10,7 +10,9 @@ namespace Drupal\content_translation\Tests;
 use Drupal\Core\Entity\EntityInterface;
 
 /**
- * Tests the Content Translation image field synchronization capability.
+ * Tests the field synchronization behavior for the image field.
+ *
+ * @group content_translation
  */
 class ContentTranslationSyncImageTest extends ContentTranslationTestBase {
 
@@ -35,14 +37,6 @@ class ContentTranslationSyncImageTest extends ContentTranslationTestBase {
    */
   public static $modules = array('language', 'content_translation', 'entity_test', 'image', 'field_ui');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Image field synchronization',
-      'description' => 'Tests the field synchronization behavior for the image field.',
-      'group' => 'Content Translation UI',
-    );
-  }
-
   function setUp() {
     parent::setUp();
     $this->files = $this->drupalGetTestFiles('image');
@@ -55,7 +49,7 @@ class ContentTranslationSyncImageTest extends ContentTranslationTestBase {
     $this->fieldName = 'field_test_et_ui_image';
     $this->cardinality = 3;
 
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $this->fieldName,
       'entity_type' => $this->entityTypeId,
       'type' => 'image',
@@ -122,7 +116,7 @@ class ContentTranslationSyncImageTest extends ContentTranslationTestBase {
     $langcode = $this->langcodes[1];
 
     // Populate the required contextual values.
-    $attributes = $this->container->get('request')->attributes;
+    $attributes = \Drupal::request()->attributes;
     $attributes->set('source_langcode', $default_langcode);
 
     // Populate the test entity with some random initial values.

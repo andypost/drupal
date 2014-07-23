@@ -7,11 +7,13 @@
 
 namespace Drupal\rdf\Tests;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\taxonomy\Tests\TaxonomyTestBase;
 
 /**
  * Tests RDFa markup generation for taxonomy term fields.
+ *
+ * @group rdf
  */
 class TaxonomyTermFieldAttributesTest extends TaxonomyTestBase {
 
@@ -35,14 +37,6 @@ class TaxonomyTermFieldAttributesTest extends TaxonomyTestBase {
    * @var \Drupal\taxonomy\VocabularyInterface
    */
   protected $vocabulary;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'RDFa markup for taxonomy term fields',
-      'description' => 'Tests the RDFa markup of taxonomy term fields.',
-      'group' => 'RDF',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -155,11 +149,11 @@ class TaxonomyTermFieldAttributesTest extends TaxonomyTestBase {
    * @todo Move this to TaxonomyTestBase, like the other field modules.
    */
   protected function createTaxonomyTermReferenceField($field_name, $vocabulary) {
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(

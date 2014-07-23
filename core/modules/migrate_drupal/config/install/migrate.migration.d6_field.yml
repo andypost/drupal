@@ -1,14 +1,16 @@
 id: d6_field
 label: Drupal 6 field configuration
+migration_groups:
+  - Drupal 6
 source:
   plugin: d6_field
   constants:
     entity_type: node
     langcode: und
 process:
-  entity_type: constants.entity_type
+  entity_type: 'constants/entity_type'
   status: active
-  langcode: constants.langcode
+  langcode: 'constants/langcode'
   name: field_name
   type:
     -
@@ -75,10 +77,4 @@ process:
       - widget_settings
 
 destination:
-  plugin: entity:field_config
-migration_dependencies:
-  optional:
-    # It is not possible to make this required as d6_field_settings has no
-    # source id. However it also has no required dependencies so it will always
-    # run so an optional dependency is enough.
-    - d6_field_settings
+  plugin: entity:field_storage_config

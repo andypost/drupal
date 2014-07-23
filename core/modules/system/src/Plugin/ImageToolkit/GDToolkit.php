@@ -2,15 +2,13 @@
 
 /**
  * @file
- * Contains \Drupal\system\Plugin\ImageToolkit\GDToolkit;.
+ * Contains \Drupal\system\Plugin\ImageToolkit\GDToolkit.
  */
 
 namespace Drupal\system\Plugin\ImageToolkit;
 
 use Drupal\Component\Utility\Unicode;
-use Drupal\Core\Image\ImageInterface;
 use Drupal\Core\ImageToolkit\ImageToolkitBase;
-use Drupal\Component\Utility\Image as ImageUtility;
 
 /**
  * Defines the GD2 toolkit for image manipulation within Drupal.
@@ -42,8 +40,7 @@ class GDToolkit extends ImageToolkitBase {
    * @param resource $resource
    *   The GD image resource.
    *
-   * @return self
-   *   Returns this toolkit object.
+   * @return $this
    */
   public function setResource($resource) {
     $this->resource = $resource;
@@ -86,168 +83,14 @@ class GDToolkit extends ImageToolkitBase {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public function resize(ImageInterface $image, $width, $height) {
-    // @todo Dimensions computation will be moved into a dedicated functionality
-    //   in https://drupal.org/node/2108307.
-    $width = (int) round($width);
-    $height = (int) round($height);
-
-    if ($width <= 0 || $height <= 0) {
-      return FALSE;
-    }
-
-    $res = $this->createTmp($this->getType(), $width, $height);
-
-    if (!imagecopyresampled($res, $this->getResource(), 0, 0, 0, 0, $width, $height, $this->getWidth($image), $this->getHeight($image))) {
-      return FALSE;
-    }
-
-    imagedestroy($this->getResource());
-    // Update image object.
-    $this->setResource($res);
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function rotate(ImageInterface $image, $degrees, $background = NULL) {
-    // PHP installations using non-bundled GD do not have imagerotate.
-    if (!function_exists('imagerotate')) {
-      watchdog('image', 'The image %file could not be rotated because the imagerotate() function is not available in this PHP installation.', array('%file' => $image->getSource()));
-      return FALSE;
-    }
-
-    // Convert the hexadecimal background value to a color index value.
-    if (isset($background)) {
-      $rgb = array();
-      for ($i = 16; $i >= 0; $i -= 8) {
-        $rgb[] = (($background >> $i) & 0xFF);
-      }
-      $background = imagecolorallocatealpha($this->getResource(), $rgb[0], $rgb[1], $rgb[2], 0);
-    }
-    // Set the background color as transparent if $background is NULL.
-    else {
-      // Get the current transparent color.
-      $background = imagecolortransparent($this->getResource());
-
-      // If no transparent colors, use white.
-      if ($background == 0) {
-        $background = imagecolorallocatealpha($this->getResource(), 255, 255, 255, 0);
-      }
-    }
-
-    // Images are assigned a new color palette when rotating, removing any
-    // transparency flags. For GIF images, keep a record of the transparent color.
-    if ($this->getType() == IMAGETYPE_GIF) {
-      $transparent_index = imagecolortransparent($this->getResource());
-      if ($transparent_index != 0) {
-        $transparent_gif_color = imagecolorsforindex($this->getResource(), $transparent_index);
-      }
-    }
-
-    $this->setResource(imagerotate($this->getResource(), 360 - $degrees, $background));
-
-    // GIFs need to reassign the transparent color after performing the rotate.
-    if (isset($transparent_gif_color)) {
-      $background = imagecolorexactalpha($this->getResource(), $transparent_gif_color['red'], $transparent_gif_color['green'], $transparent_gif_color['blue'], $transparent_gif_color['alpha']);
-      imagecolortransparent($this->getResource(), $background);
-    }
-
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function crop(ImageInterface $image, $x, $y, $width, $height) {
-    // @todo Dimensions computation will be moved into a dedicated functionality
-    //   in https://drupal.org/node/2108307.
-    $aspect = $this->getHeight($image) / $this->getWidth($image);
-    $height = empty($height) ? $width * $aspect : $height;
-    $width = empty($width) ? $height / $aspect : $width;
-    $width = (int) round($width);
-    $height = (int) round($height);
-
-    if ($width <= 0 || $height <= 0) {
-      return FALSE;
-    }
-
-    $res = $this->createTmp($this->getType(), $width, $height);
-
-    if (!imagecopyresampled($res, $this->getResource(), 0, 0, $x, $y, $width, $height, $width, $height)) {
-      return FALSE;
-    }
-
-    // Destroy the original image and return the modified image.
-    imagedestroy($this->getResource());
-    $this->setResource($res);
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function desaturate(ImageInterface $image) {
-    // PHP installations using non-bundled GD do not have imagefilter.
-    if (!function_exists('imagefilter')) {
-      watchdog('image', 'The image %file could not be desaturated because the imagefilter() function is not available in this PHP installation.', array('%file' => $image->getSource()));
-      return FALSE;
-    }
-
-    return imagefilter($this->getResource(), IMG_FILTER_GRAYSCALE);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function scale(ImageInterface $image, $width = NULL, $height = NULL, $upscale = FALSE) {
-    // @todo Dimensions computation will be moved into a dedicated functionality
-    //   in https://drupal.org/node/2108307.
-    $dimensions = array(
-      'width' => $this->getWidth($image),
-      'height' => $this->getHeight($image),
-    );
-
-    // Scale the dimensions - if they don't change then just return success.
-    if (!ImageUtility::scaleDimensions($dimensions, $width, $height, $upscale)) {
-      return TRUE;
-    }
-
-    return $this->resize($image, $dimensions['width'], $dimensions['height']);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function scaleAndCrop(ImageInterface $image, $width, $height) {
-    // @todo Dimensions computation will be moved into a dedicated functionality
-    //   in https://drupal.org/node/2108307.
-    $scale = max($width / $this->getWidth($image), $height / $this->getHeight($image));
-    $x = ($this->getWidth($image) * $scale - $width) / 2;
-    $y = ($this->getHeight($image) * $scale - $height) / 2;
-
-    if ($this->resize($image, $this->getWidth($image) * $scale, $this->getHeight($image) * $scale)) {
-      return $this->crop($image, $x, $y, $width, $height);
-    }
-
-    return FALSE;
-  }
-
-  /**
    * Loads a GD resource from a file.
-   *
-   * @param \Drupal\Core\Image\ImageInterface $image
-   *   An image object.
    *
    * @return bool
    *   TRUE or FALSE, based on success.
    */
-  protected function load($image) {
+  protected function load() {
     $function = 'imagecreatefrom' . image_type_to_extension($this->getType(), FALSE);
-    if (function_exists($function) && $resource = $function($image->getSource())) {
+    if (function_exists($function) && $resource = $function($this->getImage()->getSource())) {
       $this->setResource($resource);
       if (!imageistruecolor($resource)) {
         // Convert indexed images to true color, so that filters work
@@ -265,7 +108,7 @@ class GDToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function save(ImageInterface $image, $destination) {
+  public function save($destination) {
     $scheme = file_uri_scheme($destination);
     // Work around lack of stream wrapper support in imagejpeg() and imagepng().
     if ($scheme && file_stream_wrapper_valid_scheme($scheme)) {
@@ -304,11 +147,11 @@ class GDToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function parseFile(ImageInterface $image) {
-    $data = @getimagesize($image->getSource());
+  public function parseFile() {
+    $data = @getimagesize($this->getImage()->getSource());
     if ($data && in_array($data[2], static::supportedTypes())) {
       $this->setType($data[2]);
-      $this->load($image);
+      $this->load();
       return (bool) $this->getResource();
     }
     return FALSE;
@@ -371,14 +214,14 @@ class GDToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function getWidth(ImageInterface $image) {
+  public function getWidth() {
     return $this->getResource() ? imagesx($this->getResource()) : NULL;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getHeight(ImageInterface $image) {
+  public function getHeight() {
     return $this->getResource() ? imagesy($this->getResource()) : NULL;
   }
 
@@ -400,7 +243,7 @@ class GDToolkit extends ImageToolkitBase {
    *   The image type represented by a PHP IMAGETYPE_* constant (e.g.
    *   IMAGETYPE_JPEG).
    *
-   * @return this
+   * @return $this
    */
   public function setType($type) {
     if (in_array($type, static::supportedTypes())) {
@@ -412,7 +255,7 @@ class GDToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function getMimeType(ImageInterface $image) {
+  public function getMimeType() {
     return $this->getType() ? image_type_to_mime_type($this->getType()) : '';
   }
 

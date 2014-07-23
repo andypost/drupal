@@ -13,7 +13,6 @@ use Drupal\Core\Access\AccessManager;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\Language;
-use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Menu\LocalActionManager;
 use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -23,12 +22,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 
 /**
- * Tests the local action manager.
- *
- * @group Drupal
+ * @coversDefaultClass \Drupal\Core\Menu\LocalActionManager
  * @group Menu
- *
- * @covers \Drupal\Core\Menu\LocalActionManager
  */
 class LocalActionManagerTest extends UnitTestCase {
 
@@ -68,13 +63,6 @@ class LocalActionManagerTest extends UnitTestCase {
   protected $cacheBackend;
 
   /**
-   * The mocked language manager.
-   *
-   * @var \Drupal\Core\Language\LanguageManagerInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  protected $languageManager;
-
-  /**
    * The mocked access manager.
    *
    * @var \Drupal\Core\Access\AccessManager|\PHPUnit_Framework_MockObject_MockObject
@@ -112,29 +100,12 @@ class LocalActionManagerTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public static function getInfo() {
-    return array(
-      'name' => 'Local actions manager',
-      'description' => 'Tests the local action manager.',
-      'group' => 'Menu',
-    );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   protected function setUp() {
     $this->controllerResolver = $this->getMock('Drupal\Core\Controller\ControllerResolverInterface');
     $this->request = $this->getMock('Symfony\Component\HttpFoundation\Request');
     $this->routeProvider = $this->getMock('Drupal\Core\Routing\RouteProviderInterface');
     $this->moduleHandler = $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface');
     $this->cacheBackend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
-    $this->languageManager = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
-    $this->languageManager->expects($this->any())
-      ->method('getCurrentLanguage')
-      ->will($this->returnValue(
-        new Language(array('langcode' => 'en'))
-      ));
 
     $this->accessManager = $this->getMockBuilder('Drupal\Core\Access\AccessManager')
       ->disableOriginalConstructor()
@@ -143,7 +114,7 @@ class LocalActionManagerTest extends UnitTestCase {
     $this->discovery = $this->getMock('Drupal\Component\Plugin\Discovery\DiscoveryInterface');
     $this->factory = $this->getMock('Drupal\Component\Plugin\Factory\FactoryInterface');
 
-    $this->localActionManager = new TestLocalActionManager($this->controllerResolver, $this->request, $this->routeProvider, $this->moduleHandler, $this->cacheBackend, $this->languageManager, $this->accessManager, $this->account, $this->discovery, $this->factory);
+    $this->localActionManager = new TestLocalActionManager($this->controllerResolver, $this->request, $this->routeProvider, $this->moduleHandler, $this->cacheBackend, $this->accessManager, $this->account, $this->discovery, $this->factory);
   }
 
   /**
@@ -372,7 +343,7 @@ class LocalActionManagerTest extends UnitTestCase {
 
 class TestLocalActionManager extends LocalActionManager {
 
-  public function __construct(ControllerResolverInterface $controller_resolver, Request $request, RouteProviderInterface $route_provider, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache_backend, LanguageManagerInterface $language_manager, AccessManager $access_manager, AccountInterface $account, DiscoveryInterface $discovery, FactoryInterface $factory) {
+  public function __construct(ControllerResolverInterface $controller_resolver, Request $request, RouteProviderInterface $route_provider, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache_backend, AccessManager $access_manager, AccountInterface $account, DiscoveryInterface $discovery, FactoryInterface $factory) {
     $this->discovery = $discovery;
     $this->factory = $factory;
     $this->routeProvider = $route_provider;
@@ -383,7 +354,7 @@ class TestLocalActionManager extends LocalActionManager {
     $this->requestStack->push($request);
     $this->moduleHandler = $module_handler;
     $this->alterInfo('menu_local_actions');
-    $this->setCacheBackend($cache_backend, $language_manager, 'local_action_plugins', array('local_action' => TRUE));
+    $this->setCacheBackend($cache_backend, 'local_action_plugins', array('local_action' => TRUE));
   }
 
 }

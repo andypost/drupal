@@ -7,20 +7,15 @@
 
 namespace Drupal\entity_reference\Tests;
 
+use Drupal\Component\Utility\String;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the Entity Reference Selection plugin.
+ * Tests sorting referenced items.
+ *
+ * @group entity_reference
  */
 class EntityReferenceSelectionSortTest extends WebTestBase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity Reference handlers sort',
-      'description' => 'Test sorting referenced items.',
-      'group' => 'Entity Reference',
-    );
-  }
 
   public static $modules = array('node', 'entity_reference', 'entity_test');
 
@@ -36,7 +31,7 @@ class EntityReferenceSelectionSortTest extends WebTestBase {
    */
   public function testSort() {
     // Add text field to entity, to sort by.
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => 'field_text',
       'entity_type' => 'node',
       'type' => 'text',
@@ -53,8 +48,8 @@ class EntityReferenceSelectionSortTest extends WebTestBase {
     ))->save();
 
 
-    // Create a field and instance.
-    $field = entity_create('field_config', array(
+    // Create a field storage and instance.
+    $field_storage = entity_create('field_storage_config', array(
       'name' => 'test_field',
       'entity_type' => 'entity_test',
       'translatable' => FALSE,
@@ -64,9 +59,9 @@ class EntityReferenceSelectionSortTest extends WebTestBase {
       'type' => 'entity_reference',
       'cardinality' => 1,
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'entity_type' => 'entity_test',
       'bundle' => 'test_bundle',
       'settings' => array(
@@ -115,7 +110,7 @@ class EntityReferenceSelectionSortTest extends WebTestBase {
       $node = entity_create('node', $values);
       $node->save();
       $nodes[$key] = $node;
-      $node_labels[$key] = check_plain($node->label());
+      $node_labels[$key] = String::checkPlain($node->label());
     }
 
     // Test as a non-admin.

@@ -9,13 +9,13 @@ namespace Drupal\Tests\Core\Entity;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\FieldItemBase;
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Language\Language;
 
 /**
  * @coversDefaultClass \Drupal\Core\Entity\ContentEntityBase
- *
- * @group Drupal
+ * @group Entity
  */
 class ContentEntityBaseUnitTest extends UnitTestCase {
 
@@ -95,17 +95,6 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
    * @var \Drupal\Core\Field\FieldDefinition[]
    */
   protected $fieldDefinitions;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'description' => '',
-      'name' => '\Drupal\Core\Entity\ContentEntityBase unit test',
-      'group' => 'Entity',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -217,10 +206,7 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
       ->getMock();
     $field_item = $this->getMockBuilder('\Drupal\Core\Field\FieldItemBase')
       ->disableOriginalConstructor()
-      ->getMock();
-    $field_item->staticExpects($this->once())
-      ->method('mainPropertyName')
-      ->will($this->returnValue('value'));
+      ->getMockForAbstractClass();
 
     $this->typedDataManager->expects($this->any())
       ->method('getPropertyInstance')
@@ -278,7 +264,8 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
     // This method is internal, so check for errors on calling it only.
     $storage = $this->getMock('\Drupal\Core\Entity\EntityStorageInterface');
     $record = new \stdClass();
-    $this->entity->preSaveRevision($storage, $record);
+    // Our mocked entity->preSaveRevision() returns NULL, so assert that.
+    $this->assertNull($this->entity->preSaveRevision($storage, $record));
   }
 
   /**
@@ -366,7 +353,8 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
   public function testSetContext() {
     $name = $this->randomName();
     $parent = $this->getMock('\Drupal\Core\TypedData\TypedDataInterface');
-    $this->entity->setContext($name, $parent);
+    // Our mocked entity->setContext() returns NULL, so assert that.
+    $this->assertNull($this->entity->setContext($name, $parent));
   }
 
   /**

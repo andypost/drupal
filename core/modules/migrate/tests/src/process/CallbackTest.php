@@ -10,21 +10,11 @@ namespace Drupal\migrate\Tests\process;
 use Drupal\migrate\Plugin\migrate\process\Callback;
 
 /**
+ * Tests the callback process plugin.
+ *
  * @group migrate
- * @group Drupal
  */
 class CallbackTest extends MigrateProcessTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Callback process plugin',
-      'description' => 'Tests the callback process plugin.',
-      'group' => 'Migrate',
-    );
-  }
 
   /**
    * {@inheritdoc}

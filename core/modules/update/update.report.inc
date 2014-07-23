@@ -5,6 +5,9 @@
  * Code required only when rendering the available updates report.
  */
 
+use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Utility\String;
+
 /**
  * Returns HTML for the project status report.
  *
@@ -25,8 +28,12 @@ function theme_update_report($variables) {
   $output = drupal_render($update_last_check);
 
   if (!is_array($data)) {
+    // @todo When converting this theme function to Twig, double-check with the
+    //   caller to ensure $data is not double-escaped. At present, we cannot
+    //   guarantee within this function that it is safe. Address in:
+    //   https://www.drupal.org/node/1898466
     $output .= '<p>' . $data . '</p>';
-    return $output;
+    return SafeMarkup::set($output);
   }
 
   $header = array();
@@ -46,28 +53,28 @@ function theme_update_report($variables) {
       case UPDATE_CURRENT:
         $class = 'ok';
         $uri = 'core/misc/icons/73b355/check.png';
-        $text = t('ok');
+        $text = t('Ok');
         break;
       case UPDATE_UNKNOWN:
       case UPDATE_FETCH_PENDING:
       case UPDATE_NOT_FETCHED:
         $class = 'unknown';
         $uri = 'core/misc/icons/e29700/warning.png';
-        $text = t('warning');
+        $text = t('Warning');
         break;
       case UPDATE_NOT_SECURE:
       case UPDATE_REVOKED:
       case UPDATE_NOT_SUPPORTED:
         $class = 'error';
         $uri = 'core/misc/icons/ea2800/error.png';
-        $text = t('error');
+        $text = t('Error');
         break;
       case UPDATE_NOT_CHECKED:
       case UPDATE_NOT_CURRENT:
       default:
         $class = 'warning';
         $uri = 'core/misc/icons/e29700/warning.png';
-        $text = t('warning');
+        $text = t('Warning');
         break;
     }
 
@@ -83,7 +90,7 @@ function theme_update_report($variables) {
     $row = '<div class="version-status">';
     $update_status_label = array('#theme' => 'update_status_label', '#status' => $project['status']);
     $status_label = drupal_render($update_status_label);
-    $row .= !empty($status_label) ? $status_label : check_plain($project['reason']);
+    $row .= !empty($status_label) ? $status_label : String::checkPlain($project['reason']);
     $row .= '<span class="icon">' . drupal_render($icon) . '</span>';
     $row .= "</div>\n";
 
@@ -93,13 +100,13 @@ function theme_update_report($variables) {
         $row .= l($project['title'], $project['link']);
       }
       else {
-        $row .= check_plain($project['title']);
+        $row .= String::checkPlain($project['title']);
       }
     }
     else {
-      $row .= check_plain($project['name']);
+      $row .= String::checkPlain($project['name']);
     }
-    $row .= ' ' . check_plain($project['existing_version']);
+    $row .= ' ' . String::checkPlain($project['existing_version']);
     if ($project['install_type'] == 'dev' && !empty($project['datestamp'])) {
       $row .= ' <span class="version-date">(' . format_date($project['datestamp'], 'custom', 'Y-M-d') . ')</span>';
     }
@@ -201,7 +208,7 @@ function theme_update_report($variables) {
       $row .= '<div class="extra">' . "\n";
       foreach ($project['extra'] as $value) {
         $row .= '<div class="' . implode(' ', $value['class']) . '">';
-        $row .= check_plain($value['label']) . ': ';
+        $row .= String::checkPlain($value['label']) . ': ';
         $row .= drupal_placeholder($value['data']);
         $row .= "</div>\n";
       }
@@ -267,7 +274,7 @@ function theme_update_report($variables) {
     $row_key = isset($project['title']) ? drupal_strtolower($project['title']) : drupal_strtolower($project['name']);
     $rows[$project['project_type']][$row_key] = array(
       'class' => array($class),
-      'data' => array($row),
+      'data' => array(SafeMarkup::set($row)),
     );
   }
 
@@ -303,7 +310,7 @@ function theme_update_report($variables) {
   );
   drupal_render($assets);
 
-  return $output;
+  return SafeMarkup::set($output);
 }
 
 /**

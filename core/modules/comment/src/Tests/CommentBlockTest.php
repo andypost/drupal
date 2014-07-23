@@ -7,10 +7,11 @@
 
 namespace Drupal\comment\Tests;
 use Drupal\Component\Utility\String;
-use Drupal\Core\Cache\Cache;
 
 /**
- * Tests the Comment module blocks.
+ * Tests comment block functionality.
+ *
+ * @group comment
  */
 class CommentBlockTest extends CommentTestBase {
 
@@ -35,14 +36,6 @@ class CommentBlockTest extends CommentTestBase {
      ));
   }
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment blocks',
-      'description' => 'Test comment block functionality.',
-      'group' => 'Comment',
-    );
-  }
-
   /**
    * Tests the recent comments block.
    */
@@ -65,9 +58,6 @@ class CommentBlockTest extends CommentTestBase {
     // block.
     $this->drupalLogout();
     user_role_revoke_permissions(DRUPAL_ANONYMOUS_RID, array('access comments'));
-    // drupalCreateNode() does not automatically flush content caches unlike
-    // posting a node from a node form.
-    Cache::invalidateTags(array('content' => TRUE));
     $this->drupalGet('');
     $this->assertNoText(t('Recent comments'));
     user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access comments'));

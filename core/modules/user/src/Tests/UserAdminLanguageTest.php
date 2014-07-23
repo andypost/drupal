@@ -7,10 +7,13 @@
 
 namespace Drupal\user\Tests;
 
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests users' ability to change their own administration language.
+ *
+ * @group user
  */
 class UserAdminLanguageTest extends WebTestBase {
 
@@ -34,14 +37,6 @@ class UserAdminLanguageTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('user', 'language');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'User administration pages language settings',
-      'description' => "Tests user's ability to change their administration pages language.",
-      'group' => 'User',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -137,7 +132,7 @@ class UserAdminLanguageTest extends WebTestBase {
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
       'name' => $name,
-      'direction' => '0',
+      'direction' => LanguageInterface::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
   }

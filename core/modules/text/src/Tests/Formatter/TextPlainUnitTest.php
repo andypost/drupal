@@ -7,14 +7,16 @@
 
 namespace Drupal\text\Tests\Formatter;
 
+use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
- * Tests the text_plain field formatter.
+ * Tests the creation of text fields.
  *
+ * @group text
  * @todo Move assertion helper methods into KernelTestBase.
  * @todo Move field helper methods, $modules, and setUp() into a new
  *   FieldPluginUnitTestBase.
@@ -27,21 +29,6 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
    * @var array
    */
   public static $modules = array('entity', 'field', 'text', 'entity_test', 'system', 'filter', 'user');
-
-  /**
-   * Contains rendered content.
-   *
-   * @var string
-   */
-  protected $content;
-
-  public static function getInfo() {
-    return array(
-      'name'  => 'Text field text_plain formatter',
-      'description'  => "Test the creation of text fields.",
-      'group' => 'Field types',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -67,16 +54,16 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
     $this->formatter_type = 'string';
     $this->formatter_settings = array();
 
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => $this->entity_type,
       'type' => $this->field_type,
       'settings' => $this->field_settings,
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
 
     $this->instance = entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'bundle' => $this->bundle,
       'label' => $this->randomName(),
       'settings' => $this->instance_settings,
@@ -122,8 +109,8 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
    */
   protected function renderEntityFields(ContentEntityInterface $entity, EntityViewDisplayInterface $display) {
     $content = $display->build($entity);
-    $this->content = drupal_render($content);
-    return $this->content;
+    $content = $this->render($content);
+    return $content;
   }
 
   /**
@@ -144,7 +131,7 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
    * @return string
    *   The $message with exported replacement tokens, sanitized for HTML output.
    *
-   * @see check_plain()
+   * @see \Drupal\Component\Utility\String::checkPlain()
    * @see format_string()
    */
   protected function formatString($message, array $args) {
@@ -304,7 +291,7 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
     $this->renderEntityFields($entity, $this->display);
     $this->assertText($value);
     $this->assertNoRaw($value);
-    $this->assertRaw(nl2br(check_plain($value)));
+    $this->assertRaw(nl2br(String::checkPlain($value)));
   }
 
 }

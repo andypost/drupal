@@ -8,10 +8,12 @@
 namespace Drupal\taxonomy\Tests;
 
 use Drupal\Core\Datetime\DrupalDateTime;
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
- * Test for legacy node bug.
+ * Posts an article with a taxonomy term and a date prior to 1970.
+ *
+ * @group taxonomy
  */
 class LegacyTest extends TaxonomyTestBase {
 
@@ -21,14 +23,6 @@ class LegacyTest extends TaxonomyTestBase {
    * @var array
    */
   public static $modules = array('node', 'datetime');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Test for legacy node bug.',
-      'description' => 'Posts an article with a taxonomy term and a date prior to 1970.',
-      'group' => 'Taxonomy',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -41,11 +35,11 @@ class LegacyTest extends TaxonomyTestBase {
     $vocabulary->save();
     $field_name = 'field_' . $vocabulary->id();
 
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings' => array(
         'allowed_values' => array(
           array(

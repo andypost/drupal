@@ -11,12 +11,12 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Controller\ControllerResolverInterface;
 use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\DependencyInjection\DependencySerialization;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\views\ViewExecutable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Provides a base class for single- or multistep view forms.
@@ -26,7 +26,8 @@ use Symfony\Component\HttpFoundation\Request;
  * default is \Drupal\views\Form\ViewsFormMainForm). That way it is actually
  * possible for modules to have a multistep form if they need to.
  */
-class ViewsForm extends DependencySerialization implements FormInterface, ContainerInjectionInterface {
+class ViewsForm implements FormInterface, ContainerInjectionInterface {
+  use DependencySerializationTrait;
 
   /**
    * The class resolver to get the subform form objects.
@@ -36,11 +37,11 @@ class ViewsForm extends DependencySerialization implements FormInterface, Contai
   protected $classResolver;
 
   /**
-   * The current request.
+   * The request stack.
    *
-   * @var \Symfony\Component\HttpFoundation\Request
+   * @var \Symfony\Component\HttpFoundation\RequestStack
    */
-  protected $request;
+  protected $requestStack;
 
   /**
    * The url generator to generate the form action.
@@ -70,17 +71,17 @@ class ViewsForm extends DependencySerialization implements FormInterface, Contai
    *   The class resolver to get the subform form objects.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
    *   The url generator to generate the form action.
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The current request.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
+   *   The request stack.
    * @param string $view_id
    *   The ID of the view.
    * @param string $view_display_id
    *   The ID of the active view's display.
    */
-  public function __construct(ClassResolverInterface $controller_resolver, UrlGeneratorInterface $url_generator, Request $request, $view_id, $view_display_id) {
+  public function __construct(ClassResolverInterface $controller_resolver, UrlGeneratorInterface $url_generator, RequestStack $requestStack, $view_id, $view_display_id) {
     $this->classResolver = $controller_resolver;
     $this->urlGenerator = $url_generator;
-    $this->request = $request;
+    $this->requestStack = $requestStack;
     $this->viewId = $view_id;
     $this->viewDisplayId = $view_display_id;
   }
@@ -92,7 +93,7 @@ class ViewsForm extends DependencySerialization implements FormInterface, Contai
     return new static(
       $container->get('controller_resolver'),
       $container->get('url_generator'),
-      $container->get('request'),
+      $container->get('request_stack'),
       $view_id,
       $view_display_id
     );
@@ -126,7 +127,7 @@ class ViewsForm extends DependencySerialization implements FormInterface, Contai
 
     $form = array();
 
-    $query = $this->request->query->all();
+    $query = $this->requestStack->getCurrentRequest()->query->all();
     $query = UrlHelper::filterQueryParameters($query, array(), '');
 
     $form['#action'] = $this->urlGenerator->generateFromPath($view->getUrl(), array('query' => $query));

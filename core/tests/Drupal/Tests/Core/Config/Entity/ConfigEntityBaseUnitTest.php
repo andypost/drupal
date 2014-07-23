@@ -16,8 +16,6 @@ use Drupal\Tests\UnitTestCase;
 
 /**
  * @coversDefaultClass \Drupal\Core\Config\Entity\ConfigEntityBase
- *
- * @group Drupal
  * @group Config
  */
 class ConfigEntityBaseUnitTest extends UnitTestCase {
@@ -86,15 +84,11 @@ class ConfigEntityBaseUnitTest extends UnitTestCase {
   protected $cacheBackend;
 
   /**
-   * {@inheritdoc}
+   * The mocked typed config manager.
+   *
+   * @var \Drupal\Core\Config\TypedConfigManagerInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  public static function getInfo() {
-    return array(
-      'description' => '',
-      'name' => '\Drupal\Core\Config\Entity\ConfigEntityBase unit test',
-      'group' => 'Entity',
-    );
-  }
+  protected $typedConfigManager;
 
   /**
    * {@inheritdoc}
@@ -129,11 +123,14 @@ class ConfigEntityBaseUnitTest extends UnitTestCase {
 
     $this->cacheBackend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
 
+    $this->typedConfigManager = $this->getMock('Drupal\Core\Config\TypedConfigManagerInterface');
+
     $container = new ContainerBuilder();
     $container->set('entity.manager', $this->entityManager);
     $container->set('uuid', $this->uuid);
     $container->set('language_manager', $this->languageManager);
     $container->set('cache.test', $this->cacheBackend);
+    $container->set('config.typed', $this->typedConfigManager);
     $container->setParameter('cache_bins', array('cache.test' => 'test'));
     \Drupal::setContainer($container);
 
@@ -189,11 +186,11 @@ class ConfigEntityBaseUnitTest extends UnitTestCase {
     $method = new \ReflectionMethod('\Drupal\Core\Config\Entity\ConfigEntityBase', 'addDependency');
     $method->setAccessible(TRUE);
     $method->invoke($this->entity, 'module', $this->provider);
-    $method->invoke($this->entity, 'module', 'Core');
+    $method->invoke($this->entity, 'module', 'core');
     $method->invoke($this->entity, 'module', 'node');
     $dependencies = $this->entity->get('dependencies');
     $this->assertNotContains($this->provider, $dependencies['module']);
-    $this->assertNotContains('Core', $dependencies['module']);
+    $this->assertNotContains('core', $dependencies['module']);
     $this->assertContains('node', $dependencies['module']);
 
     // Test sorting of dependencies.
@@ -431,14 +428,21 @@ class ConfigEntityBaseUnitTest extends UnitTestCase {
    * @covers ::toArray
    */
   public function testToArray() {
+    $this->typedConfigManager->expects($this->once())
+      ->method('getDefinition')
+      ->will($this->returnValue(array('mapping' => array('id' => '', 'dependencies' => ''))));
     $properties = $this->entity->toArray();
     $this->assertInternalType('array', $properties);
-    $class_info = new \ReflectionClass($this->entity);
-    foreach ($class_info->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
-      $name = $property->getName();
-      $this->assertArrayHasKey($name, $properties);
-      $this->assertSame($this->entity->get($name), $properties[$name]);
-    }
+    $this->assertEquals(array('id' => $this->entity->id(), 'dependencies' => array()), $properties);
+  }
+
+  /**
+   * @covers ::toArray
+   *
+   * @expectedException \Drupal\Core\Config\Schema\SchemaIncompleteException
+   */
+  public function testToArrayFallback() {
+    $this->entity->toArray();
   }
 
 }

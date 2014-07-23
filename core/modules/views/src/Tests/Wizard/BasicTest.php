@@ -12,16 +12,10 @@ use Drupal\views\Views;
 
 /**
  * Tests creating views with the wizard and viewing them on the listing page.
+ *
+ * @group views
  */
 class BasicTest extends WizardTestBase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Basic functionality',
-      'description' => 'Test creating basic views with the wizard and viewing them on the listing page.',
-      'group' => 'Views Wizard',
-    );
-  }
 
   function testViewsWizardAndListing() {
     $this->drupalCreateContentType(array('type' => 'article'));
@@ -44,7 +38,7 @@ class BasicTest extends WizardTestBase {
     $this->assertText($view1['description']);
     $this->assertLinkByHref(url('admin/structure/views/view/' . $view1['id']));
     $this->assertLinkByHref(url('admin/structure/views/view/' . $view1['id'] . '/delete'));
-    $this->assertLinkByHref(url('admin/structure/views/view/' . $view1['id'] . '/clone'));
+    $this->assertLinkByHref(url('admin/structure/views/view/' . $view1['id'] . '/duplicate'));
 
     // This view should not have a block.
     $this->drupalGet('admin/structure/block');
@@ -151,6 +145,11 @@ class BasicTest extends WizardTestBase {
 
     $result = $this->xpath('//small[@id = "edit-label-machine-name-suffix"]');
     $this->assertTrue(count($result), 'Ensure that the machine name is applied to the name field.');
+
+    $this->drupalPostAjaxForm(NULL, array('show[wizard_key]' => 'users'), 'show[wizard_key]');
+    $this->assertNoFieldByName('show[type]', NULL, 'The "of type" filter is not added for users.');
+    $this->drupalPostAjaxForm(NULL, array('show[wizard_key]' => 'node'), 'show[wizard_key]');
+    $this->assertFieldByName('show[type]', 'all', 'The "of type" filter is added for nodes.');
   }
 
   /**

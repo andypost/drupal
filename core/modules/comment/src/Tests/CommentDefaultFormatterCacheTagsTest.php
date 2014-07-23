@@ -12,7 +12,10 @@ use Drupal\comment\CommentInterface;
 use Drupal\system\Tests\Entity\EntityUnitTestBase;
 
 /**
- * Tests CommentDefaultFormatter's cache tag bubbling.
+ * Tests the bubbling up of comment cache tags when using the Comment list
+ * formatter on an entity.
+ *
+ * @group comment
  */
 class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
 
@@ -21,18 +24,7 @@ class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('entity_test', 'comment');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment list cache tags',
-      'description' => 'Tests the bubbling up of comment cache tags when using the Comment list formatter on an entity.',
-      'group' => 'Comment',
-    );
-  }
+  public static $modules = array('entity_test', 'comment', 'menu_link');
 
   /**
    * {@inheritdoc}
@@ -57,25 +49,7 @@ class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
 
     // Set up a field, so that the entity that'll be referenced bubbles up a
     // cache tag when rendering it entirely.
-    entity_create('field_config', array(
-      'name' => 'comment',
-      'entity_type' => 'entity_test',
-      'type' => 'comment',
-      'settings' => array(),
-    ))->save();
-    entity_create('field_instance_config', array(
-      'entity_type' => 'entity_test',
-      'bundle' => 'entity_test',
-      'field_name' => 'comment',
-      'label' => 'Comment',
-      'settings' => array(),
-    ))->save();
-    entity_get_display('entity_test', 'entity_test', 'default')
-      ->setComponent('comment', array(
-        'type' => 'comment_default',
-        'settings' => array(),
-      ))
-      ->save();
+    \Drupal::service('comment.manager')->addDefaultField('entity_test', 'entity_test');
   }
 
   /**
@@ -110,6 +84,7 @@ class CommentDefaultFormatterCacheTagsTest extends EntityUnitTestBase {
       'entity_id' => $commented_entity->id(),
       'entity_type' => 'entity_test',
       'field_name' => 'comment',
+      'comment_type' => 'comment',
       'status' => CommentInterface::PUBLISHED,
       'uid' => $user->id(),
     ));

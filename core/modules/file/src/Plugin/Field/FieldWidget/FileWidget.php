@@ -7,10 +7,11 @@
 
 namespace Drupal\file\Plugin\Field\FieldWidget;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
-use Drupal\Core\Field\WidgetBase;
-use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Render\Element;
 
 /**
@@ -75,15 +76,15 @@ class FileWidget extends WidgetBase {
     // Load the items for form rebuilds from the field state as they might not be
     // in $form_state['values'] because of validation limitations. Also, they are
     // only passed in as $items when editing existing entities.
-    $field_state = field_form_get_state($parents, $field_name, $form_state);
+    $field_state = static::getWidgetState($parents, $field_name, $form_state);
     if (isset($field_state['items'])) {
       $items->setValue($field_state['items']);
     }
 
     // Determine the number of widgets to display.
-    $cardinality = $this->fieldDefinition->getCardinality();
+    $cardinality = $this->fieldDefinition->getFieldStorageDefinition()->getCardinality();
     switch ($cardinality) {
-      case FieldDefinitionInterface::CARDINALITY_UNLIMITED:
+      case FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED:
         $max = count($items);
         $is_multiple = TRUE;
         break;
@@ -94,7 +95,7 @@ class FileWidget extends WidgetBase {
         break;
     }
 
-    $title = check_plain($this->fieldDefinition->getLabel());
+    $title = String::checkPlain($this->fieldDefinition->getLabel());
     $description = field_filter_xss($this->fieldDefinition->getDescription());
 
     $elements = array();
@@ -130,7 +131,7 @@ class FileWidget extends WidgetBase {
     }
 
     $empty_single_allowed = ($cardinality == 1 && $delta == 0);
-    $empty_multiple_allowed = ($cardinality == FieldDefinitionInterface::CARDINALITY_UNLIMITED || $delta < $cardinality) && empty($form_state['programmed']);
+    $empty_multiple_allowed = ($cardinality == FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED || $delta < $cardinality) && empty($form_state['programmed']);
 
     // Add one more empty row for new uploads except when this is a programmed
     // multiple form as it is not necessary.
@@ -158,8 +159,8 @@ class FileWidget extends WidgetBase {
       $elements['#title'] = $title;
 
       $elements['#description'] = $description;
-      $elements['#field_name'] = $element['#field_name'];
-      $elements['#language'] = $element['#language'];
+      $elements['#field_name'] = $field_name;
+      $elements['#language'] = $items->getLangcode();
       $elements['#display_field'] = (bool) $this->getFieldSetting('display_field');
       // The field settings include defaults for the field type. However, this
       // widget is a base class for other widgets (e.g., ImageWidget) that may
@@ -197,7 +198,7 @@ class FileWidget extends WidgetBase {
       'description_field' => NULL,
     );
 
-    $cardinality = $this->fieldDefinition->getCardinality();
+    $cardinality = $this->fieldDefinition->getFieldStorageDefinition()->getCardinality();
     $defaults = array(
       'fids' => array(),
       'display' => (bool) $field_settings['display_default'],
@@ -217,6 +218,8 @@ class FileWidget extends WidgetBase {
       // Allows this field to return an array instead of a single value.
       '#extended' => TRUE,
       // Add properties needed by value() and process() methods.
+      '#field_name' => $this->fieldDefinition->getName(),
+      '#entity_type' => $items->getEntity()->getEntityTypeId(),
       '#display_field' => (bool) $field_settings['display_field'],
       '#display_default' => $field_settings['display_default'],
       '#description_field' => $field_settings['description_field'],
@@ -311,18 +314,18 @@ class FileWidget extends WidgetBase {
     $current = count(Element::children(NestedArray::getValue($form, $parents))) - 1;
 
     $field_storage_definitions = \Drupal::entityManager()->getFieldStorageDefinitions($element['#entity_type']);
-    $field = $field_storage_definitions[$element['#field_name']];
+    $field_storage = $field_storage_definitions[$element['#field_name']];
     $uploaded = count($values['fids']);
     $count = $uploaded + $current;
-    if ($count > $field->getCardinality()) {
-      $keep = $uploaded - $count + $field->getCardinality();
+    if ($count > $field_storage->getCardinality()) {
+      $keep = $uploaded - $count + $field_storage->getCardinality();
       $removed_files = array_slice($values['fids'], $keep);
       $removed_names = array();
       foreach ($removed_files as $fid) {
         $file = file_load($fid);
         $removed_names[] = $file->getFilename();
       }
-      $args = array('%field' => $field->getFieldName(), '@max' => $field->getCardinality(), '@count' => $keep, '%list' => implode(', ', $removed_names));
+      $args = array('%field' => $field_storage->getFieldName(), '@max' => $field_storage->getCardinality(), '@count' => $keep, '%list' => implode(', ', $removed_names));
       $message = t('Field %field can only hold @max values but there were @count uploaded. The following files have been omitted as a result: %list.', $args);
       drupal_set_message($message, 'warning');
       $values['fids'] = array_slice($values['fids'], 0, $keep);
@@ -527,9 +530,9 @@ class FileWidget extends WidgetBase {
     NestedArray::setValue($form_state['values'], array_slice($button['#parents'], 0, -2), $submitted_values);
 
     // Update items.
-    $field_state = field_form_get_state($parents, $field_name, $form_state);
+    $field_state = static::getWidgetState($parents, $field_name, $form_state);
     $field_state['items'] = $submitted_values;
-    field_form_set_state($parents, $field_name, $form_state, $field_state);
+    static::setWidgetState($parents, $field_name, $form_state, $field_state);
   }
 
 }

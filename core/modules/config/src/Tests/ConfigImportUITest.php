@@ -12,21 +12,15 @@ use Drupal\Core\Config\InstallStorage;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests importing configuration from files into active store.
+ * Tests the user interface for importing/exporting configuration.
+ *
+ * @group config
  */
 class ConfigImportUITest extends WebTestBase {
 
   // Enable the Options and Text modules to ensure dependencies are handled
   // correctly.
   public static $modules = array('config', 'config_test', 'config_import_test', 'text', 'options');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Import UI',
-      'description' => 'Tests the user interface for importing/exporting configuration.',
-      'group' => 'Configuration',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -56,15 +50,15 @@ class ConfigImportUITest extends WebTestBase {
 
     // Create new config entity.
     $original_dynamic_data = array(
+      'uuid' => '30df59bd-7b03-4cf7-bb35-d42fc49f0651',
+      'langcode' => \Drupal::languageManager()->getDefaultLanguage()->id,
+      'status' => TRUE,
+      'dependencies' => array(),
       'id' => 'new',
       'label' => 'New',
       'weight' => 0,
       'style' => '',
       'test_dependencies' => array(),
-      'status' => TRUE,
-      'uuid' => '30df59bd-7b03-4cf7-bb35-d42fc49f0651',
-      'langcode' => \Drupal::languageManager()->getDefaultLanguage()->id,
-      'dependencies' => array(),
       'protected_property' => '',
     );
     $staging->write($dynamic_name, $original_dynamic_data);
@@ -331,6 +325,21 @@ class ConfigImportUITest extends WebTestBase {
     $this->assertNotEqual($new_site_name, \Drupal::config('system.site')->get('name'));
   }
 
+  public function testConfigUninstallConfigException() {
+    $staging = $this->container->get('config.storage.staging');
+
+    $core_extension = \Drupal::config('core.extension')->get();
+    unset($core_extension['module']['config']);
+    $staging->write('core.extension', $core_extension);
+
+    $this->drupalGet('admin/config/development/configuration');
+    $this->assertText('core.extension');
+
+    // Import and verify that both do not appear anymore.
+    $this->drupalPostForm(NULL, array(), t('Import all'));
+    $this->assertText('Can not uninstall the Configuration module as part of a configuration synchronization through the user interface.');
+  }
+
   function prepareSiteNameUpdate($new_site_name) {
     $staging = $this->container->get('config.storage.staging');
     // Create updated configuration object.
@@ -349,31 +358,31 @@ class ConfigImportUITest extends WebTestBase {
     $uuid = $this->container->get('uuid');
 
     $values_primary = array(
+      'uuid' => $uuid->generate(),
+      'langcode' => 'en',
+      'status' => TRUE,
+      'dependencies' => array(),
       'id' => 'primary',
       'label' => 'Primary',
       'weight' => 0,
       'style' => NULL,
       'test_dependencies' => array(),
-      'status' => TRUE,
-      'uuid' => $uuid->generate(),
-      'langcode' => 'en',
-      'dependencies' => array(),
       'protected_property' => null,
     );
     $staging->write($name_primary, $values_primary);
     $values_secondary = array(
+      'uuid' => $uuid->generate(),
+      'langcode' => 'en',
+      'status' => TRUE,
+      // Add a dependency on primary, to ensure that is synced first.
+      'dependencies' => array(
+        'entity' => array($name_primary),
+      ),
       'id' => 'secondary',
       'label' => 'Secondary Sync',
       'weight' => 0,
       'style' => NULL,
       'test_dependencies' => array(),
-      'status' => TRUE,
-      'uuid' => $uuid->generate(),
-      'langcode' => 'en',
-      // Add a dependency on primary, to ensure that is synced first.
-      'dependencies' => array(
-        'entity' => array($name_primary),
-      ),
       'protected_property' => null,
     );
     $staging->write($name_secondary, $values_secondary);

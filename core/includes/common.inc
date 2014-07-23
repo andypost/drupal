@@ -14,6 +14,7 @@ use Drupal\Component\Serialization\Exception\InvalidDataTypeException;
 use Drupal\Component\Utility\Bytes;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\Number;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\SortArray;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Tags;
@@ -296,12 +297,6 @@ function drupal_get_feeds() {
 }
 
 /**
- * @defgroup http_handling HTTP handling
- * @{
- * Functions to properly handle HTTP responses.
- */
-
-/**
  * Prepares a 'destination' URL query parameter for use with url().
  *
  * Used to direct the user back to the referring page after completing a form.
@@ -337,10 +332,6 @@ function drupal_get_destination() {
   }
   return $destination;
 }
-
-/**
- * @} End of "defgroup http_handling".
- */
 
 /**
  * @defgroup validation Input validation
@@ -452,11 +443,15 @@ function format_rss_item($title, $link, $description, $args = array()) {
 /**
  * Formats XML elements.
  *
+ * Note: It is the caller's responsibility to sanitize any input parameters.
+ * This function does not perform sanitization.
+ *
  * @param $array
  *   An array where each item represents an element and is either a:
  *   - (key => value) pair (<key>value</key>)
  *   - Associative array with fields:
- *     - 'key': element name
+ *     - 'key': The element name. Element names are not sanitized, so do not
+ *       pass user input.
  *     - 'value': element contents
  *     - 'attributes': associative array of element attributes
  *
@@ -485,7 +480,11 @@ function format_xml_elements($array) {
       $output .= ' <' . $key . '>' . (is_array($value) ? format_xml_elements($value) : String::checkPlain($value)) . "</$key>\n";
     }
   }
-  return $output;
+  // @todo This is marking the output string as safe HTML, but we have only
+  //   sanitized the attributes and tag values, not the tag names, and we
+  //   cannot guarantee the assembled markup is safe. Consider a fix in:
+  //   https://www.drupal.org/node/2296885
+  return SafeMarkup::set($output);
 }
 
 /**
@@ -539,23 +538,6 @@ function format_xml_elements($array) {
  */
 function format_plural($count, $singular, $plural, array $args = array(), array $options = array()) {
   return \Drupal::translation()->formatPlural($count, $singular, $plural, $args, $options);
-}
-
-/**
- * Parses a given byte count.
- *
- * @param $size
- *   A size expressed as a number of bytes with optional SI or IEC binary unit
- *   prefix (e.g. 2, 3K, 5MB, 10G, 6GiB, 8 bytes, 9mbytes).
- *
- * @return
- *   An integer representation of the size in bytes.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\Component\Utility\Bytes::toInt().
- */
-function parse_size($size) {
-  return Bytes::toInt($size);
 }
 
 /**
@@ -886,8 +868,7 @@ function l($text, $path, array $options = array()) {
 
   // Sanitize the link text if necessary.
   $text = $variables['options']['html'] ? $variables['text'] : String::checkPlain($variables['text']);
-
-  return '<a href="' . $url . '"' . $attributes . '>' . $text . '</a>';
+  return SafeMarkup::set('<a href="' . $url . '"' . $attributes . '>' . $text . '</a>');
 }
 
 /**
@@ -1758,7 +1739,7 @@ function _drupal_add_js($data = NULL, $options = NULL) {
           // @todo Make this less hacky: http://drupal.org/node/1547376.
           $scriptPath = $GLOBALS['script_path'];
           $pathPrefix = '';
-          $current_query = \Drupal::service('request')->query->all();
+          $current_query = \Drupal::service('request_stack')->getCurrentRequest()->query->all();
           url('', array('script' => &$scriptPath, 'prefix' => &$pathPrefix));
           $current_path = current_path();
           $current_path_is_admin = FALSE;
@@ -1899,7 +1880,7 @@ function drupal_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALS
       $setting['ajaxPageState']['theme'] = $theme_key;
       // Checks that the DB is available before filling theme_token.
       if (!defined('MAINTENANCE_MODE')) {
-        $setting['ajaxPageState']['theme_token'] = drupal_get_token($theme_key);
+        $setting['ajaxPageState']['theme_token'] = \Drupal::csrfToken()->get($theme_key);
       }
 
       // Provide the page with information about the individual JavaScript files
@@ -2512,162 +2493,6 @@ function drupal_clear_js_cache() {
 }
 
 /**
- * Converts a PHP variable into its JavaScript equivalent.
- *
- * We use HTML-safe strings, with several characters escaped.
- *
- * @see drupal_json_decode()
- *
- * @ingroup php_wrappers
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\Component\Serialization\Json::encode().
- */
-function drupal_json_encode($var) {
-  return Json::encode($var);
-}
-
-/**
- * Converts an HTML-safe JSON string into its PHP equivalent.
- *
- * @see drupal_json_encode()
- *
- * @ingroup php_wrappers
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\Component\Serialization\Json::decode().
- */
-function drupal_json_decode($var) {
-  return Json::decode($var);
-}
-
-/**
- * Ensures the private key variable used to generate tokens is set.
- *
- * @return string
- *   The private key.
- *
- * @see \Drupal\Core\Access\CsrfTokenGenerator
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::service('private_key')->get().
- */
-function drupal_get_private_key() {
-  return \Drupal::service('private_key')->get();
-}
-
-/**
- * Generates a token based on $value, the user session, and the private key.
- *
- * @param string $value
- *   An additional value to base the token on.
- *
- * The generated token is based on the session ID of the current user. Normally,
- * anonymous users do not have a session, so the generated token will be
- * different on every page request. To generate a token for users without a
- * session, manually start a session prior to calling this function.
- *
- * @return string
- *   A 43-character URL-safe token for validation, based on the user session ID,
- *   the hash salt provided from drupal_get_hash_salt(), and the
- *   'drupal_private_key' configuration variable.
- *
- * @see drupal_get_hash_salt()
- * @see \Drupal\Core\Access\CsrfTokenGenerator
- * @see \Drupal\Core\Session\SessionManager::start()
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::csrfToken()->get().
- */
-function drupal_get_token($value = '') {
-  return \Drupal::csrfToken()->get($value);
-}
-
-/**
- * Validates a token based on $value, the user session, and the private key.
- *
- * @param string $token
- *   The token to be validated.
- * @param string $value
- *   An additional value to base the token on.
- *
- * @return bool
- *   True for a valid token, false for an invalid token.
- *
- * @see \Drupal\Core\Access\CsrfTokenGenerator
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use return \Drupal::csrfToken()->validate().
- */
-function drupal_valid_token($token, $value = '') {
-  return \Drupal::csrfToken()->validate($token, $value);
-}
-
-/**
- * Loads code for subsystems and modules, and registers stream wrappers.
- */
-function _drupal_bootstrap_code() {
-  require_once __DIR__ . '/../../' . Settings::get('path_inc', 'core/includes/path.inc');
-  require_once __DIR__ . '/module.inc';
-  require_once __DIR__ . '/theme.inc';
-  require_once __DIR__ . '/pager.inc';
-  require_once __DIR__ . '/../../' . Settings::get('menu_inc', 'core/includes/menu.inc');
-  require_once __DIR__ . '/tablesort.inc';
-  require_once __DIR__ . '/file.inc';
-  require_once __DIR__ . '/unicode.inc';
-  require_once __DIR__ . '/form.inc';
-  require_once __DIR__ . '/mail.inc';
-  require_once __DIR__ . '/ajax.inc';
-  require_once __DIR__ . '/errors.inc';
-  require_once __DIR__ . '/schema.inc';
-  require_once __DIR__ . '/entity.inc';
-
-  // Load all enabled modules
-  \Drupal::moduleHandler()->loadAll();
-
-  // Make sure all stream wrappers are registered.
-  file_get_stream_wrappers();
-  // Ensure mt_rand() is reseeded to prevent random values from one page load
-  // being exploited to predict random values in subsequent page loads.
-  $seed = unpack("L", Crypt::randomBytes(4));
-  mt_srand($seed[1]);
-
-  // Set the allowed protocols once we have the config available.
-  $allowed_protocols = \Drupal::config('system.filter')->get('protocols');
-  if (!isset($allowed_protocols)) {
-    // \Drupal\Component\Utility\UrlHelper::filterBadProtocol() is called by the
-    // installer and update.php, in which case the configuration may not exist
-    // (yet). Provide a minimal default set of allowed protocols for these
-    // cases.
-    $allowed_protocols = array('http', 'https');
-  }
-  UrlHelper::setAllowedProtocols($allowed_protocols);
-}
-
-/**
- * Temporary BC function for scripts not using DrupalKernel.
- *
- * DrupalKernel skips this and replicates it via event listeners.
- *
- * @see \Drupal\Core\EventSubscriber\PathSubscriber;
- * @see \Drupal\Core\EventSubscriber\LegacyRequestSubscriber;
- */
-function _drupal_bootstrap_full($skip = FALSE) {
-  static $called = FALSE;
-
-  if ($called || $skip) {
-    $called = TRUE;
-    return;
-  }
-
-  // Let all modules take action before the menu system handles the request.
-  // We do not want this while running update.php.
-  if (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'update') {
-    drupal_theme_initialize();
-  }
-}
-
-/**
  * Stores the current page in the cache.
  *
  * If page_compression is enabled, a gzipped version of the page is stored in
@@ -2823,12 +2648,17 @@ function drupal_pre_render_conditional_comments($elements) {
 /**
  * Pre-render callback: Renders a generic HTML tag with attributes into #markup.
  *
+ * Note: It is the caller's responsibility to sanitize any input parameters.
+ * This callback does not perform sanitization.
+ *
  * @param array $element
  *   An associative array containing:
  *   - #tag: The tag name to output. Typical tags added to the HTML HEAD:
  *     - meta: To provide meta information, such as a page refresh.
  *     - link: To refer to stylesheets and other contextual information.
  *     - script: To load JavaScript.
+ *     The value of #tag is not escaped or sanitized, so do not pass in user
+ *     input.
  *   - #attributes: (optional) An array of HTML attributes to apply to the
  *     tag.
  *   - #value: (optional) A string containing tag content, such as inline
@@ -2841,7 +2671,11 @@ function drupal_pre_render_conditional_comments($elements) {
 function drupal_pre_render_html_tag($element) {
   $attributes = isset($element['#attributes']) ? new Attribute($element['#attributes']) : '';
   if (!isset($element['#value'])) {
-    $markup = '<' . $element['#tag'] . $attributes . " />\n";
+    // This function is intended for internal use, so we assume that no unsafe
+    // values are passed in #tag. The attributes are already safe because
+    // Attribute output is already automatically sanitized.
+    // @todo Escape this properly instead? https://www.drupal.org/node/2296101
+    $markup = SafeMarkup::set('<' . $element['#tag'] . $attributes . " />\n");
   }
   else {
     $markup = '<' . $element['#tag'] . $attributes . '>';
@@ -2853,6 +2687,9 @@ function drupal_pre_render_html_tag($element) {
       $markup .= $element['#value_suffix'];
     }
     $markup .= '</' . $element['#tag'] . ">\n";
+    // @todo We cannot actually guarantee this markup is safe. Consider a fix
+    //   in: https://www.drupal.org/node/2296101
+    $markup = SafeMarkup::set($markup);
   }
   if (!empty($element['#noscript'])) {
     $element['#markup'] = '<noscript>' . $markup . '</noscript>';
@@ -3292,6 +3129,7 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
       if (!$is_recursive_call) {
         _drupal_render_process_post_render_cache($elements);
       }
+      $elements['#markup'] = SafeMarkup::set($elements['#markup']);
       return $elements['#markup'];
     }
   }
@@ -3305,8 +3143,16 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
   // Make any final changes to the element before it is rendered. This means
   // that the $element or the children can be altered or corrected before the
   // element is rendered into the final text.
+  /** @var \Drupal\Core\Controller\ControllerResolverInterface $controller_resolver */
+  $controller_resolver = \Drupal::service('controller_resolver');
   if (isset($elements['#pre_render'])) {
     foreach ($elements['#pre_render'] as $callable) {
+      if (is_string($callable) && strpos($callable, '::') === FALSE) {
+        $callable = $controller_resolver->getControllerFromDefinition($callable);
+      }
+      else {
+        $callable = $callable;
+      }
       $elements = call_user_func($callable, $elements);
     }
   }
@@ -3336,6 +3182,11 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
     $elements['#children'] = '';
   }
 
+  // @todo Simplify after https://drupal.org/node/2273925
+  if (isset($elements['#markup'])) {
+    $elements['#markup'] = SafeMarkup::set($elements['#markup']);
+  }
+
   // Assume that if #theme is set it represents an implemented hook.
   $theme_is_implemented = isset($elements['#theme']);
 
@@ -3359,6 +3210,7 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
     foreach ($children as $key) {
       $elements['#children'] .= drupal_render($elements[$key], TRUE);
     }
+    $elements['#children'] = SafeMarkup::set($elements['#children']);
   }
 
   // If #theme is not implemented and the element has raw #markup as a
@@ -3369,7 +3221,7 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
   // required. Eventually #theme_wrappers will expect both #markup and
   // #children to be a single string as #children.
   if (!$theme_is_implemented && isset($elements['#markup'])) {
-    $elements['#children'] = $elements['#markup'] . $elements['#children'];
+    $elements['#children'] = SafeMarkup::set($elements['#markup'] . $elements['#children']);
   }
 
   // Let the theme functions in #theme_wrappers add markup around the rendered
@@ -3407,6 +3259,12 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
   // which allows the output'ed text to be filtered.
   if (isset($elements['#post_render'])) {
     foreach ($elements['#post_render'] as $callable) {
+      if (is_string($callable) && strpos($callable, '::') === FALSE) {
+        $callable = $controller_resolver->getControllerFromDefinition($callable);
+      }
+      else {
+        $callable = $callable;
+      }
       $elements['#children'] = call_user_func($callable, $elements['#children'], $elements);
     }
   }
@@ -3453,6 +3311,7 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
   }
 
   $elements['#printed'] = TRUE;
+  $elements['#markup'] = SafeMarkup::set($elements['#markup']);
   return $elements['#markup'];
 }
 
@@ -3480,7 +3339,7 @@ function drupal_render_children(&$element, $children_keys = NULL) {
       $output .= drupal_render($element[$key]);
     }
   }
-  return $output;
+  return SafeMarkup::set($output);
 }
 
 /**
@@ -3644,14 +3503,17 @@ function drupal_render_cache_set(&$markup, array $elements) {
     $data['#post_render_cache'] = $elements['#post_render_cache'];
   }
 
+  // Tag every render cache item with the "rendered" cache tag. This allows us
+  // to invalidate the entire render cache, regardless of the cache bin.
+  $cache_tags = $elements['#cache']['tags'] ?: array();
+  $cache_tags['rendered'] = TRUE;
+
   // Persist cache tags associated with this element.
-  if (isset($elements['#cache']['tags'])) {
-    $data['#cache']['tags'] = $elements['#cache']['tags'];
-  }
+  $data['#cache']['tags'] = $cache_tags;
 
   $bin = isset($elements['#cache']['bin']) ? $elements['#cache']['bin'] : 'render';
   $expire = isset($elements['#cache']['expire']) ? $elements['#cache']['expire'] : Cache::PERMANENT;
-  \Drupal::cache($bin)->set($cid, $data, $expire, $elements['#cache']['tags']);
+  \Drupal::cache($bin)->set($cid, $data, $expire, $cache_tags);
 }
 
 /**
@@ -3672,9 +3534,24 @@ function drupal_render_cache_set(&$markup, array $elements) {
  * @return string
  *   The generated placeholder HTML.
  *
+ * @throws \Exception
+ *
  * @see drupal_render_cache_get()
  */
 function drupal_render_cache_generate_placeholder($callback, array &$context) {
+  if (is_string($callback) && strpos($callback, '::') === FALSE) {
+    /** @var \Drupal\Core\Controller\ControllerResolverInterface $controller_resolver */
+    $controller_resolver = \Drupal::service('controller_resolver');
+    $callable = \Drupal::service('controller_resolver')->getControllerFromDefinition($callback);
+  }
+  else {
+   $callable = $callback;
+  }
+
+  if (!is_callable($callable)) {
+    throw new Exception(t('$callable must be a callable function or of the form service_id:method.'));
+  }
+
   // Generate a unique token if one is not already provided.
   $context += array(
     'token' => \Drupal\Component\Utility\Crypt::randomBytesBase64(55),
@@ -3702,10 +3579,19 @@ function drupal_render_cache_generate_placeholder($callback, array &$context) {
  */
 function _drupal_render_process_post_render_cache(array &$elements) {
   if (isset($elements['#post_render_cache'])) {
+    /** @var \Drupal\Core\Controller\ControllerResolverInterface $controller_resolver */
+    $controller_resolver = \Drupal::service('controller_resolver');
+
     // Call all #post_render_cache callbacks, passing the provided context.
     foreach (array_keys($elements['#post_render_cache']) as $callback) {
+      if (strpos($callback, '::') === FALSE) {
+        $callable = $controller_resolver->getControllerFromDefinition($callback);
+      }
+      else {
+        $callable = $callback;
+      }
       foreach ($elements['#post_render_cache'][$callback] as $context) {
-        $elements = call_user_func_array($callback, array($elements, $context));
+        $elements = call_user_func_array($callable, array($elements, $context));
       }
     }
     // Make sure that any attachments added in #post_render_cache callbacks are

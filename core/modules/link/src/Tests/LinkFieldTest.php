@@ -13,6 +13,8 @@ use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests link field widgets and formatters.
+ *
+ * @group link
  */
 class LinkFieldTest extends WebTestBase {
 
@@ -26,9 +28,9 @@ class LinkFieldTest extends WebTestBase {
   /**
    * A field to use in this test class.
    *
-   * @var \Drupal\field\Entity\FieldConfig
+   * @var \Drupal\field\Entity\FieldStorageConfig
    */
-  protected $field;
+  protected $fieldStorage;
 
   /**
    * The instance used in this test class.
@@ -43,14 +45,6 @@ class LinkFieldTest extends WebTestBase {
    * @var object
    */
   protected $web_user;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Link field',
-      'description' => 'Tests link field widgets and formatters.',
-      'group' => 'Field types',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -68,14 +62,14 @@ class LinkFieldTest extends WebTestBase {
   function testURLValidation() {
     $field_name = drupal_strtolower($this->randomName());
     // Create a field with settings to validate.
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'link',
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
     $this->instance = entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'bundle' => 'entity_test',
       'settings' => array(
         'title' => DRUPAL_DISABLED,
@@ -192,14 +186,14 @@ class LinkFieldTest extends WebTestBase {
   function testLinkTitle() {
     $field_name = drupal_strtolower($this->randomName());
     // Create a field with settings to validate.
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'link',
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
     $this->instance = entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'bundle' => 'entity_test',
       'label' => 'Read more about this entity',
       'settings' => array(
@@ -310,15 +304,15 @@ class LinkFieldTest extends WebTestBase {
   function testLinkFormatter() {
     $field_name = drupal_strtolower($this->randomName());
     // Create a field with settings to validate.
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'link',
       'cardinality' => 2,
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
     entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'label' => 'Read more about this entity',
       'bundle' => 'entity_test',
       'settings' => array(
@@ -376,10 +370,10 @@ class LinkFieldTest extends WebTestBase {
       'rel' => array(NULL, 'nofollow'),
       'target' => array(NULL, '_blank'),
       'url_only' => array(
-        array('url_only' => array(FALSE)),
-        array('url_only' => array(FALSE), 'url_plain' => TRUE),
-        array('url_only' => array(TRUE)),
-        array('url_only' => array(TRUE), 'url_plain' => TRUE),
+        array('url_only' => FALSE),
+        array('url_only' => FALSE, 'url_plain' => TRUE),
+        array('url_only' => TRUE),
+        array('url_only' => TRUE, 'url_plain' => TRUE),
       ),
     );
     foreach ($options as $setting => $values) {
@@ -452,15 +446,15 @@ class LinkFieldTest extends WebTestBase {
   function testLinkSeparateFormatter() {
     $field_name = drupal_strtolower($this->randomName());
     // Create a field with settings to validate.
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'link',
       'cardinality' => 2,
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
     entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'bundle' => 'entity_test',
       'settings' => array(
         'title' => DRUPAL_OPTIONAL,

@@ -7,18 +7,15 @@
 
 namespace Drupal\file\Tests;
 
+use Drupal\Component\Utility\String;
+
 /**
- * Tests the file token replacement in strings.
+ * Generates text using placeholders for dummy content to check file token
+ * replacement.
+ *
+ * @group file
  */
 class FileTokenReplaceTest extends FileFieldTestBase {
-  public static function getInfo() {
-    return array(
-      'name' => 'File token replacement',
-      'description' => 'Generates text using placeholders for dummy content to check file token replacement.',
-      'group' => 'File',
-    );
-  }
-
   /**
    * Creates a file, then tests the tokens generated from it.
    */
@@ -46,16 +43,16 @@ class FileTokenReplaceTest extends FileFieldTestBase {
     // Generate and test sanitized tokens.
     $tests = array();
     $tests['[file:fid]'] = $file->id();
-    $tests['[file:name]'] = check_plain($file->getFilename());
-    $tests['[file:path]'] = check_plain($file->getFileUri());
-    $tests['[file:mime]'] = check_plain($file->getMimeType());
+    $tests['[file:name]'] = String::checkPlain($file->getFilename());
+    $tests['[file:path]'] = String::checkPlain($file->getFileUri());
+    $tests['[file:mime]'] = String::checkPlain($file->getMimeType());
     $tests['[file:size]'] = format_size($file->getSize());
-    $tests['[file:url]'] = check_plain(file_create_url($file->getFileUri()));
+    $tests['[file:url]'] = String::checkPlain(file_create_url($file->getFileUri()));
     $tests['[file:created]'] = format_date($file->getCreatedTime(), 'medium', '', NULL, $language_interface->id);
     $tests['[file:created:short]'] = format_date($file->getCreatedTime(), 'short', '', NULL, $language_interface->id);
     $tests['[file:changed]'] = format_date($file->getChangedTime(), 'medium', '', NULL, $language_interface->id);
     $tests['[file:changed:short]'] = format_date($file->getChangedTime(), 'short', '', NULL, $language_interface->id);
-    $tests['[file:owner]'] = check_plain(user_format_name($this->admin_user));
+    $tests['[file:owner]'] = String::checkPlain(user_format_name($this->admin_user));
     $tests['[file:owner:uid]'] = $file->getOwnerId();
 
     // Test to make sure that we generated something for each token.

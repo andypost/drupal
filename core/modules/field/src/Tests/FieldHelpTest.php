@@ -11,6 +11,8 @@ use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests help display for the Field module.
+ *
+ * @group field
  */
 class FieldHelpTest extends WebTestBase {
 
@@ -28,14 +30,6 @@ class FieldHelpTest extends WebTestBase {
    * The admin user that will be created.
    */
   protected $adminUser;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Field help functionality',
-      'description' => 'Verify help display for the Field module.',
-      'group' => 'Field',
-    );
-  }
 
   public function setUp() {
     parent::setUp();
@@ -56,6 +50,7 @@ class FieldHelpTest extends WebTestBase {
 
     // Enable the Options, Email and Field API Test modules.
     \Drupal::moduleHandler()->install(array('options', 'field_test'));
+    $this->resetAll();
     \Drupal::service('plugin.manager.field.widget')->clearCachedDefinitions();
     \Drupal::service('plugin.manager.field.field_type')->clearCachedDefinitions();
 

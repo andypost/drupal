@@ -7,10 +7,13 @@
 
 namespace Drupal\comment\Tests;
 
+use Drupal\comment\Entity\CommentType;
 use Drupal\simpletest\KernelTestBase;
 
 /**
  * Tests that comment fields cannot be added to entities with non-integer IDs.
+ *
+ * @group comment
  */
 class CommentStringIdEntitiesTest extends KernelTestBase {
 
@@ -19,15 +22,15 @@ class CommentStringIdEntitiesTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = array('comment', 'user', 'field', 'field_ui', 'entity_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Comments on Entity Types with string IDs',
-      'description' => 'Test that comment fields cannot be added to entities with non-integer IDs',
-      'group' => 'Comment',
-    );
-  }
+  public static $modules = array(
+    'comment',
+    'user',
+    'field',
+    'field_ui',
+    'entity',
+    'entity_test',
+    'text',
+  );
 
   public function setUp() {
     parent::setUp();
@@ -40,13 +43,22 @@ class CommentStringIdEntitiesTest extends KernelTestBase {
    */
   public function testCommentFieldNonStringId() {
     try {
-      $field = entity_create('field_config', array(
+      $bundle = CommentType::create(array(
+        'id' => 'foo',
+        'label' => 'foo',
+        'description' => '',
+        'target_entity_type_id' => 'entity_test_string_id',
+      ));
+      $bundle->save();
+      $field_storage = entity_create('field_storage_config', array(
         'name' => 'foo',
         'entity_type' => 'entity_test_string_id',
-        'settings' => array(),
+        'settings' => array(
+          'comment_type' => 'entity_test_string_id',
+        ),
         'type' => 'comment',
       ));
-      $field->save();
+      $field_storage->save();
       $this->fail('Did not throw an exception as expected.');
     }
     catch (\UnexpectedValueException $e) {

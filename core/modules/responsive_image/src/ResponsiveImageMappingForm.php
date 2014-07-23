@@ -7,6 +7,7 @@
 
 namespace Drupal\responsive_image;
 
+use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\EntityForm;
 
 /**
@@ -72,13 +73,14 @@ class ResponsiveImageMappingForm extends EntityForm {
     );
 
     $image_styles = image_style_options(TRUE);
+    $image_styles[RESPONSIVE_IMAGE_EMPTY_IMAGE] = $this->t('- empty image -');
     foreach ($responsive_image_mapping->getMappings() as $breakpoint_id => $mapping) {
       foreach ($mapping as $multiplier => $image_style) {
         $breakpoint = $responsive_image_mapping->getBreakpointGroup()->getBreakpointById($breakpoint_id);
         $label = $multiplier . ' ' . $breakpoint->name . ' [' . $breakpoint->mediaQuery . ']';
         $form['mappings'][$breakpoint_id][$multiplier] = array(
           '#type' => 'select',
-          '#title' => check_plain($label),
+          '#title' => String::checkPlain($label),
           '#options' => $image_styles,
           '#default_value' => $image_style,
           '#description' => $this->t('Select an image style for this breakpoint.'),

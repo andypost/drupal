@@ -10,7 +10,9 @@ namespace Drupal\system\Tests\Form;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Test the tableselect form element for expected behavior.
+ * Tests the tableselect form element for expected behavior.
+ *
+ * @group Form
  */
 class ElementsTableSelectTest extends WebTestBase {
 
@@ -20,14 +22,6 @@ class ElementsTableSelectTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('form_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Tableselect form element type test',
-      'description' => 'Test the tableselect element for expected behavior',
-      'group' => 'Form API',
-    );
-  }
 
   /**
    * Test the display of checkboxes when #multiple is TRUE.
@@ -166,11 +160,11 @@ class ElementsTableSelectTest extends WebTestBase {
     );
 
     // Test with a valid value.
-    list($processed_form, $form_state, $errors) = $this->formSubmitHelper($form, array('tableselect' => array('row1' => 'row1')));
+    list(, , $errors) = $this->formSubmitHelper($form, array('tableselect' => array('row1' => 'row1')));
     $this->assertFalse(isset($errors['tableselect']), 'Option checker allows valid values for checkboxes.');
 
     // Test with an invalid value.
-    list($processed_form, $form_state, $errors) = $this->formSubmitHelper($form, array('tableselect' => array('non_existing_value' => 'non_existing_value')));
+    list(, , $errors) = $this->formSubmitHelper($form, array('tableselect' => array('non_existing_value' => 'non_existing_value')));
     $this->assertTrue(isset($errors['tableselect']), 'Option checker disallows invalid values for checkboxes.');
 
   }
@@ -191,11 +185,11 @@ class ElementsTableSelectTest extends WebTestBase {
     );
 
     // Test with a valid value.
-    list($processed_form, $form_state, $errors) = $this->formSubmitHelper($form, array('tableselect' => 'row1'));
+    list(, , $errors) = $this->formSubmitHelper($form, array('tableselect' => 'row1'));
     $this->assertFalse(isset($errors['tableselect']), 'Option checker allows valid values for radio buttons.');
 
     // Test with an invalid value.
-    list($processed_form, $form_state, $errors) = $this->formSubmitHelper($form, array('tableselect' => 'non_existing_value'));
+    list(, , $errors) = $this->formSubmitHelper($form, array('tableselect' => 'non_existing_value'));
     $this->assertTrue(isset($errors['tableselect']), 'Option checker disallows invalid values for radio buttons.');
   }
 
@@ -213,7 +207,7 @@ class ElementsTableSelectTest extends WebTestBase {
    */
   private function formSubmitHelper($form, $edit) {
     $form_id = $this->randomName();
-    $form_state = form_state_defaults();
+    $form_state = \Drupal::formBuilder()->getFormStateDefaults();
 
     $form['op'] = array('#type' => 'submit', '#value' => t('Submit'));
     // The form token CSRF protection should not interfere with this test, so we
@@ -222,8 +216,9 @@ class ElementsTableSelectTest extends WebTestBase {
 
     $form_state['input'] = $edit;
     $form_state['input']['form_id'] = $form_id;
+    $form_state['build_info']['callback_object'] = new StubForm($form_id, $form);
 
-    drupal_prepare_form($form_id, $form, $form_state);
+    \Drupal::formBuilder()->prepareForm($form_id, $form, $form_state);
 
     drupal_process_form($form_id, $form, $form_state);
 

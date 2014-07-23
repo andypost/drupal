@@ -11,7 +11,6 @@ use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\String;
-use Drupal\Component\Utility\Xss;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Database\ConnectionNotDefinedException;
@@ -20,16 +19,20 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Session\UserSession;
+use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\PublicStream;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\block\Entity\Block;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\CssSelector\CssSelector;
 
 /**
  * Test case for typical Drupal tests.
+ *
+ * @ingroup testing
  */
 abstract class WebTestBase extends TestBase {
+
+  use AssertContentTrait;
 
   /**
    * The profile to install as a basis for testing.
@@ -68,36 +71,6 @@ abstract class WebTestBase extends TestBase {
    * @var bool
    */
   protected $dumpHeaders = FALSE;
-
-  /**
-   * The content of the page currently loaded in the internal browser.
-   *
-   * @var string
-   */
-  protected $content;
-
-  /**
-   * The plain-text content of the currently-loaded page.
-   *
-   * @var string
-   */
-  protected $plainTextContent;
-
-  /**
-   * The value of drupalSettings for the currently-loaded page.
-   *
-   * drupalSettings refers to the drupalSettings JavaScript variable.
-   *
-   * @var Array
-   */
-  protected $drupalSettings;
-
-  /**
-   * The parsed version of the page.
-   *
-   * @var \SimpleXMLElement
-   */
-  protected $elements = NULL;
 
   /**
    * The current user logged in using the internal browser.
@@ -173,6 +146,8 @@ abstract class WebTestBase extends TestBase {
 
   /**
    * The kernel used in this test.
+   *
+   * @var \Drupal\Core\DrupalKernel
    */
   protected $kernel;
 
@@ -286,7 +261,7 @@ abstract class WebTestBase extends TestBase {
         $settings['uid'] = $this->loggedInUser->id();
       }
       else {
-        $user = \Drupal::currentUser() ?: drupal_anonymous_user();
+        $user = \Drupal::currentUser() ?: new AnonymousUserSession();
         $settings['uid'] = $user->id();
       }
     }
@@ -402,7 +377,7 @@ abstract class WebTestBase extends TestBase {
    *   @endcode
    *   The following defaults are provided:
    *   - label: Random string.
-   *   - id: Random string.
+   *   - ID: Random string.
    *   - region: 'sidebar_first'.
    *   - theme: The default theme.
    *   - visibility: Empty array.
@@ -427,10 +402,13 @@ abstract class WebTestBase extends TestBase {
         'max_age' => 0,
       ),
     );
-    foreach (array('region', 'id', 'theme', 'plugin', 'visibility', 'weight') as $key) {
+    foreach (array('region', 'id', 'theme', 'plugin', 'weight') as $key) {
       $values[$key] = $settings[$key];
       // Remove extra values that do not belong in the settings array.
       unset($settings[$key]);
+    }
+    foreach ($settings['visibility'] as $id => $visibility) {
+      $settings['visibility'][$id]['id'] = $id;
     }
     $values['settings'] = $settings;
     $block = entity_create('block', $values);
@@ -643,7 +621,7 @@ abstract class WebTestBase extends TestBase {
       // Grant the specified permissions to the role, if any.
       if (!empty($permissions)) {
         user_role_grant_permissions($role->id(), $permissions);
-        $assigned_permissions = entity_load('user_role', $role->id())->permissions;
+        $assigned_permissions = entity_load('user_role', $role->id())->getPermissions();
         $missing_permissions = array_diff($permissions, $assigned_permissions);
         if (!$missing_permissions) {
           $this->pass(String::format('Created permissions: @perms', array('@perms' => implode(', ', $permissions))), 'Role');
@@ -751,7 +729,7 @@ abstract class WebTestBase extends TestBase {
    * Generate a token for the currently logged in user.
    */
   protected function drupalGetToken($value = '') {
-    $private_key = drupal_get_private_key();
+    $private_key = \Drupal::service('private_key')->get();
     return Crypt::hmacBase64($value, $this->session_id . $private_key);
   }
 
@@ -775,6 +753,16 @@ abstract class WebTestBase extends TestBase {
       $this->loggedInUser = FALSE;
       $this->container->get('current_user')->setAccount(new AnonymousUserSession());
     }
+  }
+
+  /**
+   * Returns the session name in use on the child site.
+   *
+   * @return string
+   *   The name of the session cookie.
+   */
+  public function getSessionName() {
+    return $this->session_name;
   }
 
   /**
@@ -807,6 +795,12 @@ abstract class WebTestBase extends TestBase {
       'mail' => 'admin@example.com',
       'pass_raw' => $this->randomName(),
     ));
+
+    // Some tests (SessionTest and SessionHttpsTest) need to examine whether the
+    // proper session cookies were set on a response. Because the child site
+    // uses the same session name as the test runner, it is necessary to make
+    // that available to test-methods.
+    $this->session_name = $this->originalSessionName;
 
     // Reset the static batch to remove Simpletest's batch operations.
     $batch = &batch_get();
@@ -844,7 +838,6 @@ abstract class WebTestBase extends TestBase {
       'required' => TRUE,
     );
     $this->writeSettings($settings);
-
     // Allow for test-specific overrides.
     $settings_testing_file = DRUPAL_ROOT . '/' . $this->originalSite . '/settings.testing.php';
     if (file_exists($settings_testing_file)) {
@@ -852,7 +845,7 @@ abstract class WebTestBase extends TestBase {
       copy($settings_testing_file, $directory . '/settings.testing.php');
       // Add the name of the testing class to settings.php and include the
       // testing specific overrides
-      file_put_contents($directory . '/settings.php', "\n\$test_class = '" . get_class($this) ."';\n" . 'include DRUPAL_ROOT . \'/\' . $conf_path . \'/settings.testing.php\';' ."\n", FILE_APPEND);
+      file_put_contents($directory . '/settings.php', "\n\$test_class = '" . get_class($this) ."';\n" . 'include DRUPAL_ROOT . \'/\' . $site_path . \'/settings.testing.php\';' ."\n", FILE_APPEND);
     }
     $settings_services_file = DRUPAL_ROOT . '/' . $this->originalSite . '/testing.services.yml';
     if (file_exists($settings_services_file)) {
@@ -863,14 +856,14 @@ abstract class WebTestBase extends TestBase {
     // Since Drupal is bootstrapped already, install_begin_request() will not
     // bootstrap into DRUPAL_BOOTSTRAP_CONFIGURATION (again). Hence, we have to
     // reload the newly written custom settings.php manually.
-    drupal_settings_initialize();
+    Settings::initialize($directory);
 
     // Execute the non-interactive installer.
     require_once DRUPAL_ROOT . '/core/includes/install.core.inc';
     install_drupal($parameters);
 
     // Import new settings.php written by the installer.
-    drupal_settings_initialize();
+    Settings::initialize($directory);
     foreach ($GLOBALS['config_directories'] as $type => $path) {
       $this->configDirectories[$type] = $path;
     }
@@ -883,7 +876,14 @@ abstract class WebTestBase extends TestBase {
     // Not using File API; a potential error must trigger a PHP warning.
     chmod($directory, 0777);
 
-    $this->rebuildContainer();
+    $request = \Drupal::request();
+    $this->kernel = DrupalKernel::createFromRequest($request, drupal_classloader(), 'prod', TRUE);
+    $this->kernel->prepareLegacyRequest($request);
+    // Force the container to be built from scratch instead of loaded from the
+    // disk. This forces us to not accidently load the parent site.
+    $container = $this->kernel->rebuildContainer();
+
+    $config = $container->get('config.factory');
 
     // Manually create and configure private and temporary files directories.
     // While these could be preset/enforced in settings.php like the public
@@ -891,7 +891,7 @@ abstract class WebTestBase extends TestBase {
     // UI. If declared in settings.php, they would no longer be configurable.
     file_prepare_directory($this->private_files_directory, FILE_CREATE_DIRECTORY);
     file_prepare_directory($this->temp_files_directory, FILE_CREATE_DIRECTORY);
-    \Drupal::config('system.file')
+    $config->get('system.file')
       ->set('path.private', $this->private_files_directory)
       ->set('path.temporary', $this->temp_files_directory)
       ->save();
@@ -900,7 +900,7 @@ abstract class WebTestBase extends TestBase {
     // tests from sending out emails and collect them in state instead.
     // While this should be enforced via settings.php prior to installation,
     // some tests expect to be able to test mail system implementations.
-    \Drupal::config('system.mail')
+    $config->get('system.mail')
       ->set('interface.default', 'test_mail_collector')
       ->save();
 
@@ -908,10 +908,10 @@ abstract class WebTestBase extends TestBase {
     // environment optimizations for all tests to avoid needless overhead and
     // ensure a sane default experience for test authors.
     // @see https://drupal.org/node/2259167
-    \Drupal::config('system.logging')
+    $config->get('system.logging')
       ->set('error_level', 'verbose')
       ->save();
-    \Drupal::config('system.performance')
+    $config->get('system.performance')
       ->set('css.preprocess', FALSE)
       ->set('js.preprocess', FALSE)
       ->save();
@@ -931,22 +931,20 @@ abstract class WebTestBase extends TestBase {
     }
     if ($modules) {
       $modules = array_unique($modules);
-      $success = \Drupal::moduleHandler()->install($modules, TRUE);
+      $success = $container->get('module_handler')->install($modules, TRUE);
       $this->assertTrue($success, String::format('Enabled modules: %modules', array('%modules' => implode(', ', $modules))));
       $this->rebuildContainer();
     }
 
-    // Like DRUPAL_BOOTSTRAP_CONFIGURATION above, any further bootstrap phases
-    // are not re-executed by the installer, as Drupal is bootstrapped already.
     // Reset/rebuild all data structures after enabling the modules, primarily
     // to synchronize all data structures and caches between the test runner and
     // the child site.
     // Affects e.g. file_get_stream_wrappers().
-    // @see _drupal_bootstrap_code()
-    // @see _drupal_bootstrap_full()
+    // @see \Drupal\Core\DrupalKernel::bootCode()
     // @todo Test-specific setUp() methods may set up further fixtures; find a
     //   way to execute this after setUp() is done, or to eliminate it entirely.
     $this->resetAll();
+    $this->kernel->prepareLegacyRequest($request);
 
     // Temporary fix so that when running from run-tests.sh we don't get an
     // empty current path which would indicate we're on the home page.
@@ -1096,35 +1094,16 @@ abstract class WebTestBase extends TestBase {
    * @see TestBase::prepareEnvironment()
    * @see TestBase::restoreEnvironment()
    *
-   * @todo Fix http://drupal.org/node/1708692 so that module enable/disable
+   * @todo Fix https://www.drupal.org/node/2021959 so that module enable/disable
    *   changes are immediately reflected in \Drupal::getContainer(). Until then,
    *   tests can invoke this workaround when requiring services from newly
    *   enabled modules to be immediately available in the same request.
    */
-  protected function rebuildContainer($environment = 'prod') {
-    // Preserve the request object after the container rebuild.
+  protected function rebuildContainer() {
+    // Maintain the current global request object.
     $request = \Drupal::request();
-    // When called from InstallerTestBase, the current container is the minimal
-    // container from TestBase::prepareEnvironment(), which does not contain a
-    // request stack.
-    if (\Drupal::getContainer()->initialized('request_stack')) {
-      $request_stack = \Drupal::service('request_stack');
-    }
-
-    $this->kernel = new DrupalKernel($environment, drupal_classloader(), TRUE, FALSE);
-    $this->kernel->boot();
-    // DrupalKernel replaces the container in \Drupal::getContainer() with a
-    // different object, so we need to replace the instance on this test class.
-    $this->container = \Drupal::getContainer();
-    // The current user is set in TestBase::prepareEnvironment().
-    $this->container->set('request', $request);
-    if (isset($request_stack)) {
-      $this->container->set('request_stack', $request_stack);
-    }
-    else {
-      $this->container->get('request_stack')->push($request);
-    }
-    $this->container->get('current_user')->setAccount(\Drupal::currentUser());
+    // Rebuild the kernel and bring it back to a fully bootstrapped state.
+    $this->container = $this->kernel->rebuildContainer();
 
     // The request context is normally set by the router_listener from within
     // its KernelEvents::REQUEST listener. In the simpletest parent site this
@@ -1241,9 +1220,6 @@ abstract class WebTestBase extends TestBase {
       if (!$result) {
         throw new \UnexpectedValueException('One or more cURL options could not be set.');
       }
-
-      // By default, the child session name should be the same as the parent.
-      $this->session_name = session_name();
     }
     // We set the user agent header on each request so as to use the current
     // time and a new uniqid.
@@ -1363,16 +1339,18 @@ abstract class WebTestBase extends TestBase {
       }
     }
 
-    $this->drupalSetContent($content, isset($original_url) ? $original_url : curl_getinfo($this->curlHandle, CURLINFO_EFFECTIVE_URL));
+    $this->setRawContent($content);
+    $this->url = isset($original_url) ? $original_url : curl_getinfo($this->curlHandle, CURLINFO_EFFECTIVE_URL);
+
     $message_vars = array(
       '!method' => !empty($curl_options[CURLOPT_NOBODY]) ? 'HEAD' : (empty($curl_options[CURLOPT_POSTFIELDS]) ? 'GET' : 'POST'),
       '@url' => isset($original_url) ? $original_url : $url,
       '@status' => $status,
-      '!length' => format_size(strlen($this->drupalGetContent()))
+      '!length' => format_size(strlen($this->getRawContent()))
     );
     $message = String::format('!method @url returned @status (!length).', $message_vars);
-    $this->assertTrue($this->drupalGetContent() !== FALSE, $message, 'Browser');
-    return $this->drupalGetContent();
+    $this->assertTrue($this->getRawContent() !== FALSE, $message, 'Browser');
+    return $this->getRawContent();
   }
 
   /**
@@ -1445,36 +1423,10 @@ abstract class WebTestBase extends TestBase {
    *   TRUE if this test was instantiated in a request within the test site,
    *   FALSE otherwise.
    *
-   * @see _drupal_bootstrap_configuration()
+   * @see \Drupal\Core\DrupalKernel::bootConfiguration()
    */
   protected function isInChildSite() {
     return DRUPAL_TEST_IN_CHILD_SITE;
-  }
-
-  /**
-   * Parse content returned from curlExec using DOM and SimpleXML.
-   *
-   * @return
-   *   A SimpleXMLElement or FALSE on failure.
-   */
-  protected function parse() {
-    if (!$this->elements) {
-      // DOM can load HTML soup. But, HTML soup can throw warnings, suppress
-      // them.
-      $htmlDom = new \DOMDocument();
-      @$htmlDom->loadHTML('<?xml encoding="UTF-8">' . $this->drupalGetContent());
-      if ($htmlDom) {
-        $this->pass(String::format('Valid HTML found on "@path"', array('@path' => $this->getUrl())), 'Browser');
-        // It's much easier to work with simplexml than DOM, luckily enough
-        // we can just simply import our DOM tree.
-        $this->elements = simplexml_import_dom($htmlDom);
-      }
-    }
-    if (!$this->elements) {
-      $this->fail('Parsed page successfully.', 'Browser');
-    }
-
-    return $this->elements;
   }
 
   /**
@@ -1489,7 +1441,7 @@ abstract class WebTestBase extends TestBase {
    *   "name: value".
    *
    * @return
-   *   The retrieved HTML string, also available as $this->drupalGetContent()
+   *   The retrieved HTML string, also available as $this->getRawContent()
    */
   protected function drupalGet($path, array $options = array(), array $headers = array()) {
     $options['absolute'] = TRUE;
@@ -1518,7 +1470,7 @@ abstract class WebTestBase extends TestBase {
     $verbose = 'GET request to: ' . $path .
                '<hr />Ending URL: ' . $this->getUrl();
     if ($this->dumpHeaders) {
-      $verbose .= '<hr />Headers: <pre>' . check_plain(var_export(array_map('trim', $this->headers), TRUE)) . '</pre>';
+      $verbose .= '<hr />Headers: <pre>' . String::checkPlain(var_export(array_map('trim', $this->headers), TRUE)) . '</pre>';
     }
     $verbose .= '<hr />' . $out;
 
@@ -1649,6 +1601,7 @@ abstract class WebTestBase extends TestBase {
     if (isset($path)) {
       $this->drupalGet($path, $options);
     }
+
     if ($this->parse()) {
       $edit_save = $edit;
       // Let's iterate over all the forms.
@@ -1708,7 +1661,7 @@ abstract class WebTestBase extends TestBase {
           $verbose = 'POST request to: ' . $path;
           $verbose .= '<hr />Ending URL: ' . $this->getUrl();
           if ($this->dumpHeaders) {
-            $verbose .= '<hr />Headers: <pre>' . check_plain(var_export(array_map('trim', $this->headers), TRUE)) . '</pre>';
+            $verbose .= '<hr />Headers: <pre>' . String::checkPlain(var_export(array_map('trim', $this->headers), TRUE)) . '</pre>';
           }
           $verbose .= '<hr />Fields: ' . highlight_string('<?php ' . var_export($post_array, TRUE), TRUE);
           $verbose .= '<hr />' . $out;
@@ -1950,8 +1903,8 @@ abstract class WebTestBase extends TestBase {
       }
     }
     $content = $dom->saveHTML();
-    $this->drupalSetContent($content);
-    $this->drupalSetSettings($drupal_settings);
+    $this->setRawContent($content);
+    $this->setDrupalSettings($drupal_settings);
   }
 
   /**
@@ -2071,7 +2024,7 @@ abstract class WebTestBase extends TestBase {
    *   Either the new page content or FALSE.
    */
   protected function checkForMetaRefresh() {
-    if (strpos($this->drupalGetContent(), '<meta ') && $this->parse()) {
+    if (strpos($this->getRawContent(), '<meta ') && $this->parse()) {
       $refresh = $this->xpath('//meta[@http-equiv="Refresh"]');
       if (!empty($refresh)) {
         // Parse the content attribute of the meta tag for the format:
@@ -2096,7 +2049,7 @@ abstract class WebTestBase extends TestBase {
    *   "name: value".
    *
    * @return
-   *   The retrieved headers, also available as $this->drupalGetContent()
+   *   The retrieved headers, also available as $this->getRawContent()
    */
   protected function drupalHead($path, array $options = array(), array $headers = array()) {
     $options['absolute'] = TRUE;
@@ -2108,7 +2061,7 @@ abstract class WebTestBase extends TestBase {
     if ($this->dumpHeaders) {
       $this->verbose('GET request to: ' . $path .
                      '<hr />Ending URL: ' . $this->getUrl() .
-                     '<hr />Headers: <pre>' . check_plain(var_export(array_map('trim', $this->headers), TRUE)) . '</pre>');
+                     '<hr />Headers: <pre>' . String::checkPlain(var_export(array_map('trim', $this->headers), TRUE)) . '</pre>');
     }
 
     return $out;
@@ -2276,236 +2229,13 @@ abstract class WebTestBase extends TestBase {
   }
 
   /**
-   * Builds an XPath query.
-   *
-   * Builds an XPath query by replacing placeholders in the query by the value
-   * of the arguments.
-   *
-   * XPath 1.0 (the version supported by libxml2, the underlying XML library
-   * used by PHP) doesn't support any form of quotation. This function
-   * simplifies the building of XPath expression.
-   *
-   * @param string $xpath
-   *   An XPath query, possibly with placeholders in the form ':name'.
-   * @param array $args
-   *   An array of arguments with keys in the form ':name' matching the
-   *   placeholders in the query. The values may be either strings or numeric
-   *   values.
-   *
-   * @return string
-   *   An XPath query with arguments replaced.
-   */
-  protected function buildXPathQuery($xpath, array $args = array()) {
-    // Replace placeholders.
-    foreach ($args as $placeholder => $value) {
-      // XPath 1.0 doesn't support a way to escape single or double quotes in a
-      // string literal. We split double quotes out of the string, and encode
-      // them separately.
-      if (is_string($value)) {
-        // Explode the text at the quote characters.
-        $parts = explode('"', $value);
-
-        // Quote the parts.
-        foreach ($parts as &$part) {
-          $part = '"' . $part . '"';
-        }
-
-        // Return the string.
-        $value = count($parts) > 1 ? 'concat(' . implode(', \'"\', ', $parts) . ')' : $parts[0];
-      }
-
-      // Use preg_replace_callback() instead of preg_replace() to prevent the
-      // regular expression engine from trying to substitute backreferences.
-      $replacement = function ($matches) use ($value) {
-        return $value;
-      };
-      $xpath = preg_replace_callback('/' . preg_quote($placeholder) . '\b/', $replacement, $xpath);
-    }
-    return $xpath;
-  }
-
-  /**
-   * Performs an xpath search on the contents of the internal browser.
-   *
-   * The search is relative to the root element (HTML tag normally) of the page.
-   *
-   * @param string $xpath
-   *   The xpath string to use in the search.
-   * @param array $arguments
-   *   An array of arguments with keys in the form ':name' matching the
-   *   placeholders in the query. The values may be either strings or numeric
-   *   values.
-   *
-   * @return array
-   *   The return value of the xpath search. For details on the xpath string
-   *   format and return values see the SimpleXML documentation,
-   *   http://php.net/manual/function.simplexml-element-xpath.php.
-   */
-  protected function xpath($xpath, array $arguments = array()) {
-    if ($this->parse()) {
-      $xpath = $this->buildXPathQuery($xpath, $arguments);
-      $result = $this->elements->xpath($xpath);
-      // Some combinations of PHP / libxml versions return an empty array
-      // instead of the documented FALSE. Forcefully convert any falsish values
-      // to an empty array to allow foreach(...) constructions.
-      return $result ? $result : array();
-    }
-    else {
-      return FALSE;
-    }
-  }
-
-  /**
-   * Performs a CSS selection based search on the contents of the internal
-   * browser. The search is relative to the root element (HTML tag normally) of
-   * the page.
-   *
-   * @param $selector string
-   *   CSS selector to use in the search.
-   *
-   * @return \SimpleXMLElement
-   *   The return value of the xpath search performed after converting the css
-   *   selector to an XPath selector.
-   */
-  protected function cssSelect($selector) {
-    return $this->xpath(CssSelector::toXPath($selector));
-  }
-
-  /**
-   * Get all option elements, including nested options, in a select.
-   *
-   * @param $element
-   *   The element for which to get the options.
-   *
-   * @return
-   *   Option elements in select.
-   */
-  protected function getAllOptions(\SimpleXMLElement $element) {
-    $options = array();
-    // Add all options items.
-    foreach ($element->option as $option) {
-      $options[] = $option;
-    }
-
-    // Search option group children.
-    if (isset($element->optgroup)) {
-      foreach ($element->optgroup as $group) {
-        $options = array_merge($options, $this->getAllOptions($group));
-      }
-    }
-    return $options;
-  }
-
-  /**
-   * Passes if a link with the specified label is found.
-   *
-   * An optional link index may be passed.
-   *
-   * @param $label
-   *   Text between the anchor tags.
-   * @param $index
-   *   Link position counting from zero.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The gorup this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE if the assertion succeeded, FALSE otherwise.
-   */
-  protected function assertLink($label, $index = 0, $message = '', $group = 'Other') {
-    $links = $this->xpath('//a[normalize-space(text())=:label]', array(':label' => $label));
-    $message = ($message ?  $message : String::format('Link with label %label found.', array('%label' => $label)));
-    return $this->assert(isset($links[$index]), $message, $group);
-  }
-
-  /**
-   * Passes if a link with the specified label is not found.
-   *
-   * @param $label
-   *   Text between the anchor tags.
-   * @param $index
-   *   Link position counting from zero.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE if the assertion succeeded, FALSE otherwise.
-   */
-  protected function assertNoLink($label, $message = '', $group = 'Other') {
-    $links = $this->xpath('//a[normalize-space(text())=:label]', array(':label' => $label));
-    $message = ($message ?  $message : String::format('Link with label %label not found.', array('%label' => $label)));
-    return $this->assert(empty($links), $message, $group);
-  }
-
-  /**
-   * Passes if a link containing a given href (part) is found.
-   *
-   * @param $href
-   *   The full or partial value of the 'href' attribute of the anchor tag.
-   * @param $index
-   *   Link position counting from zero.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE if the assertion succeeded, FALSE otherwise.
-   */
-  protected function assertLinkByHref($href, $index = 0, $message = '', $group = 'Other') {
-    $links = $this->xpath('//a[contains(@href, :href)]', array(':href' => $href));
-    $message = ($message ?  $message : String::format('Link containing href %href found.', array('%href' => $href)));
-    return $this->assert(isset($links[$index]), $message, $group);
-  }
-
-  /**
-   * Passes if a link containing a given href (part) is not found.
-   *
-   * @param $href
-   *   The full or partial value of the 'href' attribute of the anchor tag.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE if the assertion succeeded, FALSE otherwise.
-   */
-  protected function assertNoLinkByHref($href, $message = '', $group = 'Other') {
-    $links = $this->xpath('//a[contains(@href, :href)]', array(':href' => $href));
-    $message = ($message ?  $message : String::format('No link containing href %href found.', array('%href' => $href)));
-    return $this->assert(empty($links), $message, $group);
-  }
-
-  /**
    * Follows a link by name.
    *
    * Will click the first link found with this link text by default, or a later
    * one if an index is given. Match is case sensitive with normalized space.
-   * The label is translated label. There is an assert for successful click.
+   * The label is translated label.
+   *
+   * If the link is discovered and clicked, the test passes. Fail otherwise.
    *
    * @param $label
    *   Text between the anchor tags.
@@ -2513,21 +2243,17 @@ abstract class WebTestBase extends TestBase {
    *   Link position counting from zero.
    *
    * @return
-   *   Page on success, or FALSE on failure.
+   *   Page contents on success, or FALSE on failure.
    */
   protected function clickLink($label, $index = 0) {
     $url_before = $this->getUrl();
     $urls = $this->xpath('//a[normalize-space()=:label]', array(':label' => $label));
-
     if (isset($urls[$index])) {
       $url_target = $this->getAbsoluteUrl($urls[$index]['href']);
-    }
-
-    $this->assertTrue(isset($urls[$index]), String::format('Clicked link %label (@url_target) from @url_before', array('%label' => $label, '@url_target' => $url_target, '@url_before' => $url_before)), 'Browser');
-
-    if (isset($url_target)) {
+      $this->pass(String::format('Clicked link %label (@url_target) from @url_before', array('%label' => $label, '@url_target' => $url_target, '@url_before' => $url_before)), 'Browser');
       return $this->drupalGet($url_target);
     }
+    $this->fail(String::format('Link $label does not exist on @url_before', array('%label' => $label, '@url_before' => $url_before)), 'Browser');
     return FALSE;
   }
 
@@ -2664,18 +2390,22 @@ abstract class WebTestBase extends TestBase {
 
   /**
    * Gets the current raw HTML of requested page.
+   *
+   * @deprecated 8.x
+   *   Use getRawContent().
    */
   protected function drupalGetContent() {
-    return $this->content;
+    return $this->getRawContent();
   }
 
   /**
    * Gets the value of drupalSettings for the currently-loaded page.
    *
-   * drupalSettings refers to the drupalSettings JavaScript variable.
+   * @deprecated 8.x
+   *   Use getDrupalSettings().
    */
   protected function drupalGetSettings() {
-    return $this->drupalSettings;
+    return $this->getDrupalSettings();
   }
 
   /**
@@ -2707,31 +2437,21 @@ abstract class WebTestBase extends TestBase {
   /**
    * Sets the raw HTML content.
    *
-   * This can be useful when a page has been fetched outside of the internal
-   * browser and assertions need to be made on the returned page.
-   *
-   * A good example would be when testing HTTP request made by Drupal. After
-   * fetching the page the content can be set and page elements can be checked
-   * to ensure that the function worked properly.
+   * @deprecated 8.x
+   *   Use setRawContent().
    */
-  protected function drupalSetContent($content, $url = 'internal:') {
-    $this->content = $content;
-    $this->url = $url;
-    $this->plainTextContent = FALSE;
-    $this->elements = FALSE;
-    $this->drupalSettings = array();
-    if (preg_match('/var drupalSettings = (.*?);$/m', $content, $matches)) {
-      $this->drupalSettings = Json::decode($matches[1]);
-    }
+  protected function drupalSetContent($content) {
+    $this->setRawContent($content);
   }
 
   /**
    * Sets the value of drupalSettings for the currently-loaded page.
    *
-   * drupalSettings refers to the drupalSettings JavaScript variable.
+   * @deprecated 8.x
+   *   Use setDrupalSettings().
    */
   protected function drupalSetSettings($settings) {
-    $this->drupalSettings = $settings;
+    $this->setDrupalSettings($settings);
   }
 
   /**
@@ -2766,851 +2486,6 @@ abstract class WebTestBase extends TestBase {
     $actual_url = urldecode($this->getUrl());
     $expected_url = urldecode($this->container->get('url_generator')->generateFromPath($path, $options));
     return $this->assertEqual($actual_url, $expected_url, $message, $group);
-  }
-
-  /**
-   * Passes if the raw text IS found on the loaded page, fail otherwise.
-   *
-   * Raw text refers to the raw HTML that the page generated.
-   *
-   * @param $raw
-   *   Raw (HTML) string to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertRaw($raw, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = String::format('Raw "@raw" found', array('@raw' => $raw));
-    }
-    return $this->assert(strpos($this->drupalGetContent(), $raw) !== FALSE, $message, $group);
-  }
-
-  /**
-   * Passes if the raw text is NOT found on the loaded page, fail otherwise.
-   *
-   * Raw text refers to the raw HTML that the page generated.
-   *
-   * @param $raw
-   *   Raw (HTML) string to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoRaw($raw, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = String::format('Raw "@raw" not found', array('@raw' => $raw));
-    }
-    return $this->assert(strpos($this->drupalGetContent(), $raw) === FALSE, $message, $group);
-  }
-
-  /**
-   * Passes if the text IS found on the text version of the page.
-   *
-   * The text version is the equivalent of what a user would see when viewing
-   * through a web browser. In other words the HTML has been filtered out of the
-   * contents.
-   *
-   * @param $text
-   *   Plain text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertText($text, $message = '', $group = 'Other') {
-    return $this->assertTextHelper($text, $message, $group, FALSE);
-  }
-
-  /**
-   * Passes if the text is NOT found on the text version of the page.
-   *
-   * The text version is the equivalent of what a user would see when viewing
-   * through a web browser. In other words the HTML has been filtered out of the
-   * contents.
-   *
-   * @param $text
-   *   Plain text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoText($text, $message = '', $group = 'Other') {
-    return $this->assertTextHelper($text, $message, $group, TRUE);
-  }
-
-  /**
-   * Helper for assertText and assertNoText.
-   *
-   * It is not recommended to call this function directly.
-   *
-   * @param $text
-   *   Plain text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   * @param $not_exists
-   *   TRUE if this text should not exist, FALSE if it should.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertTextHelper($text, $message = '', $group, $not_exists) {
-    if ($this->plainTextContent === FALSE) {
-      $this->plainTextContent = Xss::filter($this->drupalGetContent(), array());
-    }
-    if (!$message) {
-      $message = !$not_exists ? String::format('"@text" found', array('@text' => $text)) : String::format('"@text" not found', array('@text' => $text));
-    }
-    return $this->assert($not_exists == (strpos($this->plainTextContent, $text) === FALSE), $message, $group);
-  }
-
-  /**
-   * Passes if the text is found ONLY ONCE on the text version of the page.
-   *
-   * The text version is the equivalent of what a user would see when viewing
-   * through a web browser. In other words the HTML has been filtered out of
-   * the contents.
-   *
-   * @param $text
-   *   Plain text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertUniqueText($text, $message = '', $group = 'Other') {
-    return $this->assertUniqueTextHelper($text, $message, $group, TRUE);
-  }
-
-  /**
-   * Passes if the text is found MORE THAN ONCE on the text version of the page.
-   *
-   * The text version is the equivalent of what a user would see when viewing
-   * through a web browser. In other words the HTML has been filtered out of
-   * the contents.
-   *
-   * @param $text
-   *   Plain text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoUniqueText($text, $message = '', $group = 'Other') {
-    return $this->assertUniqueTextHelper($text, $message, $group, FALSE);
-  }
-
-  /**
-   * Helper for assertUniqueText and assertNoUniqueText.
-   *
-   * It is not recommended to call this function directly.
-   *
-   * @param $text
-   *   Plain text to look for.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   * @param $be_unique
-   *   TRUE if this text should be found only once, FALSE if it should be found
-   *   more than once.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertUniqueTextHelper($text, $message = '', $group, $be_unique) {
-    if ($this->plainTextContent === FALSE) {
-      $this->plainTextContent = Xss::filter($this->drupalGetContent(), array());
-    }
-    if (!$message) {
-      $message = '"' . $text . '"' . ($be_unique ? ' found only once' : ' found more than once');
-    }
-    $first_occurance = strpos($this->plainTextContent, $text);
-    if ($first_occurance === FALSE) {
-      return $this->assert(FALSE, $message, $group);
-    }
-    $offset = $first_occurance + strlen($text);
-    $second_occurance = strpos($this->plainTextContent, $text, $offset);
-    return $this->assert($be_unique == ($second_occurance === FALSE), $message, $group);
-  }
-
-  /**
-   * Triggers a pass if the Perl regex pattern is found in the raw content.
-   *
-   * @param $pattern
-   *   Perl regex to look for including the regex delimiters.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertPattern($pattern, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = String::format('Pattern "@pattern" found', array('@pattern' => $pattern));
-    }
-    return $this->assert((bool) preg_match($pattern, $this->drupalGetContent()), $message, $group);
-  }
-
-  /**
-   * Triggers a pass if the perl regex pattern is not found in raw content.
-   *
-   * @param $pattern
-   *   Perl regex to look for including the regex delimiters.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoPattern($pattern, $message = '', $group = 'Other') {
-    if (!$message) {
-      $message = String::format('Pattern "@pattern" not found', array('@pattern' => $pattern));
-    }
-    return $this->assert(!preg_match($pattern, $this->drupalGetContent()), $message, $group);
-  }
-
-  /**
-   * Pass if the page title is the given string.
-   *
-   * @param $title
-   *   The string the title should be.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertTitle($title, $message = '', $group = 'Other') {
-    $actual = (string) current($this->xpath('//title'));
-    if (!$message) {
-      $message = String::format('Page title @actual is equal to @expected.', array(
-        '@actual' => var_export($actual, TRUE),
-        '@expected' => var_export($title, TRUE),
-      ));
-    }
-    return $this->assertEqual($actual, $title, $message, $group);
-  }
-
-  /**
-   * Pass if the page title is not the given string.
-   *
-   * @param $title
-   *   The string the title should not be.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoTitle($title, $message = '', $group = 'Other') {
-    $actual = (string) current($this->xpath('//title'));
-    if (!$message) {
-      $message = String::format('Page title @actual is not equal to @unexpected.', array(
-        '@actual' => var_export($actual, TRUE),
-        '@unexpected' => var_export($title, TRUE),
-      ));
-    }
-    return $this->assertNotEqual($actual, $title, $message, $group);
-  }
-
-  /**
-   * Asserts themed output.
-   *
-   * @param $callback
-   *   The name of the theme hook to invoke; e.g. 'links' for links.html.twig.
-   * @param $variables
-   *   An array of variables to pass to the theme function.
-   * @param $expected
-   *   The expected themed output string.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertThemeOutput($callback, array $variables = array(), $expected, $message = '', $group = 'Other') {
-    $output = _theme($callback, $variables);
-    $this->verbose('Variables:' . '<pre>' .  check_plain(var_export($variables, TRUE)) . '</pre>'
-      . '<hr />' . 'Result:' . '<pre>' .  check_plain(var_export($output, TRUE)) . '</pre>'
-      . '<hr />' . 'Expected:' . '<pre>' .  check_plain(var_export($expected, TRUE)) . '</pre>'
-      . '<hr />' . $output
-    );
-    if (!$message) {
-      $message = '%callback rendered correctly.';
-    }
-    $message = format_string($message, array('%callback' => 'theme_' . $callback . '()'));
-    return $this->assertIdentical($output, $expected, $message, $group);
-  }
-
-  /**
-   * Asserts that a field exists in the current page by the given XPath.
-   *
-   * @param $xpath
-   *   XPath used to find the field.
-   * @param $value
-   *   (optional) Value of the field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldByXPath($xpath, $value = NULL, $message = '', $group = 'Other') {
-    $fields = $this->xpath($xpath);
-
-    // If value specified then check array for match.
-    $found = TRUE;
-    if (isset($value)) {
-      $found = FALSE;
-      if ($fields) {
-        foreach ($fields as $field) {
-          if (isset($field['value']) && $field['value'] == $value) {
-            // Input element with correct value.
-            $found = TRUE;
-          }
-          elseif (isset($field->option) || isset($field->optgroup)) {
-            // Select element found.
-            $selected = $this->getSelectedItem($field);
-            if ($selected === FALSE) {
-              // No item selected so use first item.
-              $items = $this->getAllOptions($field);
-              if (!empty($items) && $items[0]['value'] == $value) {
-                $found = TRUE;
-              }
-            }
-            elseif ($selected == $value) {
-              $found = TRUE;
-            }
-          }
-          elseif ((string) $field == $value) {
-            // Text area with correct text.
-            $found = TRUE;
-          }
-        }
-      }
-    }
-    return $this->assertTrue($fields && $found, $message, $group);
-  }
-
-  /**
-   * Get the selected value from a select field.
-   *
-   * @param $element
-   *   SimpleXMLElement select element.
-   *
-   * @return
-   *   The selected value or FALSE.
-   */
-  protected function getSelectedItem(\SimpleXMLElement $element) {
-    foreach ($element->children() as $item) {
-      if (isset($item['selected'])) {
-        return $item['value'];
-      }
-      elseif ($item->getName() == 'optgroup') {
-        if ($value = $this->getSelectedItem($item)) {
-          return $value;
-        }
-      }
-    }
-    return FALSE;
-  }
-
-  /**
-   * Asserts that a field does not exist in the current page by the given XPath.
-   *
-   * @param $xpath
-   *   XPath used to find the field.
-   * @param $value
-   *   (optional) Value of the field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoFieldByXPath($xpath, $value = NULL, $message = '', $group = 'Other') {
-    $fields = $this->xpath($xpath);
-
-    // If value specified then check array for match.
-    $found = TRUE;
-    if (isset($value)) {
-      $found = FALSE;
-      if ($fields) {
-        foreach ($fields as $field) {
-          if ($field['value'] == $value) {
-            $found = TRUE;
-          }
-        }
-      }
-    }
-    return $this->assertFalse($fields && $found, $message, $group);
-  }
-
-  /**
-   * Asserts that a field exists with the given name and value.
-   *
-   * @param $name
-   *   Name of field to assert.
-   * @param $value
-   *   Value of the field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldByName($name, $value = NULL, $message = NULL, $group = 'Browser') {
-    if (!isset($message)) {
-      if (!isset($value)) {
-        $message = String::format('Found field with name @name', array(
-          '@name' => var_export($name, TRUE),
-        ));
-      }
-      else {
-        $message = String::format('Found field with name @name and value @value', array(
-          '@name' => var_export($name, TRUE),
-          '@value' => var_export($value, TRUE),
-        ));
-      }
-    }
-    return $this->assertFieldByXPath($this->constructFieldXpath('name', $name), $value, $message, $group);
-  }
-
-  /**
-   * Asserts that a field does not exist with the given name and value.
-   *
-   * @param $name
-   *   Name of field to assert.
-   * @param $value
-   *   Value of the field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoFieldByName($name, $value = '', $message = '', $group = 'Browser') {
-    return $this->assertNoFieldByXPath($this->constructFieldXpath('name', $name), $value, $message ? $message : String::format('Did not find field by name @name', array('@name' => $name)), $group);
-  }
-
-  /**
-   * Asserts that a field exists with the given id and value.
-   *
-   * @param $id
-   *   Id of field to assert.
-   * @param $value
-   *   Value of the field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldById($id, $value = '', $message = '', $group = 'Browser') {
-    return $this->assertFieldByXPath($this->constructFieldXpath('id', $id), $value, $message ? $message : String::format('Found field by id @id', array('@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a field does not exist with the given id and value.
-   *
-   * @param $id
-   *   Id of field to assert.
-   * @param $value
-   *   Value of the field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoFieldById($id, $value = '', $message = '', $group = 'Browser') {
-    return $this->assertNoFieldByXPath($this->constructFieldXpath('id', $id), $value, $message ? $message : String::format('Did not find field by id @id', array('@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a checkbox field in the current page is checked.
-   *
-   * @param $id
-   *   Id of field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertFieldChecked($id, $message = '', $group = 'Browser') {
-    $elements = $this->xpath('//input[@id=:id]', array(':id' => $id));
-    return $this->assertTrue(isset($elements[0]) && !empty($elements[0]['checked']), $message ? $message : String::format('Checkbox field @id is checked.', array('@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a checkbox field in the current page is not checked.
-   *
-   * @param $id
-   *   Id of field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoFieldChecked($id, $message = '', $group = 'Browser') {
-    $elements = $this->xpath('//input[@id=:id]', array(':id' => $id));
-    return $this->assertTrue(isset($elements[0]) && empty($elements[0]['checked']), $message ? $message : String::format('Checkbox field @id is not checked.', array('@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a select option in the current page exists.
-   *
-   * @param $id
-   *   Id of select field to assert.
-   * @param $option
-   *   Option to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertOption($id, $option, $message = '', $group = 'Browser') {
-    $options = $this->xpath('//select[@id=:id]/option[@value=:option]', array(':id' => $id, ':option' => $option));
-    return $this->assertTrue(isset($options[0]), $message ? $message : String::format('Option @option for field @id exists.', array('@option' => $option, '@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a select option in the current page does not exist.
-   *
-   * @param $id
-   *   Id of select field to assert.
-   * @param $option
-   *   Option to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoOption($id, $option, $message = '', $group = 'Browser') {
-    $selects = $this->xpath('//select[@id=:id]', array(':id' => $id));
-    $options = $this->xpath('//select[@id=:id]/option[@value=:option]', array(':id' => $id, ':option' => $option));
-    return $this->assertTrue(isset($selects[0]) && !isset($options[0]), $message ? $message : String::format('Option @option for field @id does not exist.', array('@option' => $option, '@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a select option in the current page is checked.
-   *
-   * @param $id
-   *   Id of select field to assert.
-   * @param $option
-   *   Option to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   *
-   * @todo $id is unusable. Replace with $name.
-   */
-  protected function assertOptionSelected($id, $option, $message = '', $group = 'Browser') {
-    $elements = $this->xpath('//select[@id=:id]//option[@value=:option]', array(':id' => $id, ':option' => $option));
-    return $this->assertTrue(isset($elements[0]) && !empty($elements[0]['selected']), $message ? $message : String::format('Option @option for field @id is selected.', array('@option' => $option, '@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a select option in the current page is not checked.
-   *
-   * @param $id
-   *   Id of select field to assert.
-   * @param $option
-   *   Option to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Browser'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoOptionSelected($id, $option, $message = '', $group = 'Browser') {
-    $elements = $this->xpath('//select[@id=:id]//option[@value=:option]', array(':id' => $id, ':option' => $option));
-    return $this->assertTrue(isset($elements[0]) && empty($elements[0]['selected']), $message ? $message : String::format('Option @option for field @id is not selected.', array('@option' => $option, '@id' => $id)), $group);
-  }
-
-  /**
-   * Asserts that a field exists with the given name or id.
-   *
-   * @param $field
-   *   Name or id of field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertField($field, $message = '', $group = 'Other') {
-    return $this->assertFieldByXPath($this->constructFieldXpath('name', $field) . '|' . $this->constructFieldXpath('id', $field), NULL, $message, $group);
-  }
-
-  /**
-   * Asserts that a field does not exist with the given name or id.
-   *
-   * @param $field
-   *   Name or id of field to assert.
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoField($field, $message = '', $group = 'Other') {
-    return $this->assertNoFieldByXPath($this->constructFieldXpath('name', $field) . '|' . $this->constructFieldXpath('id', $field), NULL, $message, $group);
-  }
-
-  /**
-   * Asserts that each HTML ID is used for just a single element.
-   *
-   * @param $message
-   *   (optional) A message to display with the assertion. Do not translate
-   *   messages: use format_string() to embed variables in the message text, not
-   *   t(). If left blank, a default message will be displayed.
-   * @param $group
-   *   (optional) The group this message is in, which is displayed in a column
-   *   in test output. Use 'Debug' to indicate this is debugging output. Do not
-   *   translate this string. Defaults to 'Other'; most tests do not override
-   *   this default.
-   * @param $ids_to_skip
-   *   An optional array of ids to skip when checking for duplicates. It is
-   *   always a bug to have duplicate HTML IDs, so this parameter is to enable
-   *   incremental fixing of core code. Whenever a test passes this parameter,
-   *   it should add a "todo" comment above the call to this function explaining
-   *   the legacy bug that the test wishes to ignore and including a link to an
-   *   issue that is working to fix that legacy bug.
-   *
-   * @return
-   *   TRUE on pass, FALSE on fail.
-   */
-  protected function assertNoDuplicateIds($message = '', $group = 'Other', $ids_to_skip = array()) {
-    $status = TRUE;
-    foreach ($this->xpath('//*[@id]') as $element) {
-      $id = (string) $element['id'];
-      if (isset($seen_ids[$id]) && !in_array($id, $ids_to_skip)) {
-        $this->fail(String::format('The HTML ID %id is unique.', array('%id' => $id)), $group);
-        $status = FALSE;
-      }
-      $seen_ids[$id] = TRUE;
-    }
-    return $this->assert($status, $message, $group);
-  }
-
-  /**
-   * Helper: Constructs an XPath for the given set of attributes and value.
-   *
-   * @param $attribute
-   *   Field attributes.
-   * @param $value
-   *   Value of field.
-   *
-   * @return
-   *   XPath for specified values.
-   */
-  protected function constructFieldXpath($attribute, $value) {
-    $xpath = '//textarea[@' . $attribute . '=:value]|//input[@' . $attribute . '=:value]|//select[@' . $attribute . '=:value]';
-    return $this->buildXPathQuery($xpath, array(':value' => $value));
   }
 
   /**
@@ -3819,7 +2694,8 @@ abstract class WebTestBase extends TestBase {
     $server = array_merge($server, $override_server_vars);
 
     $request = Request::create($request_path, 'GET', array(), array(), array(), $server);
-    $generator->setRequest($request);
+    $this->container->get('request_stack')->push($request);
+    $generator->updateFromRequest();
     return $request;
   }
 }

@@ -14,6 +14,7 @@ use Drupal\views\Views;
 /**
  * Tests the entity row renderers.
  *
+ * @group views
  * @see \Drupal\views\Entity\Render\RendererBase
  */
 class RowEntityRenderersTest extends ViewUnitTestBase {
@@ -23,7 +24,7 @@ class RowEntityRenderersTest extends ViewUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('entity', 'field', 'filter', 'text', 'node', 'user', 'language');
+  public static $modules = array('entity', 'field', 'filter', 'text', 'node', 'user', 'language', 'menu_link');
 
   /**
    * Views used by this test.
@@ -38,17 +39,6 @@ class RowEntityRenderersTest extends ViewUnitTestBase {
    * @var array
    */
   protected $langcodes;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity: renderers',
-      'description' => 'Tests the entity row renderers.',
-      'group' => 'Views module integration',
-    );
-  }
 
   /**
    * {@inheritdoc}

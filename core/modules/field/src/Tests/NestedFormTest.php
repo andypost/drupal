@@ -6,11 +6,12 @@
  */
 
 namespace Drupal\field\Tests;
-
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
  * Tests field elements in nested forms.
+ *
+ * @group field
  */
 class NestedFormTest extends FieldTestBase {
 
@@ -21,30 +22,22 @@ class NestedFormTest extends FieldTestBase {
    */
   public static $modules = array('field_test', 'entity_test');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Nested form',
-      'description' => 'Test the support for field elements in nested forms.',
-      'group' => 'Field API',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
 
     $web_user = $this->drupalCreateUser(array('view test entity', 'administer entity_test content'));
     $this->drupalLogin($web_user);
 
-    $this->field_single = array(
+    $this->fieldStorageSingle = array(
       'name' => 'field_single',
       'entity_type' => 'entity_test',
       'type' => 'test_field',
     );
-    $this->field_unlimited = array(
+    $this->fieldStorageUnlimited = array(
       'name' => 'field_unlimited',
       'entity_type' => 'entity_test',
       'type' => 'test_field',
-      'cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED,
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
     );
 
     $this->instance = array(
@@ -64,8 +57,8 @@ class NestedFormTest extends FieldTestBase {
    */
   function testNestedFieldForm() {
     // Add two instances on the 'entity_test'
-    entity_create('field_config', $this->field_single)->save();
-    entity_create('field_config', $this->field_unlimited)->save();
+    entity_create('field_storage_config', $this->fieldStorageSingle)->save();
+    entity_create('field_storage_config', $this->fieldStorageUnlimited)->save();
     $this->instance['field_name'] = 'field_single';
     $this->instance['label'] = 'Single field';
     entity_create('field_instance_config', $this->instance)->save();

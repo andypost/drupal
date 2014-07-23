@@ -7,28 +7,31 @@
 
 namespace Drupal\taxonomy;
 
-use Drupal\Core\Breadcrumb\BreadcrumbBuilderBase;
-use Symfony\Cmf\Component\Routing\RouteObjectInterface;
+use Drupal\Core\Breadcrumb\BreadcrumbBuilderInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Routing\LinkGeneratorTrait;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
  * Provides a custom taxonomy breadcrumb builder that uses the term hierarchy.
  */
-class TermBreadcrumbBuilder extends BreadcrumbBuilderBase {
+class TermBreadcrumbBuilder implements BreadcrumbBuilderInterface {
+  use StringTranslationTrait;
+  use LinkGeneratorTrait;
 
   /**
    * {@inheritdoc}
    */
-  public function applies(array $attributes) {
-    return !empty($attributes[RouteObjectInterface::ROUTE_NAME])
-    && ($attributes[RouteObjectInterface::ROUTE_NAME] == 'taxonomy.term_page')
-    && ($attributes['taxonomy_term'] instanceof TermInterface);
+  public function applies(RouteMatchInterface $route_match) {
+    return $route_match->getRouteName() == 'taxonomy.term_page'
+      && $route_match->getParameter('taxonomy_term') instanceof TermInterface;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function build(array $attributes) {
-    $term = $attributes['taxonomy_term'];
+  public function build(RouteMatchInterface $route_match) {
+    $term = $route_match->getParameter('taxonomy_term');
     // @todo This overrides any other possible breadcrumb and is a pure
     //   hard-coded presumption. Make this behavior configurable per
     //   vocabulary or term.

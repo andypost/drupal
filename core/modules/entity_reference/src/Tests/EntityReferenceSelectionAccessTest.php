@@ -7,23 +7,18 @@
 
 namespace Drupal\entity_reference\Tests;
 
+use Drupal\Component\Utility\String;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\comment\CommentInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the Entity Reference Selection plugin.
+ * Tests for the base handlers provided by Entity Reference.
+ *
+ * @group entity_reference
  */
 class EntityReferenceSelectionAccessTest extends WebTestBase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity Reference handlers',
-      'description' => 'Tests for the base handlers provided by Entity Reference.',
-      'group' => 'Entity Reference',
-    );
-  }
 
   public static $modules = array('node', 'comment', 'entity_reference', 'entity_test');
 
@@ -60,8 +55,8 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
    * Test the node-specific overrides of the entity handler.
    */
   public function testNodeHandler() {
-    // Create a field and instance.
-    $field = entity_create('field_config', array(
+    // Create a field storage and instance.
+    $field_storage = entity_create('field_storage_config', array(
       'name' => 'test_field',
       'entity_type' => 'entity_test',
       'translatable' => FALSE,
@@ -72,9 +67,9 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
       'type' => 'entity_reference',
       'cardinality' => '1',
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'bundle' => 'test_bundle',
       'settings' => array(
         'handler' => 'default',
@@ -114,7 +109,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
       $node = entity_create('node', $values);
       $node->save();
       $nodes[$key] = $node;
-      $node_labels[$key] = check_plain($node->label());
+      $node_labels[$key] = String::checkPlain($node->label());
     }
 
     // Test as a non-admin.
@@ -203,8 +198,8 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
    * Test the user-specific overrides of the entity handler.
    */
   public function testUserHandler() {
-    // Create a field and instance.
-    $field = entity_create('field_config', array(
+    // Create a field storage and instance.
+    $field_storage = entity_create('field_storage_config', array(
       'name' => 'test_field',
       'entity_type' => 'entity_test',
       'translatable' => FALSE,
@@ -214,9 +209,9 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
       'type' => 'entity_reference',
       'cardinality' => '1',
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'bundle' => 'test_bundle',
       'settings' => array(
         'handler' => 'default',
@@ -260,7 +255,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
         $account = $values;
       }
       $users[$key] = $account;
-      $user_labels[$key] = check_plain($account->getUsername());
+      $user_labels[$key] = String::checkPlain($account->getUsername());
     }
 
     // Test as a non-admin.
@@ -347,8 +342,8 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
    * Test the comment-specific overrides of the entity handler.
    */
   public function testCommentHandler() {
-    // Create a field and instance.
-    $field = entity_create('field_config', array(
+    // Create a field storage and instance.
+    $field_storage = entity_create('field_storage_config', array(
       'name' => 'test_field',
       'entity_type' => 'entity_test',
       'translatable' => FALSE,
@@ -359,9 +354,9 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
       'type' => 'entity_reference',
       'cardinality' => '1',
     ));
-    $field->save();
+    $field_storage->save();
     $instance = entity_create('field_instance_config', array(
-      'field' => $field,
+      'field_storage' => $field_storage,
       'bundle' => 'test_bundle',
       'settings' => array(
         'handler' => 'default',
@@ -439,7 +434,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
       $comment = entity_create('comment', $values);
       $comment->save();
       $comments[$key] = $comment;
-      $comment_labels[$key] = check_plain($comment->label());
+      $comment_labels[$key] = String::checkPlain($comment->label());
     }
 
     // Test as a non-admin.
@@ -451,7 +446,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
           array(NULL, 'CONTAINS'),
         ),
         'result' => array(
-          'node__comment' => array(
+          'comment' => array(
             $comments['published_published']->cid->value => $comment_labels['published_published'],
           ),
         ),
@@ -461,7 +456,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
           array('Published', 'CONTAINS'),
         ),
         'result' => array(
-          'node__comment' => array(
+          'comment' => array(
             $comments['published_published']->cid->value => $comment_labels['published_published'],
           ),
         ),
@@ -490,7 +485,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
           array(NULL, 'CONTAINS'),
         ),
         'result' => array(
-          'node__comment' => array(
+          'comment' => array(
             $comments['published_published']->cid->value => $comment_labels['published_published'],
             $comments['published_unpublished']->cid->value => $comment_labels['published_unpublished'],
           ),
@@ -508,7 +503,7 @@ class EntityReferenceSelectionAccessTest extends WebTestBase {
           array(NULL, 'CONTAINS'),
         ),
         'result' => array(
-          'node__comment' => array(
+          'comment' => array(
             $comments['published_published']->cid->value => $comment_labels['published_published'],
             $comments['published_unpublished']->cid->value => $comment_labels['published_unpublished'],
             $comments['unpublished_published']->cid->value => $comment_labels['unpublished_published'],

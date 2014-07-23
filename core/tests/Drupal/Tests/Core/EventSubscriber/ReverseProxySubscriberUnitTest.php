@@ -10,21 +10,14 @@ namespace Drupal\Tests\Core\EventSubscriber;
 use Drupal\Core\EventSubscriber\ReverseProxySubscriber;
 use Drupal\Core\Site\Settings;
 use Drupal\Tests\UnitTestCase;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Tests the ReverseProxySubscriber.
+ * Unit test the reverse proxy event subscriber.
  *
- * @group System
+ * @group EventSubscriber
  */
 class ReverseProxySubscriberUnitTest extends UnitTestCase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Reverse proxy implementation',
-      'description' => 'Unit test the reverse proxy event subscriber.',
-      'group' => 'System'
-    );
-  }
 
   /**
    * Tests that subscriber does not act when reverse proxy is not set.
@@ -78,16 +71,12 @@ class ReverseProxySubscriberUnitTest extends UnitTestCase {
    */
   protected function trustedHeadersAreSet(Settings $settings) {
     $subscriber = new ReverseProxySubscriber($settings);
-    $request = $this->getMock('Symfony\Component\HttpFoundation\Request', array('setTrustedHeaderName', 'setTrustedProxies'));
-    $request->staticExpects($this->at(0))
-      ->method('setTrustedHeaderName')
-      ->with($this->equalTo($request::HEADER_CLIENT_IP), $this->equalTo($settings->get('reverse_proxy_header')));
-    $request->staticExpects($this->at(1))
-      ->method('setTrustedProxies')
-      ->with($this->equalTo($settings->get('reverse_proxy_addresses')));
+    $request = new Request();
 
     $event = $this->getMockedEvent($request);
     $subscriber->onKernelRequestReverseProxyCheck($event);
+    $this->assertSame($settings->get('reverse_proxy_header'), $request->getTrustedHeaderName($request::HEADER_CLIENT_IP));
+    $this->assertSame($settings->get('reverse_proxy_addresses'), $request->getTrustedProxies());
   }
 
   /**

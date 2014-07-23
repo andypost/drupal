@@ -103,7 +103,7 @@ class ContextualLinkManager extends DefaultPluginManager implements ContextualLi
    *   The request stack.
    */
   public function __construct(ControllerResolverInterface $controller_resolver, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache_backend, LanguageManager $language_manager, AccessManager $access_manager, AccountInterface $account, RequestStack $request_stack) {
-    $this->discovery = new YamlDiscovery('contextual_links', $module_handler->getModuleDirectories());
+    $this->discovery = new YamlDiscovery('links.contextual', $module_handler->getModuleDirectories());
     $this->discovery = new ContainerDerivativeDiscoveryDecorator($this->discovery);
     $this->factory = new ContainerFactory($this);
 
@@ -113,7 +113,7 @@ class ContextualLinkManager extends DefaultPluginManager implements ContextualLi
     $this->moduleHandler = $module_handler;
     $this->requestStack = $request_stack;
     $this->alterInfo('contextual_links_plugins');
-    $this->setCacheBackend($cache_backend, $language_manager, 'contextual_links_plugins');
+    $this->setCacheBackend($cache_backend, 'contextual_links_plugins:' . $language_manager->getCurrentLanguage()->getId(), array('contextual_links_plugins' => TRUE));
   }
 
   /**

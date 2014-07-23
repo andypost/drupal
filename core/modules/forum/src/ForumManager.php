@@ -9,18 +9,23 @@ namespace Drupal\forum;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\DependencyInjection\DependencySerialization;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\comment\CommentManagerInterface;
 use Drupal\node\NodeInterface;
 
 /**
  * Provides forum manager service.
  */
-class ForumManager extends DependencySerialization implements ForumManagerInterface {
+class ForumManager implements ForumManagerInterface {
   use StringTranslationTrait;
+  use DependencySerializationTrait {
+    __wakeup as defaultWakeup;
+    __sleep as defaultSleep;
+  }
 
   /**
    * Forum sort order, newest first.
@@ -62,6 +67,13 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
    * @var \Drupal\Core\Database\Connection
    */
   protected $connection;
+
+  /**
+   * The comment manager service.
+   *
+   * @var \Drupal\comment\CommentManagerInterface
+   */
+  protected $commentManager;
 
   /**
    * Array of last post information keyed by forum (term) id.
@@ -109,12 +121,15 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
    *   The current database connection.
    * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
    *   The translation manager service.
+   * @param \Drupal\comment\CommentManagerInterface $comment_manager
+   *   The comment manager service.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityManagerInterface $entity_manager, Connection $connection, TranslationInterface $string_translation) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityManagerInterface $entity_manager, Connection $connection, TranslationInterface $string_translation, CommentManagerInterface $comment_manager) {
     $this->configFactory = $config_factory;
     $this->entityManager = $entity_manager;
     $this->connection = $connection;
-    $this->translationManager = $string_translation;
+    $this->stringTranslation = $string_translation;
+    $this->commentManager = $comment_manager;
   }
 
   /**
@@ -169,7 +184,7 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
         ->extend('Drupal\Core\Database\Query\TableSortExtender');
       $query->fields('n', array('nid'));
 
-      $query->join('comment_entity_statistics', 'ces', "n.nid = ces.entity_id AND ces.field_id = 'node__comment_forum' AND ces.entity_type = 'node'");
+      $query->join('comment_entity_statistics', 'ces', "n.nid = ces.entity_id AND ces.field_name = 'comment_forum' AND ces.entity_type = 'node'");
       $query->fields('ces', array(
         'cid',
         'last_comment_uid',
@@ -221,7 +236,7 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
         }
         else {
           $history = $this->lastVisit($topic->id(), $account);
-          $topic->new_replies = $this->numberNew($topic->id(), $history);
+          $topic->new_replies = $this->commentManager->getCountNewComments($topic, 'comment_forum', $history);
           $topic->new = $topic->new_replies || ($topic->last_comment_timestamp > $history);
         }
       }
@@ -285,21 +300,6 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
   }
 
   /**
-   * Wraps comment_num_new() in a method.
-   *
-   * @param int $nid
-   *   Node ID.
-   * @param int $timestamp
-   *   Timestamp of last read.
-   *
-   * @return int
-   *   Number of new comments.
-   */
-  protected function numberNew($nid, $timestamp) {
-    return comment_num_new($nid, $timestamp);
-  }
-
-  /**
    * Gets the last time the user viewed a node.
    *
    * @param int $nid
@@ -340,7 +340,7 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
     // Query "Last Post" information for this forum.
     $query = $this->connection->select('node_field_data', 'n');
     $query->join('forum', 'f', 'n.vid = f.vid AND f.tid = :tid', array(':tid' => $tid));
-    $query->join('comment_entity_statistics', 'ces', "n.nid = ces.entity_id AND ces.field_id = 'node__comment_forum' AND ces.entity_type = 'node'");
+    $query->join('comment_entity_statistics', 'ces', "n.nid = ces.entity_id AND ces.field_name = 'comment_forum' AND ces.entity_type = 'node'");
     $query->join('users', 'u', 'ces.last_comment_uid = u.uid');
     $query->addExpression('CASE ces.last_comment_uid WHEN 0 THEN ces.last_comment_name ELSE u.name END', 'last_comment_name');
 
@@ -378,7 +378,7 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
     if (empty($this->forumStatistics)) {
       // Prime the statistics.
       $query = $this->connection->select('node_field_data', 'n');
-      $query->join('comment_entity_statistics', 'ces', "n.nid = ces.entity_id AND ces.field_id = 'node__comment_forum' AND ces.entity_type = 'node'");
+      $query->join('comment_entity_statistics', 'ces', "n.nid = ces.entity_id AND ces.field_name = 'comment_forum' AND ces.entity_type = 'node'");
       $query->join('forum', 'f', 'n.vid = f.vid');
       $query->addExpression('COUNT(n.nid)', 'topic_count');
       $query->addExpression('SUM(ces.comment_count)', 'comment_count');
@@ -499,7 +499,7 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
    * {@inheritdoc}
    */
   public function __sleep() {
-    $vars = parent::__sleep();
+    $vars = $this->defaultSleep();
     // Do not serialize static cache.
     unset($vars['history'], $vars['index'], $vars['lastPostData'], $vars['forumChildren'], $vars['forumStatistics']);
     return $vars;
@@ -509,7 +509,7 @@ class ForumManager extends DependencySerialization implements ForumManagerInterf
    * {@inheritdoc}
    */
   public function __wakeup() {
-    parent::__wakeup();
+    $this->defaultWakeup();
     // Initialize static cache.
     $this->history = array();
     $this->lastPostData = array();

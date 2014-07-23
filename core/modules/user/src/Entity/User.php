@@ -8,11 +8,10 @@
 namespace Drupal\user\Entity;
 
 use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityMalformedException;
+use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\FieldDefinition;
-use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\user\UserInterface;
 
 /**
@@ -38,7 +37,6 @@ use Drupal\user\UserInterface;
  *   },
  *   admin_permission = "administer user",
  *   base_table = "users",
- *   uri_callback = "user_uri",
  *   label_callback = "user_format_name",
  *   fieldable = TRUE,
  *   translatable = TRUE,
@@ -244,15 +242,7 @@ class User extends ContentEntityBase implements UserInterface {
       return TRUE;
     }
 
-    $roles = \Drupal::entityManager()->getStorage('user_role')->loadMultiple($this->getRoles());
-
-    foreach ($roles as $role) {
-      if ($role->hasPermission($permission)) {
-        return TRUE;
-      }
-    }
-
-    return FALSE;
+    return $this->getRoleStorage()->isPermissionInRoles($permission, $this->getRoles());
   }
 
   /**
@@ -470,7 +460,7 @@ class User extends ContentEntityBase implements UserInterface {
     $fields['name'] = FieldDefinition::create('string')
       ->setLabel(t('Name'))
       ->setDescription(t('The name of this user.'))
-      ->setSetting('default_value', '')
+      ->setDefaultValue('')
       ->setPropertyConstraints('value', array(
         // No Length constraint here because the UserName constraint also covers
         // that.
@@ -485,7 +475,7 @@ class User extends ContentEntityBase implements UserInterface {
     $fields['mail'] = FieldDefinition::create('email')
       ->setLabel(t('Email'))
       ->setDescription(t('The email of this user.'))
-      ->setSetting('default_value', '')
+      ->setDefaultValue('')
       ->setPropertyConstraints('value', array('UserMailUnique' => array()));
 
     // @todo Convert to a text field in https://drupal.org/node/1548204.
@@ -504,7 +494,7 @@ class User extends ContentEntityBase implements UserInterface {
     $fields['status'] = FieldDefinition::create('boolean')
       ->setLabel(t('User status'))
       ->setDescription(t('Whether the user is active or blocked.'))
-      ->setSetting('default_value', FALSE);
+      ->setDefaultValue(FALSE);
 
     $fields['created'] = FieldDefinition::create('created')
       ->setLabel(t('Created'))
@@ -513,27 +503,37 @@ class User extends ContentEntityBase implements UserInterface {
     $fields['access'] = FieldDefinition::create('timestamp')
       ->setLabel(t('Last access'))
       ->setDescription(t('The time that the user last accessed the site.'))
-      ->setSetting('default_value', 0);
+      ->setDefaultValue(0);
 
     $fields['login'] = FieldDefinition::create('timestamp')
       ->setLabel(t('Last login'))
       ->setDescription(t('The time that the user last logged in.'))
-      ->setSetting('default_value', 0);
+      ->setDefaultValue(0);
 
     $fields['init'] = FieldDefinition::create('email')
       ->setLabel(t('Initial email'))
       ->setDescription(t('The email address used for initial account creation.'))
-      ->setSetting('default_value', '');
+      ->setDefaultValue('');
 
     // @todo Convert this to entity_reference_field, see
     // https://drupal.org/node/2044859.
     $fields['roles'] = FieldDefinition::create('string')
       ->setCustomStorage(TRUE)
       ->setLabel(t('Roles'))
-      ->setCardinality(FieldDefinitionInterface::CARDINALITY_UNLIMITED)
+      ->setCardinality(FieldDefinition::CARDINALITY_UNLIMITED)
       ->setDescription(t('The roles the user has.'));
 
     return $fields;
+  }
+
+  /**
+   * Returns the role storage object.
+   *
+   * @return \Drupal\user\RoleStorageInterface
+   *   The role storage object.
+   */
+  protected function getRoleStorage() {
+    return \Drupal::entityManager()->getStorage('user_role');
   }
 
 }

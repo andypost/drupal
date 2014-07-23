@@ -12,11 +12,8 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\views\ViewsData;
 
 /**
- * Tests the fetching of views data.
- *
- * @see hook_views_data
- *
  * @coversDefaultClass \Drupal\views\ViewsData
+ * @group views
  */
 class ViewsDataTest extends UnitTestCase {
 
@@ -58,17 +55,6 @@ class ViewsDataTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public static function getInfo() {
-    return array(
-      'name' => 'Views data',
-      'description' => 'Tests the fetching of views data.',
-      'group' => 'Views',
-    );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   protected function setUp() {
     $this->cacheBackend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
     $this->getContainerWithCacheBins($this->cacheBackend);
@@ -102,7 +88,7 @@ class ViewsDataTest extends UnitTestCase {
     $data['views_test_data']['job']['area']['id'] = 'text';
     $data['views_test_data']['job']['area']['sub_type'] = array('header', 'footer');
 
-    // Clone the example views test data for different weight, different title,
+    // Duplicate the example views test data for different weight, different title,
     // and matching data.
     $data['views_test_data_2'] = $data['views_test_data'];
     $data['views_test_data_2']['table']['base']['weight'] = 50;

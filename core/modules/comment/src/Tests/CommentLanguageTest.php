@@ -7,12 +7,15 @@
 
 namespace Drupal\comment\Tests;
 
+use Drupal\comment\Entity\Comment;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
-use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Functional tests for comment language.
+ * Tests for comment language.
+ *
+ * @group comment
  */
 class CommentLanguageTest extends WebTestBase {
 
@@ -26,14 +29,6 @@ class CommentLanguageTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('node', 'language', 'language_test', 'comment_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment language',
-      'description' => 'Tests for comment language.',
-      'group' => 'Comment',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -75,10 +70,10 @@ class CommentLanguageTest extends WebTestBase {
     $this->container->get('comment.manager')->addDefaultField('node', 'article');
 
     // Make comment body translatable.
-    $field = FieldConfig::loadByName('comment', 'comment_body');
-    $field->translatable = TRUE;
-    $field->save();
-    $this->assertTrue($field->isTranslatable(), 'Comment body is translatable.');
+    $field_storage = FieldStorageConfig::loadByName('comment', 'comment_body');
+    $field_storage->translatable = TRUE;
+    $field_storage->save();
+    $this->assertTrue($field_storage->isTranslatable(), 'Comment body is translatable.');
   }
 
   /**
@@ -110,23 +105,24 @@ class CommentLanguageTest extends WebTestBase {
         $prefix = empty($prefixes[$langcode]) ? '' : $prefixes[$langcode] . '/';
         $comment_values[$node_langcode][$langcode] = $this->randomName();
         $edit = array(
-          'subject' => $this->randomName(),
+          'subject[0][value]' => $this->randomName(),
           'comment_body[0][value]' => $comment_values[$node_langcode][$langcode],
         );
         $this->drupalPostForm($prefix . 'node/' . $node->id(), $edit, t('Preview'));
         $this->drupalPostForm(NULL, $edit, t('Save'));
 
         // Check that comment language matches the current content language.
-        $cid = db_select('comment', 'c')
+        $cid = db_select('comment_field_data', 'c')
           ->fields('c', array('cid'))
           ->condition('entity_id', $node->id())
           ->condition('entity_type', 'node')
-          ->condition('field_id', 'node__comment')
+          ->condition('field_name', 'comment')
+          ->condition('default_langcode', 1)
           ->orderBy('cid', 'DESC')
           ->range(0, 1)
           ->execute()
           ->fetchField();
-        $comment = comment_load($cid);
+        $comment = Comment::load($cid);
         $args = array('%node_language' => $node_langcode, '%comment_language' => $comment->langcode->value, '%langcode' => $langcode);
         $this->assertEqual($comment->langcode->value, $langcode, format_string('The comment posted with content language %langcode and belonging to the node with language %node_language has language %comment_language', $args));
         $this->assertEqual($comment->comment_body->value, $comment_values[$node_langcode][$langcode], 'Comment body correctly stored.');

@@ -139,7 +139,7 @@ function menu_test_theme_page_callback($inherited = FALSE) {
   // Initialize the theme system so that $theme_key will be populated.
   drupal_theme_initialize();
   // Now we check what the theme negotiator service returns.
-  $active_theme = \Drupal::service('theme.negotiator')->getActiveTheme('getActiveTheme');
+  $active_theme = \Drupal::service('theme.negotiator')->determineActiveTheme(\Drupal::routeMatch());
   $output = "Active theme: $active_theme. Actual theme: $theme_key.";
   if ($inherited) {
     $output .= ' Theme negotiation inheritance is being tested.';
@@ -167,21 +167,21 @@ function menu_test_menu_name($new_name = '') {
 }
 
 /**
- * Implements hook_menu_link_insert().
+ * Implements hook_ENTITY_TYPE_insert() for menu_link entities.
  */
 function menu_test_menu_link_insert(MenuLink $item) {
   menu_test_static_variable('insert');
 }
 
 /**
- * Implements hook_menu_link_update().
+ * Implements hook_ENTITY_TYPE_update() for menu_link entities.
  */
 function menu_test_menu_link_update(MenuLink $item) {
   menu_test_static_variable('update');
 }
 
 /**
- * Implements hook_menu_link_delete().
+ * Implements hook_ENTITY_TYPE_delete() for menu_link entities.
  */
 function menu_test_menu_link_delete(MenuLink $item) {
   menu_test_static_variable('delete');

@@ -7,10 +7,11 @@
 
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Template\Attribute;
+use Drupal\Component\Datetime\DateTimePlus;
 use Drupal\Component\Utility\Crypt;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Drupal\Component\Utility\String;
 use Drupal\menu_link\MenuLinkInterface;
 use Drupal\user\RoleInterface;
 use Drupal\user\UserInterface;
@@ -18,7 +19,7 @@ use Drupal\user\UserInterface;
 /**
  * Implements hook_help().
  */
-function toolbar_help($route_name, Request $request) {
+function toolbar_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.toolbar':
       $output = '<h3>' . t('About') . '</h3>';
@@ -79,6 +80,7 @@ function toolbar_element_info() {
       'id' => 'toolbar-administration',
       'class' => array('toolbar'),
       'role' => 'navigation',
+      'aria-label' => t('Site administration'),
     ),
     // Metadata for the administration bar.
     '#bar' => array(
@@ -108,7 +110,7 @@ function toolbar_element_info() {
  * Use Drupal's page cache for toolbar/subtrees/*, even for authenticated users.
  *
  * This gets invoked after full bootstrap, so must duplicate some of what's
- * done by _drupal_bootstrap_page_cache().
+ * done by \Drupal\Core\DrupalKernel::handlePageCache().
  *
  * @todo Replace this hack with something better integrated with DrupalKernel
  *   once Drupal's page caching itself is properly integrated.
@@ -118,7 +120,7 @@ function _toolbar_initialize_page_cache() {
   drupal_page_is_cacheable(TRUE);
 
   // If we have a cache, serve it.
-  // @see _drupal_bootstrap_page_cache()
+  // @see \Drupal\Core\DrupalKernel::handlePageCache()
   $request = \Drupal::request();
   $response = drupal_page_get_cache($request);
   if ($response) {
@@ -137,7 +139,7 @@ function _toolbar_initialize_page_cache() {
   // accesses the callback URL again (e.g., after clearing the browser cache or
   // when force-reloading a Drupal page).
   $max_age = 3600 * 24 * 365;
-  drupal_add_http_header('Expires', gmdate(DATE_RFC1123, REQUEST_TIME + $max_age));
+  drupal_add_http_header('Expires', gmdate(DateTimePlus::RFC7231, REQUEST_TIME + $max_age));
   drupal_add_http_header('Cache-Control', 'private, max-age=' . $max_age);
 }
 
@@ -149,7 +151,7 @@ function _toolbar_initialize_page_cache() {
 function toolbar_page_build(&$page) {
   $page['page_top']['toolbar'] = array(
     '#type' => 'toolbar',
-    '#access' => user_access('access toolbar'),
+    '#access' => \Drupal::currentUser()->hasPermission('access toolbar'),
   );
 }
 
@@ -458,7 +460,7 @@ function toolbar_menu_navigation_links(&$tree) {
         'toolbar-icon',
         'toolbar-icon-' . strtolower(str_replace(' ', '-', $item['link']['link_title'])),
       ),
-      'title' => check_plain($item['link']['description']),
+      'title' => String::checkPlain($item['link']['description']),
     );
   }
 }
@@ -539,7 +541,7 @@ function toolbar_modules_uninstalled($modules) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_update().
+ * Implements hook_ENTITY_TYPE_update() for menu_link entities.
  */
 function toolbar_menu_link_update(MenuLinkInterface $menu_link) {
   if ($menu_link->menu_name === 'admin') {
@@ -548,14 +550,14 @@ function toolbar_menu_link_update(MenuLinkInterface $menu_link) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_update().
+ * Implements hook_ENTITY_TYPE_update() for user entities.
  */
 function toolbar_user_update(UserInterface $user) {
   _toolbar_clear_user_cache($user->id());
 }
 
 /**
- * Implements hook_ENTITY_TYPE_update().
+ * Implements hook_ENTITY_TYPE_update() for user_role entities.
  */
 function toolbar_user_role_update(RoleInterface $role) {
   _toolbar_clear_user_cache();

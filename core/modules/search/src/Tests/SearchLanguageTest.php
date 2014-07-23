@@ -8,10 +8,12 @@
 namespace Drupal\search\Tests;
 
 use Drupal\Core\Language\Language;
-use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 
 /**
- * Test node search with multiple languages.
+ * Tests advanced search with different languages added.
+ *
+ * @group search
  */
 class SearchLanguageTest extends SearchTestBase {
 
@@ -21,14 +23,6 @@ class SearchLanguageTest extends SearchTestBase {
    * @var array
    */
   public static $modules = array('language');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Search language selection',
-      'description' => 'Tests advanced search with different languages added.',
-      'group' => 'Search',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -47,9 +41,9 @@ class SearchLanguageTest extends SearchTestBase {
     // Make the body field translatable. The title is already translatable by
     // definition. The parent class has already created the article and page
     // content types.
-    $field = FieldConfig::loadByName('node', 'body');
-    $field->translatable = TRUE;
-    $field->save();
+    $field_storage = FieldStorageConfig::loadByName('node', 'body');
+    $field_storage->translatable = TRUE;
+    $field_storage->save();
 
     // Create a few page nodes with multilingual body values.
     $default_format = filter_default_format();

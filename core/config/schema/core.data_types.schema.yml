@@ -42,9 +42,11 @@ uri:
 mapping:
   label: Mapping
   class: '\Drupal\Core\Config\Schema\Mapping'
+  definition_class: '\Drupal\Core\TypedData\MapDataDefinition'
 sequence:
   label: Sequence
   class: '\Drupal\Core\Config\Schema\Sequence'
+  definition_class: '\Drupal\Core\TypedData\ListDataDefinition'
 
 # Simple extended data types:
 
@@ -109,7 +111,6 @@ filter:
       label: 'Weight'
     settings:
       type: filter_settings.[%parent.id]
-
 
 # System action configuration base.
 action_configuration_default:
@@ -235,15 +236,9 @@ config_dependencies:
 config_entity:
   type: mapping
   mapping:
-    id:
-      type: string
-      label: 'ID'
     uuid:
       type: string
       label: 'UUID'
-    label:
-      type: label
-      label: 'Label'
     langcode:
       type: string
       label: 'Default language'
@@ -289,6 +284,58 @@ block_settings:
     view_mode:
       type: string
       label: 'View mode'
+    visibility:
+      type: sequence
+      label: 'Visibility Conditions'
+      sequence:
+        - type: condition.plugin.[id]
+          label: 'Visibility Condition'
     provider:
       type: string
       label: 'Provider'
+
+condition.plugin:
+  type: mapping
+  label: 'Condition'
+  mapping:
+    id:
+      type: string
+      label: 'ID'
+    negate:
+      type: boolean
+      label: 'Negate'
+    uuid:
+      type: string
+      label: 'UUID'
+    context_mapping:
+      type: sequence
+      label: 'Context assignments'
+      sequence:
+        - type: string
+
+display_variant.plugin:
+  type: mapping
+  label: 'Display variant'
+  mapping:
+    id:
+      type: string
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
+    weight:
+      type: integer
+      label: 'Weight'
+    uuid:
+      type: string
+      label: 'UUID'
+
+base_entity_reference_field_settings:
+  type: mapping
+  mapping:
+    target_type:
+      type: string
+      label: 'Type of item to reference'
+    target_bundle:
+      type: string
+      label: 'Bundle of item to reference'

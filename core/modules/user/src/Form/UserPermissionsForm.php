@@ -8,7 +8,6 @@
 namespace Drupal\user\Form;
 
 use Drupal\Component\Utility\String;
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\user\RoleStorageInterface;
@@ -140,18 +139,21 @@ class UserPermissionsForm extends FormBase {
             'warning' => !empty($perm_item['restrict access']) ? $this->t('Warning: Give to trusted roles only; this permission has security implications.') : '',
           );
           $options[$perm] = $perm_item['title'];
-          $user_permission_description = array(
-            '#theme' => 'user_permission_description',
-            '#permission_item' => $perm_item,
-            '#hide' => $hide_descriptions,
-          );
+          // Show the permission description.
+          if (!$hide_descriptions) {
+            $user_permission_description = $perm_item['description'];
+            // Append warning message.
+            if (!empty($perm_item['warning'])) {
+              $user_permission_description .= ' <em class="permission-warning">' . $perm_item['warning'] . '</em>';
+            }
+          }
           $form['permissions'][$perm]['description'] = array(
             '#wrapper_attributes' => array(
               'class' => array('permission'),
             ),
             '#type' => 'item',
             '#markup' => $perm_item['title'],
-            '#description' => drupal_render($user_permission_description),
+            '#description' => $user_permission_description,
           );
           $options[$perm] = '';
           foreach ($role_names as $rid => $name) {
@@ -188,9 +190,6 @@ class UserPermissionsForm extends FormBase {
     }
 
     drupal_set_message($this->t('The changes have been saved.'));
-
-    // Clear the cached pages and blocks.
-    Cache::invalidateTags(array('content' => TRUE));
   }
 
 }

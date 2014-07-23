@@ -7,10 +7,13 @@
 
 namespace Drupal\system\Tests\Common;
 
+use Drupal\Component\Utility\String;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests drupal_render() in a full environment.
+ * Performs integration tests on drupal_render().
+ *
+ * @group Common
  */
 class RenderWebTest extends WebTestBase {
 
@@ -20,14 +23,6 @@ class RenderWebTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('common_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'drupal_render() in a full environment',
-      'description' => 'Performs integration tests on drupal_render().',
-      'group' => 'Common',
-    );
-  }
 
   /**
    * Tests rendering form elements without passing through form_builder().
@@ -153,8 +148,8 @@ class RenderWebTest extends WebTestBase {
   protected function assertRenderedElement(array $element, $xpath, array $xpath_args = array()) {
     $original_element = $element;
     $this->drupalSetContent(drupal_render($element));
-    $this->verbose('<pre>' .  check_plain(var_export($original_element, TRUE)) . '</pre>'
-      . '<pre>' .  check_plain(var_export($element, TRUE)) . '</pre>'
+    $this->verbose('<pre>' .  String::checkPlain(var_export($original_element, TRUE)) . '</pre>'
+      . '<pre>' .  String::checkPlain(var_export($element, TRUE)) . '</pre>'
       . '<hr />' . $this->drupalGetContent()
     );
 

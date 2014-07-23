@@ -7,10 +7,13 @@
 
 namespace Drupal\filter\Tests;
 
+use Drupal\Component\Utility\String;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the administrative functionality of the Filter module.
+ * Thoroughly test the administrative interface of the filter module.
+ *
+ * @group filter
  */
 class FilterAdminTest extends WebTestBase {
 
@@ -18,17 +21,6 @@ class FilterAdminTest extends WebTestBase {
    * {@inheritdoc}
    */
   public static $modules = array('filter', 'node');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Filter administration functionality',
-      'description' => 'Thoroughly test the administrative interface of the filter module.',
-      'group' => 'Filter',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -304,7 +296,7 @@ class FilterAdminTest extends WebTestBase {
     $edit['body[0][format]'] = $plain;
     $this->drupalPostForm('node/' . $node->id() . '/edit', $edit, t('Save'));
     $this->drupalGet('node/' . $node->id());
-    $this->assertText(check_plain($text), 'The "Plain text" text format escapes all HTML tags.');
+    $this->assertText(String::checkPlain($text), 'The "Plain text" text format escapes all HTML tags.');
     \Drupal::config('filter.settings')
       ->set('always_show_fallback_choice', FALSE)
       ->save();

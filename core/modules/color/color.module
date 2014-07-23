@@ -7,13 +7,14 @@
 use Drupal\Core\Asset\CssOptimizer;
 use Drupal\Component\Utility\Bytes;
 use Drupal\Component\Utility\Environment;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
-use Symfony\Component\HttpFoundation\Request;
+use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
  * Implements hook_help().
  */
-function color_help($route_name, Request $request) {
+function color_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.color':
       $output = '<h3>' . t('About') . '</h3>';
@@ -164,7 +165,6 @@ function color_get_palette($theme, $default = FALSE) {
  *
  * @see color_scheme_form_validate()
  * @see color_scheme_form_submit()
- * @ingroup forms
  */
 function color_scheme_form($complete_form, &$form_state, $theme) {
   $base = drupal_get_path('module', 'color');
@@ -275,7 +275,7 @@ function template_preprocess_color_scheme_form(&$variables) {
 
   // Attempt to load preview HTML if the theme provides it.
   $preview_html_path = DRUPAL_ROOT . '/' . (isset($info['preview_html']) ? drupal_get_path('theme', $theme) . '/' . $info['preview_html'] : drupal_get_path('module', 'color') . '/preview.html');
-  $variables['html_preview'] = file_get_contents($preview_html_path);
+  $variables['html_preview'] = SafeMarkup::set(file_get_contents($preview_html_path));
 }
 
 /**
@@ -301,7 +301,7 @@ function color_palette_color_value($element, $input = FALSE, $form_state = array
     // Start with the provided value for this textfield, and validate that if
     // necessary, falling back on the default value.
     $value = form_type_textfield_value($element, $input, $form_state);
-    if (!$value || !isset($form_state['complete form']['#token']) || color_valid_hexadecimal_string($value) || drupal_valid_token($form_state['values']['form_token'], $form_state['complete form']['#token'])) {
+    if (!$value || !isset($form_state['complete form']['#token']) || color_valid_hexadecimal_string($value) || \Drupal::csrfToken()->validate($form_state['values']['form_token'], $form_state['complete form']['#token'])) {
       return $value;
     }
     else {

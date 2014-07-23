@@ -8,11 +8,14 @@
 namespace Drupal\filter\Tests;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\String;
 use Drupal\simpletest\DrupalUnitTestBase;
 use Drupal\filter\FilterBag;
 
 /**
- * Unit tests for core filters.
+ * Tests Filter module filters individually.
+ *
+ * @group filter
  */
 class FilterUnitTest extends DrupalUnitTestBase {
 
@@ -27,14 +30,6 @@ class FilterUnitTest extends DrupalUnitTestBase {
    * @var \Drupal\filter\Plugin\FilterInterface[]
    */
   protected $filters;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Filter module filters',
-      'description' => 'Tests Filter module filters individually.',
-      'group' => 'Filter',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -360,7 +355,7 @@ class FilterUnitTest extends DrupalUnitTestBase {
   /**
    * Tests the HTML escaping filter.
    *
-   * check_plain() is not tested here.
+   * \Drupal\Component\Utility\String::checkPlain() is not tested here.
    */
   function testHtmlEscapeFilter() {
     // Get FilterHtmlEscape object.
@@ -681,7 +676,7 @@ www.example.com with a newline in comments -->
     ));
     $tests = array(
       'www.trimmed.com/d/ff.ext?a=1&b=2#a1' => array(
-        '<a href="http://www.trimmed.com/d/ff.ext?a=1&amp;b=2#a1">www.trimmed.com/d/ff...</a>' => TRUE,
+        '<a href="http://www.trimmed.com/d/ff.ext?a=1&amp;b=2#a1">www.trimmed.com/d/f…</a>' => TRUE,
       ),
     );
     $this->assertFilteredString($filter, $tests);
@@ -714,22 +709,24 @@ www.example.com with a newline in comments -->
       foreach ($tasks as $value => $is_expected) {
         // Not using assertIdentical, since combination with strpos() is hard to grok.
         if ($is_expected) {
-          $success = $this->assertTrue(strpos($result, $value) !== FALSE, format_string('@source: @value found.', array(
+          $success = $this->assertTrue(strpos($result, $value) !== FALSE, format_string('@source: @value found. Filtered result: @result.', array(
             '@source' => var_export($source, TRUE),
             '@value' => var_export($value, TRUE),
+            '@result' => var_export($result, TRUE),
           )));
         }
         else {
-          $success = $this->assertTrue(strpos($result, $value) === FALSE, format_string('@source: @value not found.', array(
+          $success = $this->assertTrue(strpos($result, $value) === FALSE, format_string('@source: @value not found. Filtered result: @result.', array(
             '@source' => var_export($source, TRUE),
             '@value' => var_export($value, TRUE),
+            '@result' => var_export($result, TRUE),
           )));
         }
         if (!$success) {
-          $this->verbose('Source:<pre>' . check_plain(var_export($source, TRUE)) . '</pre>'
-            . '<hr />' . 'Result:<pre>' . check_plain(var_export($result, TRUE)) . '</pre>'
+          $this->verbose('Source:<pre>' . String::checkPlain(var_export($source, TRUE)) . '</pre>'
+            . '<hr />' . 'Result:<pre>' . String::checkPlain(var_export($result, TRUE)) . '</pre>'
             . '<hr />' . ($is_expected ? 'Expected:' : 'Not expected:')
-            . '<pre>' . check_plain(var_export($value, TRUE)) . '</pre>'
+            . '<pre>' . String::checkPlain(var_export($value, TRUE)) . '</pre>'
           );
         }
       }

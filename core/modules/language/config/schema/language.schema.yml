@@ -85,6 +85,12 @@ language.entity.*:
   type: config_entity
   label: 'Language'
   mapping:
+    id:
+      type: string
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
     direction:
       type: integer
       label: 'Direction'
@@ -123,3 +129,11 @@ language.settings:
                         language_show:
                           type: boolean
                           label: 'Show language selector on create and edit pages'
+
+condition.plugin.language:
+  type: condition.plugin
+  mapping:
+    langcodes:
+      type: sequence
+      sequence:
+        - type: string

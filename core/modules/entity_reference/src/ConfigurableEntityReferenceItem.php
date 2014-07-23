@@ -15,7 +15,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\TypedData\AllowedValuesInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Validation\Plugin\Validation\Constraint\AllowedValuesConstraint;
-use Drupal\field\FieldConfigInterface;
+use Drupal\field\FieldStorageConfigInterface;
 
 /**
  * Alternative plugin implementation of the 'entity_reference' field type.
@@ -144,7 +144,7 @@ class ConfigurableEntityReferenceItem extends EntityReferenceItem implements All
     $target_type = $field_definition->getSetting('target_type');
     $target_type_info = \Drupal::entityManager()->getDefinition($target_type);
 
-    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\ContentEntityInterface') && $field_definition instanceof FieldConfigInterface) {
+    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\ContentEntityInterface') && $field_definition instanceof FieldStorageConfigInterface) {
       $schema['columns']['revision_id'] = array(
         'description' => 'The revision ID of the target entity.',
         'type' => 'int',
@@ -159,7 +159,7 @@ class ConfigurableEntityReferenceItem extends EntityReferenceItem implements All
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, array &$form_state, $has_data) {
+  public function settingsForm(array &$form, array &$form_state, $has_data) {
     $element['target_type'] = array(
       '#type' => 'select',
       '#title' => t('Type of item to reference'),
@@ -190,7 +190,7 @@ class ConfigurableEntityReferenceItem extends EntityReferenceItem implements All
       // entity type specific plugins (e.g. 'default_node', 'default_user',
       // ...).
       if (in_array($plugin_id, $handler_groups)) {
-        $handlers_options[$plugin_id] = check_plain($plugin['label']);
+        $handlers_options[$plugin_id] = String::checkPlain($plugin['label']);
       }
     }
 

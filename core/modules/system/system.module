@@ -8,13 +8,13 @@
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Extension\Extension;
 use Drupal\Core\Extension\ExtensionDiscovery;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslationWrapper;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\block\BlockPluginInterface;
 use Drupal\user\UserInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use GuzzleHttp\Exception\RequestException;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * New users will be set to the default time zone at registration.
@@ -75,7 +75,7 @@ const EMAIL_MAX_LENGTH = 254;
 /**
  * Implements hook_help().
  */
-function system_help($route_name, Request $request) {
+function system_help($route_name, RouteMatchInterface $route_match) {
   global $base_url;
 
   switch ($route_name) {
@@ -95,6 +95,8 @@ function system_help($route_name, Request $request) {
       $output .= '<dd>' . t('In order for the site and its modules to continue to operate well, a set of routine administrative operations must run on a regular basis. The System module manages this task by making use of a system cron job. You can verify the status of cron tasks by visiting the <a href="@status">Status report page</a>. For more information, see the online handbook entry for <a href="@handbook">configuring cron jobs</a>. You can set up cron job by visiting <a href="@cron">Cron configuration</a> page', array('@status' => url('admin/reports/status'), '@handbook' => 'http://drupal.org/cron', '@cron' => url('admin/config/system/cron'))) . '</dd>';
       $output .= '<dt>' . t('Configuring basic site settings') . '</dt>';
       $output .= '<dd>' . t('The System module also handles basic configuration options for your site, including <a href="@date-time-settings">Date and time settings</a>, <a href="@file-system">File system settings</a>, <a href="@site-info">Site name and other information</a>, and a <a href="@maintenance-mode">Maintenance mode</a> for taking your site temporarily offline.', array('@date-time-settings' => url('admin/config/regional/date-time'), '@file-system' => url('admin/config/media/file-system'), '@site-info' => url('admin/config/system/site-information'), '@maintenance-mode' => url('admin/config/development/maintenance'))) . '</dd>';
+      $output .= '<dt>' . t('Providing administrative help') . '</dt>';
+      $output .= '<dd>' . t('Page-specific administrative help text that is provided by the System module and other modules is displayed in the System Help block. This block can be placed and configured on the <a href="!blocks">Block layout page</a>.', array('!blocks' => (\Drupal::moduleHandler()->moduleExists('block')) ? \Drupal::url('block.admin_display') : '#')) . '</dd>';
       $output .= '</dl>';
       return $output;
 
@@ -107,7 +109,7 @@ function system_help($route_name, Request $request) {
 
     case 'system.theme_settings_theme':
       $theme_list = list_themes();
-      $theme = $theme_list[$request->attributes->get('theme')];
+      $theme = $theme_list[$route_match->getParameter('theme')];
       return '<p>' . t('These options control the display settings for the %name theme. When your site is displayed using this theme, these settings will be used.', array('%name' => $theme->info['name'])) . '</p>';
 
     case 'system.theme_settings':
@@ -132,13 +134,13 @@ function system_help($route_name, Request $request) {
       return '<p>' . t('The uninstall process removes all data related to a module.') . '</p>';
 
     case 'block.admin_edit':
-      if (($block = $request->attributes->get('block')) && $block->get('plugin') == 'system_powered_by_block') {
+      if (($block = $route_match->getParameter('block')) && $block->get('plugin') == 'system_powered_by_block') {
         return '<p>' . t('The <em>Powered by Drupal</em> block is an optional link to the home page of the Drupal project. While there is absolutely no requirement that sites feature this link, it may be used to show support for Drupal.') . '</p>';
       }
       break;
 
     case 'block.admin_add':
-      if ($request->attributes->get('plugin_id') == 'system_powered_by_block') {
+      if ($route_match->getParameter('plugin_id') == 'system_powered_by_block') {
         return '<p>' . t('The <em>Powered by Drupal</em> block is an optional link to the home page of the Drupal project. While there is absolutely no requirement that sites feature this link, it may be used to show support for Drupal.') . '</p>';
       }
       break;
@@ -177,6 +179,7 @@ function system_theme() {
     ),
     'system_config_form' => array(
       'render element' => 'form',
+      'template' => 'system-config-form',
     ),
     'confirm_form' => array(
       'render element' => 'form',
@@ -524,7 +527,8 @@ function system_element_info() {
   );
   $types['date'] = array(
     '#input' => TRUE,
-    '#theme' => 'date',
+    '#theme' => 'input__date',
+    '#pre_render' => array('form_pre_render_date'),
     '#theme_wrappers' => array('form_element'),
   );
   $types['file'] = array(
@@ -750,7 +754,7 @@ function system_stream_wrappers() {
  * Menu item access callback - only enabled themes can be accessed.
  */
 function _system_themes_access($theme) {
-  return user_access('administer themes') && drupal_theme_access($theme);
+  return \Drupal::currentUser()->hasPermission('administer themes') && drupal_theme_access($theme);
 }
 
 /**
@@ -977,7 +981,7 @@ function system_page_build(&$page) {
         'path' => current_path(),
         'front' => drupal_is_front_page(),
         'language' => \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_URL)->id,
-        'query' => \Drupal::service('request')->query->all(),
+        'query' => \Drupal::request()->query->all(),
       )
     );
   }
@@ -1003,7 +1007,7 @@ function system_form_user_register_form_alter(&$form, &$form_state) {
 }
 
 /**
- * Implements hook_user_presave().
+ * Implements hook_ENTITY_TYPE_presave() for user entities.
  */
 function system_user_presave(UserInterface $account) {
   $config = \Drupal::config('system.date');
@@ -1103,16 +1107,17 @@ function system_check_directory($form_element) {
     return $form_element;
   }
 
+  $logger = \Drupal::logger('file system');
   if (!is_dir($directory) && !drupal_mkdir($directory, NULL, TRUE)) {
     // If the directory does not exists and cannot be created.
     form_set_error($form_element['#parents'][0], $form_state, t('The directory %directory does not exist and could not be created.', array('%directory' => $directory)));
-    watchdog('file system', 'The directory %directory does not exist and could not be created.', array('%directory' => $directory), WATCHDOG_ERROR);
+    $logger->error('The directory %directory does not exist and could not be created.', array('%directory' => $directory));
   }
 
   if (is_dir($directory) && !is_writable($directory) && !drupal_chmod($directory)) {
     // If the directory is not writable and cannot be made so.
     form_set_error($form_element['#parents'][0], $form_state, t('The directory %directory exists but is not writable and could not be made writable.', array('%directory' => $directory)));
-    watchdog('file system', 'The directory %directory exists but is not writable and could not be made writable.', array('%directory' => $directory), WATCHDOG_ERROR);
+    $logger->error('The directory %directory exists but is not writable and could not be made writable.', array('%directory' => $directory));
   }
   elseif (is_dir($directory)) {
     if ($form_element['#name'] == 'file_public_path') {
@@ -1703,22 +1708,6 @@ function system_block_view_system_help_block_alter(array &$build, BlockPluginInt
   // Assume that most users do not need or want to perform contextual actions on
   // the help block, so don't needlessly draw attention to it.
   unset($build['#contextual_links']);
-}
-
-/**
- * Returns HTML for a system settings form.
- *
- * By default this does not alter the appearance of a form at all,
- * but is provided as a convenience for themers.
- *
- * @param $variables
- *   An associative array containing:
- *   - form: A render element representing the form.
- *
- * @ingroup themeable
- */
-function theme_system_config_form($variables) {
-  return drupal_render_children($variables['form']);
 }
 
 /**

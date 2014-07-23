@@ -13,7 +13,9 @@ use Drupal\views\Plugin\views\HandlerBase;
 use Drupal\views\Views;
 
 /**
- * Tests abstract handlers of views.
+ * Tests abstract handler definitions.
+ *
+ * @group views
  */
 class HandlerTest extends ViewTestBase {
 
@@ -30,14 +32,6 @@ class HandlerTest extends ViewTestBase {
    * @var array
    */
   public static $modules = array('views_ui', 'comment', 'node');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Handler: Base',
-      'description' => 'Tests abstract handler definitions.',
-      'group' => 'Views Handlers',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();
@@ -284,7 +278,7 @@ class HandlerTest extends ViewTestBase {
     // Setup a broken relationship.
     $view->addHandler('default', 'relationship', $this->randomName(), $this->randomName(), array(), 'broken_relationship');
     // Setup a valid relationship.
-    $view->addHandler('default', 'relationship', 'comment', 'node', array('relationship' => 'cid'), 'valid_relationship');
+    $view->addHandler('default', 'relationship', 'comment_field_data', 'node', array('relationship' => 'cid'), 'valid_relationship');
     $view->initHandlers();
     $field = $view->field['title'];
 

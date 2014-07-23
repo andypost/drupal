@@ -16,8 +16,7 @@ use Drupal\Tests\UnitTestCase;
 
 /**
  * @coversDefaultClass \Drupal\Core\Entity\Entity
- *
- * @group Drupal
+ * @group Entity
  */
 class EntityUnitTest extends UnitTestCase {
 
@@ -83,17 +82,6 @@ class EntityUnitTest extends UnitTestCase {
    * @var array
    */
   protected $values;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'description' => '',
-      'name' => '\Drupal\Core\Entity\Entity unit test',
-      'group' => 'Entity',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -542,7 +530,8 @@ class EntityUnitTest extends UnitTestCase {
   public function testPreSave() {
     // This method is internal, so check for errors on calling it only.
     $storage = $this->getMock('\Drupal\Core\Entity\EntityStorageInterface');
-    $this->entity->preSave($storage);
+    // Our mocked entity->preSave() returns NULL, so assert that.
+    $this->assertNull($this->entity->preSave($storage));
   }
 
   /**
@@ -578,7 +567,8 @@ class EntityUnitTest extends UnitTestCase {
     // This method is internal, so check for errors on calling it only.
     $storage = $this->getMock('\Drupal\Core\Entity\EntityStorageInterface');
     $values = array();
-    $this->entity->preCreate($storage, $values);
+    // Our mocked entity->preCreate() returns NULL, so assert that.
+    $this->assertNull($this->entity->preCreate($storage, $values));
   }
 
   /**
@@ -587,7 +577,8 @@ class EntityUnitTest extends UnitTestCase {
   public function testPostCreate() {
     // This method is internal, so check for errors on calling it only.
     $storage = $this->getMock('\Drupal\Core\Entity\EntityStorageInterface');
-    $this->entity->postCreate($storage);
+    // Our mocked entity->postCreate() returns NULL, so assert that.
+    $this->assertNull($this->entity->postCreate($storage));
   }
 
   /**
@@ -596,7 +587,8 @@ class EntityUnitTest extends UnitTestCase {
   public function testPreDelete() {
     // This method is internal, so check for errors on calling it only.
     $storage = $this->getMock('\Drupal\Core\Entity\EntityStorageInterface');
-    $this->entity->preDelete($storage, array($this->entity));
+    // Our mocked entity->preDelete() returns NULL, so assert that.
+    $this->assertNull($this->entity->preDelete($storage, array($this->entity)));
   }
 
   /**
@@ -629,7 +621,8 @@ class EntityUnitTest extends UnitTestCase {
     // This method is internal, so check for errors on calling it only.
     $storage = $this->getMock('\Drupal\Core\Entity\EntityStorageInterface');
     $entities = array($this->entity);
-    $this->entity->postLoad($storage, $entities);
+    // Our mocked entity->postLoad() returns NULL, so assert that.
+    $this->assertNull($this->entity->postLoad($storage, $entities));
   }
 
   /**

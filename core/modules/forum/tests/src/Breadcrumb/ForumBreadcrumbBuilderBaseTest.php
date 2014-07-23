@@ -10,26 +10,10 @@ namespace Drupal\forum\Tests\Breadcrumb;
 use Drupal\Tests\UnitTestCase;
 
 /**
- * Tests the ForumManager.
- *
  * @coversDefaultClass \Drupal\forum\Breadcrumb\ForumBreadcrumbBuilderBase
- * @group Forum
- * @group Drupal
- *
- * @see \Drupal\forum\ForumManager
+ * @group forum
  */
 class ForumBreadcrumbBuilderBaseTest extends UnitTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Forum Breadcrumb Base Test',
-      'description' => 'Tests the abstract base class for forum breadcrumbs.',
-      'group' => 'Forum',
-    );
-  }
 
   /**
    * Tests ForumBreadcrumbBuilderBase::__construct().
@@ -147,7 +131,7 @@ class ForumBreadcrumbBuilderBaseTest extends UnitTestCase {
     $property->setValue($breadcrumb_builder, $link_generator);
 
     // Our empty data set.
-    $attributes = array();
+    $route_match = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
 
     // Expected result set.
     $expected = array(
@@ -156,7 +140,7 @@ class ForumBreadcrumbBuilderBaseTest extends UnitTestCase {
     );
 
     // And finally, the test.
-    $this->assertSame($expected, $breadcrumb_builder->build($attributes));
+    $this->assertSame($expected, $breadcrumb_builder->build($route_match));
   }
 
 }

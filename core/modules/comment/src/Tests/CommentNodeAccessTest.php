@@ -7,13 +7,15 @@
 
 namespace Drupal\comment\Tests;
 
-use Drupal\simpletest\WebTestBase;
+use Drupal\comment\CommentManagerInterface;
 
 /**
  * Tests comments with node access.
  *
  * Verifies there is no PostgreSQL error when viewing a node with threaded
  * comments (a comment and a reply), if a node access module is in use.
+ *
+ * @group comment
  */
 class CommentNodeAccessTest extends CommentTestBase {
 
@@ -23,14 +25,6 @@ class CommentNodeAccessTest extends CommentTestBase {
    * @var array
    */
   public static $modules = array('node_access_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment node access',
-      'description' => 'Test comment viewing with node access.',
-      'group' => 'Comment',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -60,7 +54,7 @@ class CommentNodeAccessTest extends CommentTestBase {
     $this->setCommentPreview(DRUPAL_DISABLED);
     $this->setCommentForm(TRUE);
     $this->setCommentSubject(TRUE);
-    $this->setCommentSettings('default_mode', COMMENT_MODE_THREADED, 'Comment paging changed.');
+    $this->setCommentSettings('default_mode', CommentManagerInterface::COMMENT_MODE_THREADED, 'Comment paging changed.');
     $this->drupalLogout();
 
     // Post comment.

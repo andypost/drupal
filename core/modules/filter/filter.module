@@ -6,21 +6,22 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\filter\FilterFormatInterface;
 use Drupal\filter\Plugin\FilterInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Implements hook_help().
  */
-function filter_help($route_name, Request $request) {
+function filter_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.filter':
       $output = '';
@@ -151,7 +152,7 @@ function filter_pre_render_text(array $element) {
   // If the requested text format does not exist, the text cannot be filtered.
   /** @var \Drupal\filter\Entity\FilterFormat $format **/
   if (!$format = entity_load('filter_format', $format_id)) {
-    watchdog('filter', 'Missing text format: %format.', array('%format' => $format_id), WATCHDOG_ALERT);
+    \Drupal::logger('filter')->alert('Missing text format: %format.', array('%format' => $format_id));
     $element['#markup'] = '';
     return $element;
   }
@@ -496,8 +497,11 @@ function check_markup($text, $format_id = NULL, $langcode = '', $filter_types_to
  *   The form element to process. Properties used:
  *   - #base_type: The form element #type to use for the 'value' element.
  *     'textarea' by default.
- *   - #format: (optional) The text format ID to preselect. If NULL or not set,
- *     the default format for the current user will be used.
+ *   - #format: (optional) The text format ID to preselect. If omitted, the
+ *     default format for the current user will be used.
+ *   - #allowed_formats: (optional) An array of text format IDs that are
+ *     available for this element. If omitted, all text formats that the current
+ *     user has access to will be allowed.
  *
  * @return
  *   The expanded element.
@@ -536,6 +540,8 @@ function filter_process_format($element) {
 
   $element['value']['#type'] = $element['#base_type'];
   $element['value'] += element_info($element['#base_type']);
+  // Make sure the #default_value key is set, so we can use it below.
+  $element['value'] += array('#default_value' => '');
 
   // Turn original element into a text format wrapper.
   $element['#attached']['library'][] = 'filter/drupal.filter';
@@ -549,15 +555,30 @@ function filter_process_format($element) {
   // Get a list of formats that the current user has access to.
   $formats = filter_formats($user);
 
-  // Use the default format for this user if none was selected.
-  if (!isset($element['#format'])) {
-    $element['#format'] = filter_default_format($user);
+  // Allow the list of formats to be restricted.
+  if (isset($element['#allowed_formats'])) {
+    // We do not add the fallback format here to allow the use-case of forcing
+    // certain text formats to be used for certain text areas. In case the
+    // fallback format is supposed to be allowed as well, it must be added to
+    // $element['#allowed_formats'] explicitly.
+    $formats = array_intersect_key($formats, array_flip($element['#allowed_formats']));
   }
 
-  // If multiple text formats are available, remove the fallback. The
-  // "always_show_fallback_choice" is a hidden variable that has no UI. It
-  // defaults to false.
-  if (!\Drupal::config('filter.settings')->get('always_show_fallback_choice')) {
+  if (!isset($element['#format']) && !empty($formats)) {
+    // If no text format was selected, use the allowed format with the highest
+    // weight. This is equivalent to calling filter_default_format().
+    $element['#format'] = reset($formats)->format;
+  }
+
+  // If #allowed_formats is set, the list of formats must not be modified in any
+  // way. Otherwise, however, if all of the following conditions are true,
+  // remove the fallback format from the list of formats:
+  // 1. The 'always_show_fallback_choice' filter setting has not been activated.
+  // 2. Multiple text formats are available.
+  // 3. The fallback format is not the default format.
+  // The 'always_show_fallback_choice' filter setting is a hidden setting that
+  // has no UI. It defaults to FALSE.
+  if (!isset($element['#allowed_formats']) && !\Drupal::config('filter.settings')->get('always_show_fallback_choice')) {
     $fallback_format = filter_fallback_format();
     if ($element['#format'] !== $fallback_format && count($formats) > 1) {
       unset($formats[$fallback_format]);
@@ -599,12 +620,13 @@ function filter_process_format($element) {
 
   $all_formats = filter_formats();
   $format_exists = isset($all_formats[$element['#format']]);
+  $format_allowed = !isset($element['#allowed_formats']) || in_array($element['#format'], $element['#allowed_formats']);
   $user_has_access = isset($formats[$element['#format']]);
-  $user_is_admin = user_access('administer filters');
+  $user_is_admin = \Drupal::currentUser()->hasPermission('administer filters');
 
-  // If the stored format does not exist, administrators have to assign a new
-  // format.
-  if (!$format_exists && $user_is_admin) {
+  // If the stored format does not exist or if it is not among the allowed
+  // formats for this textarea, administrators have to assign a new format.
+  if ((!$format_exists || !$format_allowed) && $user_is_admin) {
     $element['format']['format']['#required'] = TRUE;
     $element['format']['format']['#default_value'] = NULL;
     // Force access to the format selector (it may have been denied above if
@@ -963,8 +985,8 @@ function _filter_url_parse_full_links($match) {
   $i = 1;
 
   $match[$i] = decode_entities($match[$i]);
-  $caption = check_plain(_filter_url_trim($match[$i]));
-  $match[$i] = check_plain($match[$i]);
+  $caption = String::checkPlain(_filter_url_trim($match[$i]));
+  $match[$i] = String::checkPlain($match[$i]);
   return '<a href="' . $match[$i] . '">' . $caption . '</a>';
 }
 
@@ -978,8 +1000,8 @@ function _filter_url_parse_email_links($match) {
   $i = 0;
 
   $match[$i] = decode_entities($match[$i]);
-  $caption = check_plain(_filter_url_trim($match[$i]));
-  $match[$i] = check_plain($match[$i]);
+  $caption = String::checkPlain(_filter_url_trim($match[$i]));
+  $match[$i] = String::checkPlain($match[$i]);
   return '<a href="mailto:' . $match[$i] . '">' . $caption . '</a>';
 }
 
@@ -993,8 +1015,8 @@ function _filter_url_parse_partial_links($match) {
   $i = 1;
 
   $match[$i] = decode_entities($match[$i]);
-  $caption = check_plain(_filter_url_trim($match[$i]));
-  $match[$i] = check_plain($match[$i]);
+  $caption = String::checkPlain(_filter_url_trim($match[$i]));
+  $match[$i] = String::checkPlain($match[$i]);
   return '<a href="http://' . $match[$i] . '">' . $caption . '</a>';
 }
 
@@ -1039,7 +1061,7 @@ function _filter_url_escape_comments($match, $escape = NULL) {
 }
 
 /**
- * Shortens long URLs to http://www.example.com/long/url...
+ * Shortens long URLs to http://www.example.com/long/url…
  */
 function _filter_url_trim($text, $length = NULL) {
   static $_length;
@@ -1047,9 +1069,8 @@ function _filter_url_trim($text, $length = NULL) {
     $_length = $length;
   }
 
-  // Use +3 for '...' string length.
-  if ($_length && strlen($text) > $_length + 3) {
-    $text = substr($text, 0, $_length) . '...';
+  if (isset($_length)) {
+    $text = Unicode::truncate($text, $_length, FALSE, TRUE);
   }
 
   return $text;
@@ -1126,7 +1147,7 @@ function _filter_autop($text) {
  * Escapes all HTML tags, so they will be visible instead of being effective.
  */
 function _filter_html_escape($text) {
-  return trim(check_plain($text));
+  return trim(String::checkPlain($text));
 }
 
 /**
@@ -1185,6 +1206,10 @@ function filter_filter_secure_image_alter(&$image) {
   $image->setAttribute('src', base_path() . 'core/misc/message-16-error.png');
   $image->setAttribute('alt', t('Image removed.'));
   $image->setAttribute('title', t('This image has been removed. For security reasons, only images from the local domain are allowed.'));
+  $image_factory = \Drupal::service('image.factory');
+  $error_image = $image_factory->get('core/misc/message-16-error.png');
+  $image->setAttribute('height', $error_image->getHeight());
+  $image->setAttribute('width',  $error_image->getWidth());
 
   // Add a CSS class to aid in styling.
   $class = ($image->getAttribute('class') ? trim($image->getAttribute('class')) . ' ' : '');

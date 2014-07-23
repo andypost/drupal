@@ -108,7 +108,7 @@ abstract class LocalTaskIntegrationTest extends UnitTestCase {
         return isset($module_dirs[$module]);
       }));
 
-    $pluginDiscovery = new YamlDiscovery('local_tasks', $module_dirs);
+    $pluginDiscovery = new YamlDiscovery('links.task', $module_dirs);
     $pluginDiscovery = new ContainerDerivativeDiscoveryDecorator($pluginDiscovery);
     $property = new \ReflectionProperty('Drupal\Core\Menu\LocalTaskManager', 'discovery');
     $property->setAccessible(TRUE);
@@ -127,13 +127,8 @@ abstract class LocalTaskIntegrationTest extends UnitTestCase {
     $property->setAccessible(TRUE);
     $property->setValue($manager, $factory);
 
-    $language_manager = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
-    $language_manager->expects($this->any())
-      ->method('getCurrentLanguage')
-      ->will($this->returnValue(new Language(array('id' => 'en'))));
-
     $cache_backend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
-    $manager->setCacheBackend($cache_backend, $language_manager, 'local_task', array('local_task' => 1));
+    $manager->setCacheBackend($cache_backend, 'local_task.en', array('local_task' => 1));
 
     return $manager;
   }

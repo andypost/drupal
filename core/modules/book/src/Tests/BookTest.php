@@ -11,7 +11,9 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Tests the functionality of the Book module.
+ * Create a book, add pages, and test book interface.
+ *
+ * @group book
  */
 class BookTest extends WebTestBase {
 
@@ -49,14 +51,6 @@ class BookTest extends WebTestBase {
    * @var object
    */
   protected $admin_user;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Book functionality',
-      'description' => 'Create a book, add pages, and test book interface.',
-      'group' => 'Book',
-    );
-  }
 
   function setUp() {
     parent::setUp();
@@ -605,4 +599,19 @@ class BookTest extends WebTestBase {
     $this->assertEqual($return, $link);
   }
 
+  /**
+   * Tests the listing of all books.
+   */
+  public function testBookListing() {
+    // Create a new book.
+    $this->createBook();
+
+    // Must be a user with 'node test view' permission since node_access_test is enabled.
+    $this->drupalLogin($this->web_user);
+
+    // Load the book page and assert the created book title is displayed.
+    $this->drupalGet('book');
+
+    $this->assertText($this->book->label(), 'The book title is displayed on the book listing page.');
+  }
 }

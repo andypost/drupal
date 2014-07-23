@@ -14,22 +14,10 @@ use Drupal\system\Controller\SystemController;
 use Drupal\Tests\UnitTestCase;
 
 /**
- * Tests the System controller's #post_render_cache callback for active links.
- *
- * @group Drupal
- * @group System
- *
- * @see \Drupal\system\Controller\SystemController::setLinkActiveClass()
+ * @coversDefaultClass \Drupal\system\Controller\SystemController::setLinkActiveClass()
+ * @group system
  */
 class SystemControllerTest extends UnitTestCase {
-
-  public static function getInfo() {
-    return array(
-      'name' => 'System controller set active link class test',
-      'description' => 'Unit test of system controller #post_render_cache callback for marking active links.',
-      'group' => 'System'
-    );
-  }
 
   /**
    * Provides test data for testSetLinkActiveClass().
@@ -125,8 +113,6 @@ class SystemControllerTest extends UnitTestCase {
       'language' => 'nl',
       'query' => array(),
     );
-    // Nothing to do.
-    $markup = '<foo>bar</foo>';
     $situations[] = array('context' => $context, 'is active' => FALSE, 'attributes' => array());
     // Matching path, plus all matching variations.
     $attributes = array(
@@ -162,8 +148,6 @@ class SystemControllerTest extends UnitTestCase {
       'language' => 'nl',
       'query' => array('foo' => 'bar'),
     );
-    // Nothing to do.
-    $markup = '<foo>bar</foo>';
     $situations[] = array('context' => $context, 'is active' => FALSE, 'attributes' => array());
     // Matching path, plus all matching variations.
     $attributes = array(
@@ -195,8 +179,6 @@ class SystemControllerTest extends UnitTestCase {
       'language' => 'nl',
       'query' => array('foo' => 'bar'),
     );
-    // Nothing to do.
-    $markup = '<foo>bar</foo>';
     $situations[] = array('context' => $context, 'is active' => FALSE, 'attributes' => array());
     // Matching path, plus all matching variations.
     $attributes = array(
@@ -232,8 +214,6 @@ class SystemControllerTest extends UnitTestCase {
       'language' => 'en',
       'query' => array('foo' => 'bar'),
     );
-    // Nothing to do.
-    $markup = '<foo>bar</foo>';
     $situations[] = array('context' => $context, 'is active' => FALSE, 'attributes' => array());
     // Matching path, plus all matching variations.
     $attributes = array(

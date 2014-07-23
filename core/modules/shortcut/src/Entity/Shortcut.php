@@ -174,7 +174,7 @@ class Shortcut extends ContentEntityBase implements ShortcutInterface {
       ->setDescription(t('The name of the shortcut.'))
       ->setRequired(TRUE)
       ->setTranslatable(TRUE)
-      ->setSetting('default_value', '')
+      ->setDefaultValue('')
       ->setSetting('max_length', 255)
       ->setDisplayOptions('form', array(
         'type' => 'string',
@@ -203,7 +203,8 @@ class Shortcut extends ContentEntityBase implements ShortcutInterface {
     $fields['path'] = FieldDefinition::create('string')
       ->setLabel(t('Path'))
       ->setDescription(t('The computed shortcut path.'))
-      ->setComputed(TRUE);
+      ->setComputed(TRUE)
+      ->setCustomStorage(TRUE);
 
     $item_definition = $fields['path']->getItemDefinition();
     $item_definition->setClass('\Drupal\shortcut\ShortcutPathItem');

@@ -9,11 +9,12 @@ namespace Drupal\Core\Form;
 
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\HttpKernel;
 use Drupal\Core\KeyValueStore\KeyValueExpirableFactoryInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Site\Settings;
@@ -21,6 +22,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 
@@ -67,7 +69,7 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
   /**
    * The HTTP kernel to handle forms returning response objects.
    *
-   * @var \Drupal\Core\HttpKernel
+   * @var \Symfony\Component\HttpKernel\HttpKernel
    */
   protected $httpKernel;
 
@@ -139,18 +141,16 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
       $form_arg = $this->classResolver->getInstanceFromDefinition($form_arg);
     }
 
-    // If the $form_arg implements \Drupal\Core\Form\FormInterface, add that as
-    // the callback object and determine the form ID.
-    if (is_object($form_arg) && $form_arg instanceof FormInterface) {
-      $form_state['build_info']['callback_object'] = $form_arg;
-      if ($form_arg instanceof BaseFormIdInterface) {
-        $form_state['build_info']['base_form_id'] = $form_arg->getBaseFormID();
-      }
-      return $form_arg->getFormId();
+    if (!is_object($form_arg) || !($form_arg instanceof FormInterface)) {
+      throw new \InvalidArgumentException(String::format('The form argument @form_arg is not a valid form.', array('@form_arg' => $form_arg)));
     }
 
-    // Otherwise, the $form_arg is the form ID.
-    return $form_arg;
+    // Add the $form_arg as the callback object and determine the form ID.
+    $form_state['build_info']['callback_object'] = $form_arg;
+    if ($form_arg instanceof BaseFormIdInterface) {
+      $form_state['build_info']['base_form_id'] = $form_arg->getBaseFormID();
+    }
+    return $form_arg->getFormId();
   }
 
   /**
@@ -164,8 +164,7 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
     unset($args[0]);
     $form_state['build_info']['args'] = array_values($args);
 
-    $form_id = $this->getFormId($form_arg, $form_state);
-    return $this->buildForm($form_id, $form_state);
+    return $this->buildForm($form_arg, $form_state);
   }
 
   /**
@@ -363,6 +362,13 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
               require_once DRUPAL_ROOT . '/' . $file;
             }
           }
+          // Retrieve the list of previously known safe strings and store it
+          // for this request.
+          // @todo Ensure we are not storing an excessively large string list
+          //   in: https://www.drupal.org/node/2295823
+          $form_state['build_info'] += array('safe_strings' => array());
+          SafeMarkup::setMultiple($form_state['build_info']['safe_strings']);
+          unset($form_state['build_info']['safe_strings']);
         }
         return $form;
       }
@@ -385,6 +391,12 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
     }
 
     // Cache form state.
+
+    // Store the known list of safe strings for form re-use.
+    // @todo Ensure we are not storing an excessively large string list in:
+    //   https://www.drupal.org/node/2295823
+    $form_state['build_info']['safe_strings'] = SafeMarkup::getAll();
+
     if ($data = array_diff_key($form_state, array_flip($this->getUncacheableKeys()))) {
       $this->keyValueExpirableFactory->get('form_state')->setWithExpire($form_build_id, $data, $expire);
     }
@@ -468,15 +480,7 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
     // the constructor function itself.
     $args = $form_state['build_info']['args'];
 
-    // If an explicit form builder callback is defined we just use it, otherwise
-    // we look for a function named after the $form_id.
-    $callback = $form_id;
-    if (!empty($form_state['build_info']['callback'])) {
-      $callback = $form_state['build_info']['callback'];
-    }
-    elseif (!empty($form_state['build_info']['callback_object'])) {
-      $callback = array($form_state['build_info']['callback_object'], 'buildForm');
-    }
+    $callback = array($form_state['build_info']['callback_object'], 'buildForm');
 
     $form = array();
     // Assign a default CSS class name based on $form_id.
@@ -685,40 +689,8 @@ class FormBuilder implements FormBuilderInterface, FormValidatorInterface, FormS
 
     $form += $this->getElementInfo('form');
     $form += array('#tree' => FALSE, '#parents' => array());
-
-    if (!isset($form['#validate'])) {
-      // Ensure that modules can rely on #validate being set.
-      $form['#validate'] = array();
-      if (isset($form_state['build_info']['callback_object'])) {
-        $form['#validate'][] = array($form_state['build_info']['callback_object'], 'validateForm');
-      }
-      // Check for a handler specific to $form_id.
-      elseif (function_exists($form_id . '_validate')) {
-        $form['#validate'][] = $form_id . '_validate';
-      }
-      // Otherwise check whether this is a shared form and whether there is a
-      // handler for the shared $form_id.
-      elseif (isset($form_state['build_info']['base_form_id']) && function_exists($form_state['build_info']['base_form_id'] . '_validate')) {
-        $form['#validate'][] = $form_state['build_info']['base_form_id'] . '_validate';
-      }
-    }
-
-    if (!isset($form['#submit'])) {
-      // Ensure that modules can rely on #submit being set.
-      $form['#submit'] = array();
-      if (isset($form_state['build_info']['callback_object'])) {
-        $form['#submit'][] = array($form_state['build_info']['callback_object'], 'submitForm');
-      }
-      // Check for a handler specific to $form_id.
-      elseif (function_exists($form_id . '_submit')) {
-        $form['#submit'][] = $form_id . '_submit';
-      }
-      // Otherwise check whether this is a shared form and whether there is a
-      // handler for the shared $form_id.
-      elseif (isset($form_state['build_info']['base_form_id']) && function_exists($form_state['build_info']['base_form_id'] . '_submit')) {
-        $form['#submit'][] = $form_state['build_info']['base_form_id'] . '_submit';
-      }
-    }
+    $form['#validate'][] = array($form_state['build_info']['callback_object'], 'validateForm');
+    $form['#submit'][] = array($form_state['build_info']['callback_object'], 'submitForm');
 
     // If no #theme has been set, automatically apply theme suggestions.
     // theme_form() itself is in #theme_wrappers and not #theme. Therefore, the

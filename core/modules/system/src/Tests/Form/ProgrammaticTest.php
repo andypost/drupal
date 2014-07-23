@@ -10,7 +10,9 @@ namespace Drupal\system\Tests\Form;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Test the programmatic form submission behavior.
+ * Tests the programmatic form submission behavior.
+ *
+ * @group Form
  */
 class ProgrammaticTest extends WebTestBase {
 
@@ -20,14 +22,6 @@ class ProgrammaticTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('form_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Programmatic form submissions',
-      'description' => 'Test the programmatic form submission behavior.',
-      'group' => 'Form API',
-    );
-  }
 
   /**
    * Test the programmatic form submission workflow.
@@ -78,7 +72,7 @@ class ProgrammaticTest extends WebTestBase {
   private function submitForm($values, $valid_input) {
     // Programmatically submit the given values.
     $form_state = array('values' => $values);
-    drupal_form_submit('form_test_programmatic_form', $form_state);
+    \Drupal::formBuilder()->submitForm('\Drupal\form_test\Form\FormTestProgrammaticForm', $form_state);
 
     // Check that the form returns an error when expected, and vice versa.
     $errors = form_get_errors($form_state);
@@ -112,7 +106,7 @@ class ProgrammaticTest extends WebTestBase {
     // Programmatically submit the form with a value for the restricted field.
     // Since programmed_bypass_access_check is set to TRUE by default, the
     // field is accessible and can be set.
-    \Drupal::formBuilder()->submitForm('form_test_programmatic_form', $form_state);
+    \Drupal::formBuilder()->submitForm('\Drupal\form_test\Form\FormTestProgrammaticForm', $form_state);
     $values = $form_state['storage']['programmatic_form_submit'];
     $this->assertEqual($values['field_restricted'], 'dummy value', 'The value for the restricted field is stored correctly.');
 
@@ -121,7 +115,7 @@ class ProgrammaticTest extends WebTestBase {
     // restrictions apply, the restricted field is inaccessible, and the value
     // should not be stored.
     $form_state['programmed_bypass_access_check'] = FALSE;
-    \Drupal::formBuilder()->submitForm('form_test_programmatic_form', $form_state);
+    \Drupal::formBuilder()->submitForm('\Drupal\form_test\Form\FormTestProgrammaticForm', $form_state);
     $values = $form_state['storage']['programmatic_form_submit'];
     $this->assertNotEqual($values['field_restricted'], 'dummy value', 'The value for the restricted field is not stored.');
 

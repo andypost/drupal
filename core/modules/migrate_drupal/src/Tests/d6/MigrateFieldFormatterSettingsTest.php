@@ -11,7 +11,9 @@ use Drupal\migrate\MigrateExecutable;
 use Drupal\migrate_drupal\Tests\MigrateDrupalTestBase;
 
 /**
- * Test formatter settings to display modes.
+ * Upgrade field formatter settings to entity.display.*.*.yml.
+ *
+ * @group migrate_drupal
  */
 class MigrateFieldFormatterSettingsTest extends MigrateDrupalTestBase {
 
@@ -21,18 +23,6 @@ class MigrateFieldFormatterSettingsTest extends MigrateDrupalTestBase {
    * @var array
    */
   public static $modules = array('node', 'field', 'datetime', 'image', 'text', 'link', 'file', 'telephone');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name'  => 'Migrate field formatter settings to entity.display.*.*.yml',
-      'description'  => 'Upgrade field formatter settings to entity.display.*.*.yml',
-      'group' => 'Migrate Drupal',
-    );
-  }
-
 
   /**
    * {@inheritdoc}
@@ -92,6 +82,7 @@ class MigrateFieldFormatterSettingsTest extends MigrateDrupalTestBase {
       'label' => 'above',
       'type' => 'text_trimmed',
       'settings' => array('trim_length' => 600),
+      'third_party_settings' => array(),
     );
 
     // Make sure we don't have the excluded print entity display.

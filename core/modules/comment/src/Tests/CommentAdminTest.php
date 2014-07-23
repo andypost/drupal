@@ -9,16 +9,10 @@ namespace Drupal\comment\Tests;
 
 /**
  * Tests comment approval functionality.
+ *
+ * @group comment
  */
 class CommentAdminTest extends CommentTestBase {
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment admin',
-      'description' => 'Test comment admin functionality.',
-      'group' => 'Comment',
-    );
-  }
-
   /**
    * Test comment approval functionality through admin/content/comment.
    */
@@ -157,11 +151,10 @@ class CommentAdminTest extends CommentTestBase {
     // Login.
     $this->drupalLogin($this->admin_user);
     // Browse to comment bundle overview.
-    $this->drupalGet('admin/structure/comments');
+    $this->drupalGet('admin/structure/comment');
     $this->assertResponse(200);
     // Make sure titles visible.
-    $this->assertText('Field name');
-    $this->assertText('Used in');
+    $this->assertText('Comment type');
     $this->assertText('Description');
     // Make sure the description is present.
     $this->assertText('Default comment field');

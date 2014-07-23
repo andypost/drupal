@@ -8,13 +8,14 @@
 namespace Drupal\Core\Language;
 
 use Drupal\Component\Utility\String;
-use Drupal\Core\DependencyInjection\DependencySerialization;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
 
 /**
  * Class responsible for providing language support on language-unaware sites.
  */
-class LanguageManager extends DependencySerialization implements LanguageManagerInterface {
+class LanguageManager implements LanguageManagerInterface {
+  use DependencySerializationTrait;
 
   /**
    * The string translation service.
@@ -61,12 +62,6 @@ class LanguageManager extends DependencySerialization implements LanguageManager
    */
   protected function t($string, array $args = array(), array $options = array()) {
     return $this->translation ? $this->translation->translate($string, $args, $options) : String::format($string, $args);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function init() {
   }
 
   /**

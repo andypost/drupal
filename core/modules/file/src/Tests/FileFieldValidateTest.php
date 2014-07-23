@@ -7,23 +7,18 @@
 
 namespace Drupal\file\Tests;
 
-use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\field\Entity\FieldInstanceConfig;
 
 /**
- * Tests various validations.
+ * Tests validation functions such as file type, max file size, max size per
+ * node, and required.
+ *
+ * @group file
  */
 class FileFieldValidateTest extends FileFieldTestBase {
   protected $field;
   protected $node_type;
-
-  public static function getInfo() {
-    return array(
-      'name' => 'File field validation tests',
-      'description' => 'Tests validation functions such as file type, max file size, max size per node, and required.',
-      'group' => 'File',
-    );
-  }
 
   /**
    * Tests the required property on file fields.
@@ -54,7 +49,7 @@ class FileFieldValidateTest extends FileFieldTestBase {
 
     // Try again with a multiple value field.
     $field->delete();
-    $this->createFileField($field_name, 'node', $type_name, array('cardinality' => FieldDefinitionInterface::CARDINALITY_UNLIMITED), array('required' => '1'));
+    $this->createFileField($field_name, 'node', $type_name, array('cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED), array('required' => '1'));
 
     // Try to post a new node without uploading a file in the multivalue field.
     $edit = array();

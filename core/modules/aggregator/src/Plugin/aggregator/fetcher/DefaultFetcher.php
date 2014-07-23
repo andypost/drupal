@@ -9,6 +9,7 @@ namespace Drupal\aggregator\Plugin\aggregator\fetcher;
 
 use Drupal\aggregator\Plugin\FetcherInterface;
 use Drupal\aggregator\FeedInterface;
+use Drupal\Component\Datetime\DateTimePlus;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
@@ -65,7 +66,7 @@ class DefaultFetcher implements FetcherInterface, ContainerFactoryPluginInterfac
       $request->addHeader('If-None-Match', $feed->getEtag());
     }
     if ($feed->getLastModified()) {
-      $request->addHeader('If-Modified-Since', gmdate(DATE_RFC1123, $feed->getLastModified()));
+      $request->addHeader('If-Modified-Since', gmdate(DateTimePlus::RFC7231, $feed->getLastModified()));
     }
 
     try {
@@ -91,7 +92,7 @@ class DefaultFetcher implements FetcherInterface, ContainerFactoryPluginInterfac
     }
     catch (RequestException $e) {
       watchdog('aggregator', 'The feed from %site seems to be broken because of error "%error".', array('%site' => $feed->label(), '%error' => $e->getMessage()), WATCHDOG_WARNING);
-      drupal_set_message(t('The feed from %site seems to be broken because of error "%error".', array('%site' => $feed->label(), '%error' => $e->getMessage())));
+      drupal_set_message(t('The feed from %site seems to be broken because of error "%error".', array('%site' => $feed->label(), '%error' => $e->getMessage())) , 'warning');
       return FALSE;
     }
   }

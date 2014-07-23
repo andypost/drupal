@@ -12,7 +12,9 @@ use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUI;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Functional test for language types/negotiation info.
+ * Tests alterations to language types/negotiation info.
+ *
+ * @group language
  */
 class LanguageNegotiationInfoTest extends WebTestBase {
 
@@ -22,17 +24,6 @@ class LanguageNegotiationInfoTest extends WebTestBase {
    * @var array
    */
   public static $modules = array('language');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Language negotiation info',
-      'description' => 'Tests alterations to language types/negotiation info.',
-      'group' => 'Language',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -85,7 +76,7 @@ class LanguageNegotiationInfoTest extends WebTestBase {
       'language_test.content_language_type' => TRUE,
     ));
     $this->container->get('module_handler')->install(array('language_test'));
-    $this->rebuildContainer();
+    $this->resetAll();
 
     // Check that fixed language types are properly configured without the need
     // of saving the language negotiation settings.

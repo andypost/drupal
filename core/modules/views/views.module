@@ -14,6 +14,7 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\Database\Query\AlterableInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\views\Plugin\Derivative\ViewsLocalTask;
 use Drupal\Core\Template\AttributeArray;
 use Drupal\views\ViewExecutable;
@@ -21,12 +22,11 @@ use Drupal\Component\Plugin\Exception\PluginException;
 use Drupal\views\Entity\View;
 use Drupal\views\Views;
 use Drupal\field\FieldInstanceConfigInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Implements hook_help().
  */
-function views_help($route_name, Request $request) {
+function views_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.views':
       $output = '';
@@ -120,7 +120,7 @@ function views_theme($existing, $type, $theme, $path) {
 
   // Our extra version of pager from pager.inc
   $hooks['views_mini_pager'] = $base + array(
-    'variables' => array('tags' => array(), 'quantity' => 10, 'element' => 0, 'parameters' => array()),
+    'variables' => array('tags' => array(), 'quantity' => 9, 'element' => 0, 'parameters' => array()),
     'template' => 'views-mini-pager',
   );
 
@@ -134,7 +134,7 @@ function views_theme($existing, $type, $theme, $path) {
     'exposed_form' => array('view' => NULL, 'options' => NULL),
     'pager' => array(
       'view' => NULL, 'options' => NULL,
-      'tags' => array(), 'quantity' => 10, 'element' => 0, 'parameters' => array()
+      'tags' => array(), 'quantity' => 9, 'element' => 0, 'parameters' => array()
     ),
   );
 
@@ -338,7 +338,7 @@ function views_page_alter(&$page) {
  */
 function views_preprocess_page(&$variables) {
   // Early-return to prevent adding unnecessary JavaScript.
-  if (!user_access('access contextual links')) {
+  if (!\Drupal::currentUser()->hasPermission('access contextual links')) {
     return;
   }
 
@@ -552,8 +552,8 @@ function views_field_instance_config_delete(FieldInstanceConfigInterface $field_
  * Invalidate the views cache, forcing a rebuild on the next grab of table data.
  */
 function views_invalidate_cache() {
-  // Clear the page and block cache and Views' info cache entries.
-  Cache::deleteTags(array('content' => TRUE, 'extension' => 'views'));
+  // Clear Views' info cache entries.
+  Cache::deleteTags(array('extension' => 'views'));
 
   // Set the menu as needed to be rebuilt.
   \Drupal::service('router.builder')->setRebuildNeeded();
@@ -663,27 +663,6 @@ function views_hook_info() {
 }
 
 /**
- * Fetch a list of all base tables available
- *
- * @param $type
- *   Either 'display', 'style' or 'row'
- * @param $key
- *   For style plugins, this is an optional type to restrict to. May be 'normal',
- *   'summary', 'feed' or others based on the neds of the display.
- * @param $base
- *   An array of possible base tables.
- *
- * @return
- *   A keyed array of in the form of 'base_table' => 'Description'.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\views\Views::fetchPluginNames().
- */
-function views_fetch_plugin_names($type, $key = NULL, $base = array()) {
-  return Views::fetchPluginNames($type, $key, $base);
-}
-
-/**
  * Gets all the views plugin definitions.
  *
  * @return array
@@ -694,25 +673,6 @@ function views_fetch_plugin_names($type, $key = NULL, $base = array()) {
  */
 function views_get_plugin_definitions() {
   return Views::getPluginDefinitions();
-}
-
-/**
- * Returns a list of plugins and metadata about them.
- *
- * @return array
- *   An array keyed by PLUGIN_TYPE:PLUGIN_NAME, like 'display:page' or
- *   'pager:full', containing an array with the following keys:
- *   - title: The plugin's title.
- *   - type: The plugin type.
- *   - module: The module providing the plugin.
- *   - views: An array of enabled Views that are currently using this plugin,
- *     keyed by machine name.
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal\views\Views::pluginList().
- */
-function views_plugin_list() {
-  return Views::pluginList();
 }
 
 /**
@@ -1047,22 +1007,6 @@ function views_get_view_result($name, $display_id = NULL) {
   else {
     return array();
   }
-}
-
-/**
- * #process callback to see if we need to String::checkPlain() the options.
- *
- * Since FAPI is inconsistent, the #options are sanitized for you in all cases
- * _except_ checkboxes. We have form elements that are sometimes 'select' and
- * sometimes 'checkboxes', so we need decide late in the form rendering cycle
- * if the options need to be sanitized before they're rendered. This callback
- * inspects the type, and if it's still 'checkboxes', does the sanitation.
- */
-function views_process_check_options($element, &$form_state) {
-  if ($element['#type'] == 'checkboxes' || $element['#type'] == 'checkbox') {
-    $element['#options'] = array_map('\Drupal\Component\Utility\String::checkPlain', $element['#options']);
-  }
-  return $element;
 }
 
 /**

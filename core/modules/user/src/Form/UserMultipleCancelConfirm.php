@@ -105,7 +105,7 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
       ->get('user_user_operations_cancel')
       ->get($this->currentUser()->id());
     if (!$accounts) {
-      return new RedirectResponse($this->urlGenerator()->generateFromPath('admin/people', array('absolute' => TRUE)));
+      return new RedirectResponse($this->url('user.admin_account', [], ['absolute' => TRUE]));
     }
 
     $form['accounts'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
@@ -129,7 +129,7 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
       drupal_set_message($message, $redirect ? 'error' : 'warning');
       // If only user 1 was selected, redirect to the overview.
       if ($redirect) {
-        return new RedirectResponse($this->urlGenerator()->generateFromPath('admin/people', array('absolute' => TRUE)));
+        return new RedirectResponse($this->url('user.admin_account', [], ['absolute' => TRUE]));
       }
     }
 
@@ -190,7 +190,7 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
           $admin_form = $this->entityManager->getFormObject('user', 'cancel');
           $admin_form->setEntity($account);
           // Calling this directly required to init form object with $account.
-          $admin_form->buildForm($admin_form_mock, $admin_form_state, $this->request);
+          $admin_form->buildForm($admin_form_mock, $admin_form_state);
           $admin_form->submit($admin_form_mock, $admin_form_state);
         }
         else {

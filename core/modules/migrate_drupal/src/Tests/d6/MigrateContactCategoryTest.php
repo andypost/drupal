@@ -12,7 +12,9 @@ use Drupal\migrate\MigrateMessage;
 use Drupal\migrate_drupal\Tests\MigrateDrupalTestBase;
 
 /**
- * The Drupal 6 contact categories to Drupal 8 migration.
+ * Migrate contact categories to contact.category.*.yml.
+ *
+ * @group migrate_drupal
  */
 class MigrateContactCategoryTest extends MigrateDrupalTestBase {
 
@@ -22,17 +24,6 @@ class MigrateContactCategoryTest extends MigrateDrupalTestBase {
    * @var array
    */
   public static $modules = array('contact');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name'  => 'Migrate contact categories.',
-      'description'  => 'Migrate contact categories to contact.category.*.yml',
-      'group' => 'Migrate Drupal',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -64,6 +55,12 @@ class MigrateContactCategoryTest extends MigrateDrupalTestBase {
     $this->assertEqual($contact_category->recipients, array('test@example.com'));
     $this->assertEqual($contact_category->reply, 'Thanks for contacting us, we will reply ASAP!');
     $this->assertEqual($contact_category->weight, 1);
+
+    $contact_category = entity_load('contact_category', 'a_category_much_longer_than_thir');
+    $this->assertEqual($contact_category->label, 'A category much longer than thirty two characters');
+    $this->assertEqual($contact_category->recipients, array('fortyninechars@example.com'));
+    $this->assertEqual($contact_category->reply, '');
+    $this->assertEqual($contact_category->weight, 2);
   }
 
 }

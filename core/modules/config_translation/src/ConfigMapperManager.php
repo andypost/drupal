@@ -97,7 +97,9 @@ class ConfigMapperManager extends DefaultPluginManager implements ConfigMapperMa
     $this->themeHandler = $theme_handler;
 
     $this->alterInfo('config_translation_info');
-    $this->setCacheBackend($cache_backend, $language_manager, 'config_translation_info_plugins');
+    // Config translation only uses an info hook discovery, cache by language.
+    $cache_key = 'config_translation_info_plugins' . ':' . $language_manager->getCurrentLanguage()->getId();
+    $this->setCacheBackend($cache_backend, $cache_key, array('config_translation_info_plugins' => TRUE));
   }
 
   /**
@@ -129,6 +131,13 @@ class ConfigMapperManager extends DefaultPluginManager implements ConfigMapperMa
   /**
    * {@inheritdoc}
    */
+  public function buildDataDefinition(array $definition, $value = NULL, $name = NULL, $parent = NULL) {
+    return $this->typedConfigManager->buildDataDefinition($definition, $value, $name, $parent);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function findDefinitions() {
     $definitions = $this->discovery->getDefinitions();
     foreach ($definitions as $plugin_id => &$definition) {
@@ -141,7 +150,7 @@ class ConfigMapperManager extends DefaultPluginManager implements ConfigMapperMa
     // If this plugin was provided by a module that does not exist, remove the
     // plugin definition.
     foreach ($definitions as $plugin_id => $plugin_definition) {
-      if (isset($plugin_definition['provider']) && !in_array($plugin_definition['provider'], array('Core', 'Component')) && (!$this->moduleHandler->moduleExists($plugin_definition['provider']) && !in_array($plugin_definition['provider'], array_keys($this->themeHandler->listInfo())))) {
+      if (isset($plugin_definition['provider']) && !in_array($plugin_definition['provider'], array('core', 'component')) && (!$this->moduleHandler->moduleExists($plugin_definition['provider']) && !in_array($plugin_definition['provider'], array_keys($this->themeHandler->listInfo())))) {
         unset($definitions[$plugin_id]);
       }
     }

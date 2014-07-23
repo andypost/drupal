@@ -16,7 +16,7 @@ use Drupal\Component\Utility\String;
 use Drupal\Core\Render\Element;
 use Drupal\user\TempStoreFactory;
 use Drupal\views\Views;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -34,21 +34,21 @@ class ViewEditForm extends ViewFormBase {
   /**
    * The request object.
    *
-   * @var \Symfony\Component\HttpFoundation\Request
+   * @var \Symfony\Component\HttpFoundation\RequestStack
    */
-  protected $request;
+  protected $requestStack;
 
   /**
    * Constructs a new ViewEditForm object.
    *
    * @param \Drupal\user\TempStoreFactory $temp_store_factory
    *   The factory for the temp store object.
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The request object.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
+   *   The request stack object.
    */
-  public function __construct(TempStoreFactory $temp_store_factory, Request $request) {
+  public function __construct(TempStoreFactory $temp_store_factory, RequestStack $requestStack) {
     $this->tempStore = $temp_store_factory->get('views');
-    $this->request = $request;
+    $this->requestStack = $requestStack;
   }
 
   /**
@@ -57,7 +57,7 @@ class ViewEditForm extends ViewFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('user.tempstore'),
-      $container->get('request')
+      $container->get('request_stack')
     );
   }
 
@@ -292,7 +292,7 @@ class ViewEditForm extends ViewFormBase {
     $view->set('display', $displays);
 
     // @todo: Revisit this when http://drupal.org/node/1668866 is in.
-    $query = $this->request->query;
+    $query = $this->requestStack->getCurrentRequest()->query;
     $destination = $query->get('destination');
 
     if (!empty($destination)) {
@@ -375,7 +375,7 @@ class ViewEditForm extends ViewFormBase {
     );
 
     $is_display_deleted = !empty($display['deleted']);
-    // The master display cannot be cloned.
+    // The master display cannot be duplicated.
     $is_default = $display['id'] == 'default';
     // @todo: Figure out why getOption doesn't work here.
     $is_enabled = $view->getExecutable()->displayHandlers->get($display['id'])->isEnabled();
@@ -423,7 +423,7 @@ class ViewEditForm extends ViewFormBase {
         if (!$is_default) {
           $build['top']['actions']['duplicate'] = array(
             '#type' => 'submit',
-            '#value' => $this->t('Clone !display_title', array('!display_title' => $display_title)),
+            '#value' => $this->t('Duplicate !display_title', array('!display_title' => $display_title)),
             '#limit_validation_errors' => array(),
             '#submit' => array(array($this, 'submitDisplayDuplicate'), array($this, 'submitDelayDestination')),
             '#prefix' => '<li class="duplicate">',
@@ -445,11 +445,11 @@ class ViewEditForm extends ViewFormBase {
             continue;
           }
 
-          $build['top']['actions']['clone_as'][$type] = array(
+          $build['top']['actions']['duplicate_as'][$type] = array(
             '#type' => 'submit',
-            '#value' => $this->t('Clone as !type', array('!type' => $label)),
+            '#value' => $this->t('Duplicate as !type', array('!type' => $label)),
             '#limit_validation_errors' => array(),
-            '#submit' => array(array($this, 'submitCloneDisplayAsType'), array($this, 'submitDelayDestination')),
+            '#submit' => array(array($this, 'submitDuplicateDisplayAsType'), array($this, 'submitDelayDestination')),
             '#prefix' => '<li class="duplicate">',
             '#suffix' => '</li>',
           );
@@ -690,9 +690,9 @@ class ViewEditForm extends ViewFormBase {
           'href' => "admin/structure/views/nojs/analyze/{$view->id()}/$display_id",
           'attributes' => array('class' => array('views-ajax-link')),
         ),
-        'clone' => array(
-          'title' => $this->t('Clone view'),
-        ) + $view->urlInfo('clone')->toArray(),
+        'duplicate' => array(
+          'title' => $this->t('Duplicate view'),
+        ) + $view->urlInfo('duplicate')->toArray(),
         'reorder' => array(
           'title' => $this->t('Reorder displays'),
           'href' => "admin/structure/views/nojs/reorder-displays/{$view->id()}/$display_id",
@@ -765,7 +765,7 @@ class ViewEditForm extends ViewFormBase {
    * should not yet redirect to the destination.
    */
   public function submitDelayDestination($form, &$form_state) {
-    $query = $this->request->query;
+    $query = $this->requestStack->getCurrentRequest()->query;
     // @todo: Revisit this when http://drupal.org/node/1668866 is in.
     $destination = $query->get('destination');
     if (isset($destination) && $form_state['redirect'] !== FALSE) {
@@ -834,9 +834,9 @@ class ViewEditForm extends ViewFormBase {
   }
 
   /**
-   * Submit handler to clone a display as another display type.
+   * Submit handler to Duplicate a display as another display type.
    */
-  public function submitCloneDisplayAsType($form, &$form_state) {
+  public function submitDuplicateDisplayAsType($form, &$form_state) {
     $view = $this->entity;
     $display_id = $this->displayID;
 
@@ -849,11 +849,11 @@ class ViewEditForm extends ViewFormBase {
 
     // Let the display title be generated by the addDisplay method and set the
     // right display plugin, but keep the rest from the original display.
-    $display_clone = $displays[$display_id];
-    unset($display_clone['display_title']);
-    unset($display_clone['display_plugin']);
+    $display_duplicate = $displays[$display_id];
+    unset($display_duplicate['display_title']);
+    unset($display_duplicate['display_plugin']);
 
-    $displays[$new_display_id] = NestedArray::mergeDeep($displays[$new_display_id], $display_clone);
+    $displays[$new_display_id] = NestedArray::mergeDeep($displays[$new_display_id], $display_duplicate);
     $displays[$new_display_id]['id'] = $new_display_id;
     $view->set('display', $displays);
 

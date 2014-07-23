@@ -9,13 +9,18 @@ namespace Drupal\comment;
 
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\Component\Utility\String;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\Query\QueryFactory;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\field\Entity\FieldInstanceConfig;
 
 /**
  * Comment manager contains common functions to manage comment fields.
@@ -29,6 +34,13 @@ class CommentManager implements CommentManagerInterface {
    * @var \Drupal\Core\Entity\EntityManagerInterface
    */
   protected $entityManager;
+
+  /**
+   * The entity query factory.
+   *
+   * @var \Drupal\Core\Entity\Query\QueryFactory
+   */
+  protected $queryFactory;
 
   /**
    * Whether the DRUPAL_AUTHENTICATED_RID can post comments.
@@ -52,22 +64,45 @@ class CommentManager implements CommentManagerInterface {
   protected $urlGenerator;
 
   /**
+   * The module handler service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
+
+  /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
+
+  /**
    * Construct the CommentManager object.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager service.
+   * @param \Drupal\Core\Entity\Query\QueryFactory $query_factory
+   *   The entity query factory.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
    * @param \Drupal\Core\StringTranslation\TranslationInterface $string_translation
    *   The string translation service.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
    *   The url generator service.
+   *  @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler service.
+   * @param \Drupal\Core\Session\AccountInterface $current_user
+   *   The current user.
    */
-  public function __construct(EntityManagerInterface $entity_manager, ConfigFactoryInterface $config_factory, TranslationInterface $string_translation, UrlGeneratorInterface $url_generator) {
+  public function __construct(EntityManagerInterface $entity_manager, QueryFactory $query_factory, ConfigFactoryInterface $config_factory, TranslationInterface $string_translation, UrlGeneratorInterface $url_generator, ModuleHandlerInterface $module_handler, AccountInterface $current_user) {
     $this->entityManager = $entity_manager;
+    $this->queryFactory = $query_factory;
     $this->userConfig = $config_factory->get('user.settings');
     $this->stringTranslation = $string_translation;
     $this->urlGenerator = $url_generator;
+    $this->moduleHandler = $module_handler;
+    $this->currentUser = $current_user;
   }
 
   /**
@@ -103,26 +138,44 @@ class CommentManager implements CommentManagerInterface {
   /**
    * {@inheritdoc}
    */
-  public function addDefaultField($entity_type, $bundle, $field_name = 'comment', $default_value = CommentItemInterface::OPEN) {
+  public function addDefaultField($entity_type, $bundle, $field_name = 'comment', $default_value = CommentItemInterface::OPEN, $comment_type_id = 'comment') {
+    $comment_type_storage = $this->entityManager->getStorage('comment_type');
+    if ($comment_type = $comment_type_storage->load($comment_type_id)) {
+      if ($comment_type->getTargetEntityTypeId() !== $entity_type) {
+        throw new \InvalidArgumentException(String::format('The given comment type id %id can only be used with the %entity_type entity type', array(
+          '%id' => $comment_type_id,
+          '%entity_type' => $entity_type,
+        )));
+      }
+    }
+    else {
+      // Silently create the comment-type for the calling code.
+      $comment_type_storage->create(array(
+        'id' => $comment_type_id,
+        'label' => Unicode::ucfirst($comment_type_id),
+        'target_entity_type_id' => $entity_type,
+        'description' => 'Default comment field',
+      ))->save();
+    }
     // Make sure the field doesn't already exist.
-    if (!$this->entityManager->getStorage('field_config')->load($entity_type . '.' . $field_name)) {
+    if (!FieldStorageConfig::loadByName($entity_type, $field_name)) {
       // Add a default comment field for existing node comments.
-      $field = $this->entityManager->getStorage('field_config')->create(array(
+      $field_storage = $this->entityManager->getStorage('field_storage_config')->create(array(
         'entity_type' => $entity_type,
         'name' => $field_name,
         'type' => 'comment',
-        'translatable' => '0',
+        'translatable' => TRUE,
         'settings' => array(
-          'description' => 'Default comment field',
+          'comment_type' => $comment_type_id,
         ),
       ));
       // Create the field.
-      $field->save();
+      $field_storage->save();
     }
     // Make sure the instance doesn't already exist.
-    if (!$this->entityManager->getStorage('field_instance_config')->load($entity_type . '.' . $bundle . '.' . $field_name)) {
+    if (!array_key_exists($field_name, $this->entityManager->getFieldDefinitions($entity_type, $bundle))) {
       $instance = $this->entityManager->getStorage('field_instance_config')->create(array(
-        'label' => 'Comment settings',
+        'label' => 'Comments',
         'description' => '',
         'field_name' => $field_name,
         'entity_type' => $entity_type,
@@ -159,12 +212,12 @@ class CommentManager implements CommentManagerInterface {
       // Set default to display comment list.
       entity_get_display($entity_type, $bundle, 'default')
         ->setComponent($field_name, array(
-          'label' => 'hidden',
+          'label' => 'above',
           'type' => 'comment_default',
           'weight' => 20,
         ))
         ->save();
-        // The comment field should be hidden in all other view displays.
+      // The comment field should be hidden in all other view displays.
       foreach ($this->entityManager->getViewModes($entity_type) as $id => $view_mode) {
         $display = entity_get_display($entity_type, $bundle, $id);
         // Only update existing displays.
@@ -174,49 +227,44 @@ class CommentManager implements CommentManagerInterface {
       }
 
     }
-    $this->addBodyField($entity_type, $field_name);
+    $this->addBodyField($comment_type_id);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function addBodyField($entity_type, $field_name) {
+  public function addBodyField($comment_type_id) {
     // Create the field if needed.
-    $field = $this->entityManager->getStorage('field_config')->load('comment.comment_body');
-    if (!$field) {
-      $field = $this->entityManager->getStorage('field_config')->create(array(
+    $field_storage = FieldStorageConfig::loadByName('comment', 'comment_body');
+    if (!$field_storage) {
+      $field_storage = $this->entityManager->getStorage('field_storage_config')->create(array(
         'name' => 'comment_body',
         'type' => 'text_long',
         'entity_type' => 'comment',
       ));
-      $field->save();
+      $field_storage->save();
     }
-    // Create the instance if needed, field name defaults to 'comment'.
-    $comment_bundle = $entity_type . '__' . $field_name;
-    $field_instance = $this->entityManager
-      ->getStorage('field_instance_config')
-      ->load("comment.$comment_bundle.comment_body");
-    if (!$field_instance) {
+    if (!FieldInstanceConfig::loadByName('comment', $comment_type_id, 'comment_body')) {
       // Attaches the body field by default.
       $field_instance = $this->entityManager->getStorage('field_instance_config')->create(array(
         'field_name' => 'comment_body',
         'label' => 'Comment',
         'entity_type' => 'comment',
-        'bundle' => $comment_bundle,
+        'bundle' => $comment_type_id,
         'settings' => array('text_processing' => 1),
         'required' => TRUE,
       ));
       $field_instance->save();
 
       // Assign widget settings for the 'default' form mode.
-      entity_get_form_display('comment', $comment_bundle, 'default')
+      entity_get_form_display('comment', $comment_type_id, 'default')
         ->setComponent('comment_body', array(
           'type' => 'text_textarea',
         ))
         ->save();
 
       // Assign display settings for the 'default' view mode.
-      entity_get_display('comment', $comment_bundle, 'default')
+      entity_get_display('comment', $comment_type_id, 'default')
         ->setComponent('comment_body', array(
           'label' => 'hidden',
           'type' => 'text_default',
@@ -224,16 +272,6 @@ class CommentManager implements CommentManagerInterface {
         ))
         ->save();
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getFieldUIPageTitle($commented_entity_type, $field_name) {
-    $field_info = $this->getFields($commented_entity_type);
-    $sample_bundle = reset($field_info[$field_name]['bundles']);
-    $sample_definition = $this->entityManager->getFieldDefinitions($commented_entity_type, $sample_bundle)[$field_name];
-    return String::checkPlain($sample_definition->getLabel());
   }
 
   /**
@@ -274,6 +312,48 @@ class CommentManager implements CommentManagerInterface {
       }
     }
     return '';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCountNewComments(EntityInterface $entity, $field_name = NULL, $timestamp = 0) {
+    // @todo Replace module handler with optional history service injection
+    //   after http://drupal.org/node/2081585
+    if ($this->currentUser->isAuthenticated() && $this->moduleHandler->moduleExists('history')) {
+      // Retrieve the timestamp at which the current user last viewed this entity.
+      if (!$timestamp) {
+        if ($entity->getEntityTypeId() == 'node') {
+          $timestamp = history_read($entity->id());
+        }
+        else {
+          $function = $entity->getEntityTypeId() . '_last_viewed';
+          if (function_exists($function)) {
+            $timestamp = $function($entity->id());
+          }
+          else {
+            // Default to 30 days ago.
+            // @todo Remove once http://drupal.org/node/1029708 lands.
+            $timestamp = COMMENT_NEW_LIMIT;
+          }
+        }
+      }
+      $timestamp = ($timestamp > HISTORY_READ_LIMIT ? $timestamp : HISTORY_READ_LIMIT);
+
+      // Use the timestamp to retrieve the number of new comments.
+      $query = $this->queryFactory->get('comment')
+        ->condition('entity_type', $entity->getEntityTypeId())
+        ->condition('entity_id', $entity->id())
+        ->condition('created', $timestamp, '>')
+        ->condition('status', CommentInterface::PUBLISHED);
+      if ($field_name) {
+        // Limit to a particular field.
+        $query->condition('field_name', $field_name);
+      }
+
+      return $query->count()->execute();
+    }
+    return FALSE;
   }
 
 }

@@ -13,6 +13,8 @@ use Drupal\field\Tests\FieldUnitTestBase;
 
 /**
  * Tests the new entity API for the date field type.
+ *
+ * @group datetime
  */
 class DateTimeItemTest extends FieldUnitTestBase {
 
@@ -23,27 +25,19 @@ class DateTimeItemTest extends FieldUnitTestBase {
    */
   public static $modules = array('datetime');
 
-  public static function getInfo() {
-    return array(
-      'name' => 'Date field item',
-      'description' => 'Tests the new entity API for the Date field type.',
-      'group' => 'Field types',
-    );
-  }
-
   public function setUp() {
     parent::setUp();
 
     // Create a field with settings to validate.
-    $this->field = entity_create('field_config', array(
+    $this->fieldStorage = entity_create('field_storage_config', array(
       'name' => 'field_datetime',
       'type' => 'datetime',
       'entity_type' => 'entity_test',
       'settings' => array('datetime_type' => 'date'),
     ));
-    $this->field->save();
+    $this->fieldStorage->save();
     $this->instance = entity_create('field_instance_config', array(
-      'field' => $this->field,
+      'field_storage' => $this->fieldStorage,
       'bundle' => 'entity_test',
       'settings' => array(
         'default_value' => 'blank',

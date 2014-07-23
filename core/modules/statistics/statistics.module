@@ -7,13 +7,13 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Implements hook_help().
  */
-function statistics_help($route_name, Request $request) {
+function statistics_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.statistics':
       $output = '';
@@ -48,7 +48,7 @@ function statistics_permission() {
 }
 
 /**
- * Implements hook_node_view().
+ * Implements hook_ENTITY_TYPE_view() for node entities.
  */
 function statistics_node_view(array &$build, EntityInterface $node, EntityViewDisplayInterface $display, $view_mode) {
   if (!$node->isNew() && $view_mode == 'full' && node_is_page($node) && empty($node->in_preview)) {
@@ -155,7 +155,7 @@ function statistics_get($nid) {
 
   if ($nid > 0) {
     // Retrieve an array with both totalcount and daycount.
-    return db_query('SELECT totalcount, daycount, timestamp FROM {node_counter} WHERE nid = :nid', array(':nid' => $nid), array('target' => 'slave'))->fetchAssoc();
+    return db_query('SELECT totalcount, daycount, timestamp FROM {node_counter} WHERE nid = :nid', array(':nid' => $nid), array('target' => 'replica'))->fetchAssoc();
   }
 }
 
@@ -195,7 +195,7 @@ function _statistics_format_item($title, $path) {
 }
 
 /**
- * Implements hook_node_predelete().
+ * Implements hook_ENTITY_TYPE_predelete() for node entities.
  */
 function statistics_node_predelete(EntityInterface $node) {
   // clean up statistics table when node is deleted

@@ -10,11 +10,8 @@ namespace Drupal\Core\Menu;
 use Drupal\Core\Access\AccessManager;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Core\Menu\LocalActionInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
-use Drupal\Component\Plugin\Discovery\ProcessDecorator;
 use Drupal\Core\Plugin\Discovery\ContainerDerivativeDiscoveryDecorator;
 use Drupal\Core\Plugin\Discovery\YamlDiscovery;
 use Drupal\Core\Plugin\Factory\ContainerFactory;
@@ -122,7 +119,7 @@ class LocalActionManager extends DefaultPluginManager {
   public function __construct(ControllerResolverInterface $controller_resolver, RequestStack $request_stack, RouteProviderInterface $route_provider, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache_backend, LanguageManagerInterface $language_manager, AccessManager $access_manager, AccountInterface $account) {
     // Skip calling the parent constructor, since that assumes annotation-based
     // discovery.
-    $this->discovery = new YamlDiscovery('local_actions', $module_handler->getModuleDirectories());
+    $this->discovery = new YamlDiscovery('links.action', $module_handler->getModuleDirectories());
     $this->discovery = new ContainerDerivativeDiscoveryDecorator($this->discovery);
     $this->factory = new ContainerFactory($this);
     $this->controllerResolver = $controller_resolver;
@@ -132,7 +129,7 @@ class LocalActionManager extends DefaultPluginManager {
     $this->moduleHandler = $module_handler;
     $this->account = $account;
     $this->alterInfo('menu_local_actions');
-    $this->setCacheBackend($cache_backend, $language_manager, 'local_action_plugins', array('local_action' => TRUE));
+    $this->setCacheBackend($cache_backend, 'local_action_plugins:' . $language_manager->getCurrentLanguage()->getId(), array('local_action' => TRUE));
   }
 
   /**

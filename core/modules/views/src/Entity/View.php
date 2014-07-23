@@ -243,32 +243,6 @@ class View extends ConfigEntityBase implements ViewStorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function toArray() {
-    $names = array(
-      'base_field',
-      'base_table',
-      'core',
-      'description',
-      'status',
-      'display',
-      'label',
-      'module',
-      'id',
-      'tag',
-      'uuid',
-      'langcode',
-      'dependencies',
-    );
-    $properties = array();
-    foreach ($names as $name) {
-      $properties[$name] = $this->get($name);
-    }
-    return $properties;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function calculateDependencies() {
     parent::calculateDependencies();
 
@@ -294,7 +268,7 @@ class View extends ConfigEntityBase implements ViewStorageInterface {
         if (!empty($display['display_options'][$handler_type])) {
           foreach ($display['display_options'][$handler_type] as $handler) {
             // Add the provider as dependency.
-            if (isset($handler['provider']) && empty($handler['optional'])) {
+            if (isset($handler['provider'])) {
               $this->addDependency('module', $handler['provider']);
             }
             // Add the additional dependencies from the handler configuration.

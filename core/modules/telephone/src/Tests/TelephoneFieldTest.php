@@ -11,6 +11,8 @@ use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests the creation of telephone fields.
+ *
+ * @group telephone
  */
 class TelephoneFieldTest extends WebTestBase {
 
@@ -28,14 +30,6 @@ class TelephoneFieldTest extends WebTestBase {
   protected $instance;
   protected $web_user;
 
-  public static function getInfo() {
-    return array(
-      'name'  => 'Telephone field',
-      'description'  => "Test the creation of telephone fields.",
-      'group' => 'Field types'
-    );
-  }
-
   function setUp() {
     parent::setUp();
 
@@ -52,7 +46,7 @@ class TelephoneFieldTest extends WebTestBase {
   function testTelephoneField() {
 
     // Add the telepone field to the article content type.
-    entity_create('field_config', array(
+    entity_create('field_storage_config', array(
       'name' => 'field_telephone',
       'entity_type' => 'node',
       'type' => 'telephone',

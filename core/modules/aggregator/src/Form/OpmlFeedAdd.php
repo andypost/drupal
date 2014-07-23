@@ -86,7 +86,7 @@ class OpmlFeedAdd extends FormBase {
       '#title' => $this->t('Update interval'),
       '#default_value' => 3600,
       '#options' => $period,
-      '#description' => $this->t('The length of time between feed updates. Requires a correctly configured <a href="@cron">cron maintenance task</a>.', array('@cron' => url('admin/reports/status'))),
+      '#description' => $this->t('The length of time between feed updates. Requires a correctly configured <a href="@cron">cron maintenance task</a>.', array('@cron' => $this->url('system.status'))),
     );
 
     $form['actions'] = array('#type' => 'actions');
@@ -105,7 +105,7 @@ class OpmlFeedAdd extends FormBase {
     // If both fields are empty or filled, cancel.
     $file_upload = $this->getRequest()->files->get('files[upload]', NULL, TRUE);
     if (empty($form_state['values']['remote']) == empty($file_upload)) {
-      $this->setFormError('remote', $form_state, $this->t('You must <em>either</em> upload a file or enter a URL.'));
+      $this->setFormError('remote', $form_state, $this->t('<em>Either</em> upload a file or enter a URL.'));
     }
   }
 

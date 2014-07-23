@@ -8,11 +8,12 @@
 namespace Drupal\serialization\Tests;
 
 use Drupal\Core\Language\LanguageInterface;
-use Symfony\Component\Serializer\Serializer;
 use Drupal\Component\Utility\String;
 
 /**
- * Tests entity normalization and serialization of supported core formats.
+ * Tests that entities can be serialized to supported core formats.
+ *
+ * @group serialization
  */
 class EntitySerializationTest extends NormalizerTestBase {
 
@@ -43,14 +44,6 @@ class EntitySerializationTest extends NormalizerTestBase {
    * @var string
    */
   protected $entityClass = 'Drupal\entity_test\Entity\EntityTest';
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Entity serialization tests',
-      'description' => 'Tests that entities can be serialized to supported core formats.',
-      'group' => 'Serialization',
-    );
-  }
 
   protected function setUp() {
     parent::setUp();

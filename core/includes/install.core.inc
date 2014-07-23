@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Config\BootstrapConfigStorageFactory;
@@ -9,6 +10,7 @@ use Drupal\Core\Database\Install\TaskException;
 use Drupal\Core\Installer\Exception\AlreadyInstalledException;
 use Drupal\Core\Installer\Exception\InstallerException;
 use Drupal\Core\Installer\Exception\NoProfilesException;
+use Drupal\Core\Installer\InstallerKernel;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Page\DefaultHtmlPageRenderer;
@@ -272,12 +274,6 @@ function install_begin_request(&$install_state) {
   // Allow command line scripts to override server variables used by Drupal.
   require_once __DIR__ . '/bootstrap.inc';
 
-  // Initialize conf_path().
-  // This primes the site path to be used during installation. By not requiring
-  // settings.php, a bare site folder can be prepared in the /sites directory,
-  // which will be used for installing Drupal.
-  conf_path(FALSE);
-
   // If the hash salt leaks, it becomes possible to forge a valid testing user
   // agent, install a new copy of Drupal, and take over the original site.
   // The user agent header is used to pass a database prefix in the request when
@@ -288,7 +284,8 @@ function install_begin_request(&$install_state) {
     exit;
   }
 
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_CONFIGURATION);
+  $site_path = DrupalKernel::findSitePath($request, FALSE);
+  Settings::initialize($site_path);
 
   // Ensure that procedural dependencies are loaded as early as possible,
   // since the error/exception handlers depend on them.
@@ -359,14 +356,11 @@ function install_begin_request(&$install_state) {
     $environment = 'prod';
   }
 
-  $kernel = new DrupalKernel($environment, drupal_classloader(), FALSE);
+  // Only allow dumping the container once the hash salt has been created.
+  $kernel = InstallerKernel::createFromRequest($request, drupal_classloader(), $environment, (bool) Settings::get('hash_salt', FALSE));
+  $kernel->setSitePath($site_path);
   $kernel->boot();
-
-  // Enter the request scope and add the Request.
-  // @todo Remove this after converting all installer screens into controllers.
   $container = $kernel->getContainer();
-  $container->enterScope('request');
-  $container->set('request', $request, 'request');
   $container->get('request_stack')->push($request);
 
   // Register the file translation service.
@@ -374,7 +368,7 @@ function install_begin_request(&$install_state) {
     $directory = $GLOBALS['config']['locale.settings']['translation.path'];
   }
   else {
-    $directory = conf_path() . '/files/translations';
+    $directory = $site_path . '/files/translations';
   }
   $container->set('string_translator.file_translation', new FileTranslation($directory));
   $container->get('string_translation')
@@ -418,6 +412,8 @@ function install_begin_request(&$install_state) {
   // ModuleHandler::isLoaded() returns TRUE, since that is a condition being
   // checked by other subsystems (e.g., the theme system).
   $module_handler->loadAll();
+
+  $kernel->prepareLegacyRequest($request);
 
   // Prepare for themed output. We need to run this at the beginning of the
   // page request to avoid a different theme accidentally getting set. (We also
@@ -1360,7 +1356,7 @@ function install_get_localization_release($version = \Drupal::VERSION) {
 
       // Dev release: the previous point release (e.g., 8.2-dev falls back to
       // 8.1) or any unstable release (e.g., 8.0-dev falls back to 8.0-rc1,
-      // 8.0-beta1 or 8.0-alpha2)
+      // 8.0-beta1 or 8.0-alpha12)
       case 'dev':
         if ($info['minor'] >= 1) {
           $alternatives[] = $info['major'] . '.' . ($info['minor'] - 1);
@@ -1368,7 +1364,7 @@ function install_get_localization_release($version = \Drupal::VERSION) {
         else {
           $alternatives[] = $info['major'] . '.0-rc1';
           $alternatives[] = $info['major'] . '.0-beta1';
-          $alternatives[] = $info['major'] . '.0-alpha2';
+          $alternatives[] = $info['major'] . '.0-alpha12';
         }
         break;
 
@@ -1458,8 +1454,7 @@ function install_load_profile(&$install_state) {
  *   An array of information about the current installation state.
  */
 function install_bootstrap_full() {
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  \Drupal::service('session_manager')->initialize();
+  \Drupal::service('session_manager')->startLazy();
 }
 
 /**
@@ -1702,19 +1697,21 @@ function install_finished(&$install_state) {
   $snapshot = \Drupal::service('config.storage.snapshot');
   \Drupal::service('config.manager')->createSnapshot($active, $snapshot);
 
-  // Load current user and perform final login tasks.
-  // This has to be done after drupal_flush_all_caches()
-  // to avoid session regeneration.
-  $account = user_load(1);
-  user_login_finalize($account);
+  if ($install_state['interactive']) {
+    // Load current user and perform final login tasks.
+    // This has to be done after drupal_flush_all_caches()
+    // to avoid session regeneration.
+    $account = user_load(1);
+    user_login_finalize($account);
+  }
 
   // @todo Temporary hack to satisfy PIFR.
   // @see https://drupal.org/node/1317548
   $pifr_assertion = '<span style="display: none;">Drupal installation complete</span>';
-
-  drupal_set_message(t('Congratulations, you installed @drupal!', array(
+  $success_message = t('Congratulations, you installed @drupal!', array(
     '@drupal' => drupal_install_profile_distribution_name(),
-  )) . $pifr_assertion);
+  ));
+  drupal_set_message(SafeMarkup::set($success_message . $pifr_assertion));
 }
 
 /**

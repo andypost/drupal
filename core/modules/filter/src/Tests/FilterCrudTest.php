@@ -10,7 +10,9 @@ namespace Drupal\filter\Tests;
 use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
- * Tests for text format and filter CRUD operations.
+ * Tests creation, loading, updating, deleting of text formats and filters.
+ *
+ * @group filter
  */
 class FilterCrudTest extends DrupalUnitTestBase {
 
@@ -20,14 +22,6 @@ class FilterCrudTest extends DrupalUnitTestBase {
    * @var array
    */
   public static $modules = array('filter', 'filter_test');
-
-  public static function getInfo() {
-    return array(
-      'name' => 'Filter CRUD operations',
-      'description' => 'Test creation, loading, updating, deleting of text formats and filters.',
-      'group' => 'Filter',
-    );
-  }
 
   /**
    * Tests CRUD operations for text formats and filters.
@@ -92,7 +86,7 @@ class FilterCrudTest extends DrupalUnitTestBase {
     $this->assertEqual($filter_format->name, $format->name, format_string('filter_format_load: Proper title for text format %format.', $t_args));
     $this->assertEqual($filter_format->weight, $format->weight, format_string('filter_format_load: Proper weight for text format %format.', $t_args));
     // Check that the filter was created in site default language.
-    $this->assertEqual($format->langcode, $default_langcode, format_string('filter_format_load: Proper language code for text format %format.', $t_args));
+    $this->assertEqual($format->language()->getId(), $default_langcode, format_string('filter_format_load: Proper language code for text format %format.', $t_args));
   }
 
 }

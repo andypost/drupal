@@ -63,11 +63,20 @@ search.settings:
             a:
               type: integer
               label: 'Tag a weight'
+    logging:
+      type: boolean
+      label: 'Log searches'
 
 search.page.*:
   type: config_entity
   label: 'Search page'
   mapping:
+    id:
+      type: string
+      label: 'ID'
+    label:
+      type: label
+      label: 'Label'
     path:
       type: string
       label: 'Search page path'

@@ -10,21 +10,11 @@ use Drupal\migrate\Plugin\migrate\process\TestGet;
 use Drupal\migrate\Row;
 
 /**
+ * Tests the get process plugin.
+ *
  * @group migrate
- * @group Drupal
  */
 class GetTest extends MigrateProcessTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Get process plugin',
-      'description' => 'Tests the get process plugin.',
-      'group' => 'Migrate',
-    );
-  }
 
   /**
    * {@inheritdoc}

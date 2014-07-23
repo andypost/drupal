@@ -7,18 +7,14 @@
 
 namespace Drupal\comment\Tests;
 
+use Drupal\comment\CommentManagerInterface;
+
 /**
- * Tests comment threading.
+ * Tests to make sure the comment number increments properly.
+ *
+ * @group comment
  */
 class CommentThreadingTest extends CommentTestBase {
-  public static function getInfo() {
-    return array(
-      'name' => 'Comment Threading',
-      'description' => 'Test to make sure the comment number increments properly.',
-      'group' => 'Comment',
-    );
-  }
-
   /**
    * Tests the comment threading.
    */
@@ -28,7 +24,7 @@ class CommentThreadingTest extends CommentTestBase {
     $this->setCommentPreview(DRUPAL_DISABLED);
     $this->setCommentForm(TRUE);
     $this->setCommentSubject(TRUE);
-    $this->setCommentSettings('default_mode', COMMENT_MODE_THREADED, 'Comment paging changed.');
+    $this->setCommentSettings('default_mode', CommentManagerInterface::COMMENT_MODE_THREADED, 'Comment paging changed.');
     $this->drupalLogout();
 
     // Create a node.

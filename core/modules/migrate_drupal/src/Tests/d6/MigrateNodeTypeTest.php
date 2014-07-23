@@ -12,7 +12,9 @@ use Drupal\migrate\MigrateExecutable;
 use Drupal\migrate_drupal\Tests\MigrateDrupalTestBase;
 
 /**
- * Tests Drupal 6 node type to Drupal 8 migration.
+ * Upgrade node types to node.type.*.yml.
+ *
+ * @group migrate_drupal
  */
 class MigrateNodeTypeTest extends MigrateDrupalTestBase {
 
@@ -22,17 +24,6 @@ class MigrateNodeTypeTest extends MigrateDrupalTestBase {
    * @var array
    */
   public static $modules = array('node');
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Migrate node type to node.type.*.yml',
-      'description' => 'Upgrade node types to node.type.*.yml',
-      'group' => 'Migrate Drupal',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -72,7 +63,7 @@ class MigrateNodeTypeTest extends MigrateDrupalTestBase {
 
     // Test we have a body field.
     $instance = FieldInstanceConfig::loadByName('node', 'test_page', 'body');
-    $this->assertEqual($instance->getLabel(), 'Body', 'Body field was found.');
+    $this->assertEqual($instance->getLabel(), 'This is the body field label', 'Body field was found.');
 
     // Test the test_story content type.
     $node_type_story = entity_load('node_type', 'test_story');

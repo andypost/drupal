@@ -114,16 +114,9 @@ a.tabledrag-handle .handle {
   padding: 0.42em 0.5em;
   width: 14px;
 }
-.no-svg a.tabledrag-handle .handle {
-  background-image: url(../../../misc/icons/787878/move.png);
-}
 a.tabledrag-handle:hover .handle,
 a.tabledrag-handle:focus .handle {
   background-image: url(../../../misc/icons/000000/move.svg);
-}
-.no-svg a.tabledrag-handle:hover .handle,
-.no-svg a.tabledrag-handle:focus .handle {
-  background-image: url(../../../misc/icons/000000/move.png);
 }
 .touch .draggable td {
   padding: 0 10px;
@@ -310,9 +303,9 @@ tr .ajax-progress-throbber .throbber {
 }
 
 /**
- * Hide elements visually, but keep them available for screen-readers.
+ * Hide elements visually, but keep them available for screen readers.
  *
- * Used for information required for screen-reader users to understand and use
+ * Used for information required for screen reader users to understand and use
  * the site where visual display is undesirable. Information provided in this
  * manner should be kept concise, to avoid unnecessary burden on the user.
  * "!important" is used to prevent unintentional overrides.
@@ -340,7 +333,7 @@ tr .ajax-progress-throbber .throbber {
 }
 
 /**
- * Hide visually and from screen-readers, but maintain layout.
+ * Hide visually and from screen readers, but maintain layout.
  */
 .invisible {
   visibility: hidden;

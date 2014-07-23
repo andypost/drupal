@@ -7,10 +7,13 @@
 
 namespace Drupal\field\Tests;
 
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
  * Tests exposing field definitions for configurable fields.
+ *
+ * @group field
  */
 class ConfigFieldDefinitionTest extends FieldUnitTestBase {
 
@@ -20,17 +23,6 @@ class ConfigFieldDefinitionTest extends FieldUnitTestBase {
    * @var \Drupal\Core\Entity\EntityManagerInterface;
    */
   protected $entityManager;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Config field definitions',
-      'description' => 'Tests exposing field definitions for configurable fields.',
-      'group' => 'Field API',
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -55,7 +47,7 @@ class ConfigFieldDefinitionTest extends FieldUnitTestBase {
   public function testBundleFieldDefinition() {
     $definitions = $this->entityManager->getFieldDefinitions($this->entityType, $this->bundle);
     $this->assertTrue(isset($definitions[$this->instance->getName()]));
-    $this->assertTrue($definitions[$this->instance->getName()] instanceof FieldStorageDefinitionInterface);
+    $this->assertTrue($definitions[$this->instance->getName()] instanceof FieldDefinitionInterface);
     // Make sure no field for the instance on another entity type is exposed.
     $this->assertFalse(isset($definitions[$this->instance_rev->getName()]));
   }

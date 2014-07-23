@@ -10,21 +10,11 @@ namespace Drupal\migrate\Tests\process;
 use Drupal\migrate\Plugin\migrate\process\Concat;
 
 /**
+ * Tests the concat process plugin.
+ *
  * @group migrate
- * @group Drupal
  */
 class ConcatTest extends MigrateProcessTestCase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Concat process plugin',
-      'description' => 'Tests the concat process plugin.',
-      'group' => 'Migrate',
-    );
-  }
 
   /**
    * {@inheritdoc}

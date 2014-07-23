@@ -12,12 +12,8 @@ use Drupal\migrate\Row;
 use Drupal\Tests\UnitTestCase;
 
 /**
- * Tests for Row class.
- *
- * @group Drupal
+ * @coversDefaultClass \Drupal\migrate\Row
  * @group migrate
- *
- * @covers \Drupal\migrate\Row
  */
 class RowTest extends UnitTestCase {
 
@@ -53,17 +49,6 @@ class RowTest extends UnitTestCase {
    * @var string
    */
   protected $testHashMod = '9476aab0b62b3f47342cc6530441432e5612dcba7ca84115bbab5cceaca1ecb3';
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Row class functionality',
-      'description' => 'Tests Row class functionality.',
-      'group' => 'Migrate',
-    );
-  }
 
   /**
    * Tests object creation: empty.
@@ -248,8 +233,8 @@ class RowTest extends UnitTestCase {
   public function testMultipleDestination() {
     $row = new Row($this->testValues, $this->testSourceIds);
     // Set some deep nested values.
-    $row->setDestinationProperty('image.alt', 'alt text');
-    $row->setDestinationProperty('image.fid', 3);
+    $row->setDestinationProperty('image/alt', 'alt text');
+    $row->setDestinationProperty('image/fid', 3);
 
     $this->assertTrue($row->hasDestinationProperty('image'));
     $this->assertFalse($row->hasDestinationProperty('alt'));
@@ -258,8 +243,8 @@ class RowTest extends UnitTestCase {
     $destination = $row->getDestination();
     $this->assertEquals('alt text', $destination['image']['alt']);
     $this->assertEquals(3, $destination['image']['fid']);
-    $this->assertEquals('alt text', $row->getDestinationProperty('image.alt'));
-    $this->assertEquals(3, $row->getDestinationProperty('image.fid'));
+    $this->assertEquals('alt text', $row->getDestinationProperty('image/alt'));
+    $this->assertEquals(3, $row->getDestinationProperty('image/fid'));
   }
 
 }
