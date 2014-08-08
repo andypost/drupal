@@ -12,6 +12,7 @@ use Drupal\Core\Entity\EntityListBuilderInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\field_ui\OverviewBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -77,7 +78,7 @@ class FieldOverview extends OverviewBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state, $entity_type_id = NULL, $bundle = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $entity_type_id = NULL, $bundle = NULL) {
     parent::buildForm($form, $form_state, $entity_type_id, $bundle);
 
     // Gather bundle information.
@@ -281,7 +282,7 @@ class FieldOverview extends OverviewBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     $this->validateAddNew($form, $form_state);
     $this->validateAddExisting($form, $form_state);
   }
@@ -291,24 +292,24 @@ class FieldOverview extends OverviewBase {
    *
    * @param array $form
    *   An associative array containing the structure of the form.
-   * @param array $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    *
    * @see \Drupal\field_ui\FieldOverview::validateForm()
    */
-  protected function validateAddNew(array $form, array &$form_state) {
+  protected function validateAddNew(array $form, FormStateInterface $form_state) {
     $field = $form_state['values']['fields']['_add_new_field'];
 
     // Validate if any information was provided in the 'add new field' row.
     if (array_filter(array($field['label'], $field['field_name'], $field['type']))) {
       // Missing label.
       if (!$field['label']) {
-        $this->setFormError('fields][_add_new_field][label', $form_state, $this->t('Add new field: you need to provide a label.'));
+        $form_state->setErrorByName('fields][_add_new_field][label', $this->t('Add new field: you need to provide a label.'));
       }
 
       // Missing field name.
       if (!$field['field_name']) {
-        $this->setFormError('fields][_add_new_field][field_name', $form_state, $this->t('Add new field: you need to provide a field name.'));
+        $form_state->setErrorByName('fields][_add_new_field][field_name', $this->t('Add new field: you need to provide a field name.'));
       }
       // Field name validation.
       else {
@@ -321,7 +322,7 @@ class FieldOverview extends OverviewBase {
 
       // Missing field type.
       if (!$field['type']) {
-        $this->setFormError('fields][_add_new_field][type', $form_state, $this->t('Add new field: you need to select a field type.'));
+        $form_state->setErrorByName('fields][_add_new_field][type', $this->t('Add new field: you need to select a field type.'));
       }
     }
   }
@@ -331,12 +332,12 @@ class FieldOverview extends OverviewBase {
    *
    * @param array $form
    *   An associative array containing the structure of the form.
-   * @param array $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    *
    * @see \Drupal\field_ui\FieldOverview::validate()
    */
-  protected function validateAddExisting(array $form, array &$form_state) {
+  protected function validateAddExisting(array $form, FormStateInterface $form_state) {
     // The form element might be absent if no existing fields can be added to
     // this bundle.
     if (isset($form_state['values']['fields']['_add_existing_field'])) {
@@ -347,12 +348,12 @@ class FieldOverview extends OverviewBase {
       if (array_filter(array($field['label'], $field['field_name']))) {
         // Missing label.
         if (!$field['label']) {
-          $this->setFormError('fields][_add_existing_field][label', $form_state, $this->t('Re-use existing field: you need to provide a label.'));
+          $form_state->setErrorByName('fields][_add_existing_field][label', $this->t('Re-use existing field: you need to provide a label.'));
         }
 
         // Missing existing field name.
         if (!$field['field_name']) {
-          $this->setFormError('fields][_add_existing_field][field_name', $form_state, $this->t('Re-use existing field: you need to select a field.'));
+          $form_state->setErrorByName('fields][_add_existing_field][field_name', $this->t('Re-use existing field: you need to select a field.'));
         }
       }
     }
@@ -361,7 +362,7 @@ class FieldOverview extends OverviewBase {
   /**
    * Overrides \Drupal\field_ui\OverviewBase::submitForm().
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $error = FALSE;
     $form_values = $form_state['values']['fields'];
     $destinations = array();
@@ -477,7 +478,7 @@ class FieldOverview extends OverviewBase {
     if ($destinations) {
       $destination = drupal_get_destination();
       $destinations[] = $destination['destination'];
-      $form_state['redirect_route'] = FieldUI::getNextDestination($destinations, $form_state);
+      $form_state->setRedirectUrl(FieldUI::getNextDestination($destinations, $form_state));
     }
     elseif (!$error) {
       drupal_set_message($this->t('Your settings have been saved.'));

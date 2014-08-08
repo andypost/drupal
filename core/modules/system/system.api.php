@@ -397,13 +397,13 @@ function hook_page_build(&$page) {
 }
 
 /**
- * Alter links for menus.
+ * Alters all the menu links discovered by the menu link plugin manager.
  *
  * @param array $links
  *   The link definitions to be altered.
  *
  * @return array
- *   An array of default menu links. Each link has a key that is the machine
+ *   An array of discovered menu links. Each link has a key that is the machine
  *   name, which must be unique. By default, use the route name as the
  *   machine name. In cases where multiple links use the same route name, such
  *   as two links to the same page in different menus, or two links using the
@@ -440,7 +440,7 @@ function hook_page_build(&$page) {
  *
  * @ingroup menu
  */
-function hook_menu_link_defaults_alter(&$links) {
+function hook_menu_links_discovered_alter(&$links) {
   // Change the weight and title of the user.logout link.
   $links['user.logout']['weight'] = -10;
   $links['user.logout']['title'] = 'Logout';
@@ -692,9 +692,9 @@ function hook_page_alter(&$page) {
  * @param $form
  *   Nested array of form elements that comprise the form.
  * @param $form_state
- *   A keyed array containing the current state of the form. The arguments
- *   that \Drupal::formBuilder()->getForm() was originally called with are
- *   available in the array $form_state['build_info']['args'].
+ *   The current state of the form. The arguments that
+ *   \Drupal::formBuilder()->getForm() was originally called with are available
+ *   in the array $form_state['build_info']['args'].
  * @param $form_id
  *   String representing the name of the form itself. Typically this is the
  *   name of the function that generated the form.
@@ -703,7 +703,7 @@ function hook_page_alter(&$page) {
  * @see hook_form_FORM_ID_alter()
  * @see forms_api_reference.html
  */
-function hook_form_alter(&$form, &$form_state, $form_id) {
+function hook_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   if (isset($form['type']) && $form['type']['#value'] . '_node_settings' == $form_id) {
     $upload_enabled_types = \Drupal::config('mymodule.settings')->get('upload_enabled_types');
     $form['workflow']['upload_' . $form['type']['#value']] = array(
@@ -731,9 +731,9 @@ function hook_form_alter(&$form, &$form_state, $form_id) {
  * @param $form
  *   Nested array of form elements that comprise the form.
  * @param $form_state
- *   A keyed array containing the current state of the form. The arguments
- *   that \Drupal::formBuilder()->getForm() was originally called with are
- *   available in the array $form_state['build_info']['args'].
+ *   The current state of the form. The arguments that
+ *   \Drupal::formBuilder()->getForm() was originally called with are available
+ *   in the array $form_state['build_info']['args'].
  * @param $form_id
  *   String representing the name of the form itself. Typically this is the
  *   name of the function that generated the form.
@@ -743,7 +743,7 @@ function hook_form_alter(&$form, &$form_state, $form_id) {
  * @see \Drupal\Core\Form\FormBuilderInterface::prepareForm()
  * @see forms_api_reference.html
  */
-function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) {
+function hook_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   // Modification for the form with the given form ID goes here. For example, if
   // FORM_ID is "user_register_form" this code would run only on the user
   // registration form.
@@ -779,7 +779,7 @@ function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) {
  * @param $form
  *   Nested array of form elements that comprise the form.
  * @param $form_state
- *   A keyed array containing the current state of the form.
+ *   The current state of the form.
  * @param $form_id
  *   String representing the name of the form itself. Typically this is the
  *   name of the function that generated the form.
@@ -788,7 +788,7 @@ function hook_form_FORM_ID_alter(&$form, &$form_state, $form_id) {
  * @see hook_form_FORM_ID_alter()
  * @see \Drupal\Core\Form\FormBuilderInterface::prepareForm()
  */
-function hook_form_BASE_FORM_ID_alter(&$form, &$form_state, $form_id) {
+function hook_form_BASE_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   // Modification for the form with the given BASE_FORM_ID goes here. For
   // example, if BASE_FORM_ID is "node_form", this code would run on every
   // node form, regardless of node type.
@@ -1666,7 +1666,7 @@ function hook_requirements($phase) {
     $cron_last = \Drupal::state()->get('system.cron_last');
 
     if (is_numeric($cron_last)) {
-      $requirements['cron']['value'] = t('Last run !time ago', array('!time' => format_interval(REQUEST_TIME - $cron_last)));
+      $requirements['cron']['value'] = t('Last run !time ago', array('!time' => \Drupal::service('date.formatter')->formatInterval(REQUEST_TIME - $cron_last)));
     }
     else {
       $requirements['cron'] = array(
@@ -2838,6 +2838,33 @@ function hook_config_import_steps_alter(&$sync_steps, \Drupal\Core\Config\Config
 }
 
 /**
+ * Alter config typed data definitions.
+ *
+ * For example you can alter the typed data types representing each
+ * configuration schema type to change default labels or form element renderers
+ * used for configuration translation.
+ *
+ * It is strongly advised not to use this hook to add new data types or to
+ * change the structure of existing ones. Keep in mind that there are tools
+ * that may use the configuration schema for static analysis of configuration
+ * files, like the string extractor for the localization system. Such systems
+ * won't work with dynamically defined configuration schemas.
+ *
+ * For adding new data types use configuration schema YAML files instead.
+ *
+ * @param $definitions
+ *   Associative array of configuration type definitions keyed by schema type
+ *   names. The elements are themselves array with information about the type.
+ */
+function hook_config_schema_info_alter(&$definitions) {
+  // Enhance the text and date type definitions with classes to generate proper
+  // form elements in ConfigTranslationFormBase. Other translatable types will
+  // appear as a one line textfield.
+  $definitions['text']['form_element_class'] = '\Drupal\config_translation\FormElement\Textarea';
+  $definitions['date_format']['form_element_class'] = '\Drupal\config_translation\FormElement\DateFormat';
+}
+
+/**
  * @} End of "addtogroup hooks".
  */
 
@@ -2865,6 +2892,19 @@ function hook_config_import_steps_alter(&$sync_steps, \Drupal\Core\Config\Config
  *
  * Note that you must use double quotes; single quotes will not work in
  * annotations.
+ *
+ * Some annotation types, which extend the "@ PluginID" annotation class, have
+ * only a single 'id' key in their annotation. For these, it is possible to use
+ * a shorthand annotation. For example:
+ * @code
+ * * @ViewsArea("entity")
+ * @endcode
+ * in place of
+ * @code
+ * * @ViewsArea(
+ * *   id = "entity"
+ * *)
+ * @endcode
  *
  * The available annotation classes are listed in this topic, and can be
  * identified when you are looking at the Drupal source code by having

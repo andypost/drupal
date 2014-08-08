@@ -81,7 +81,7 @@ interface EntityManagerInterface extends PluginManagerInterface {
   public function getFieldStorageDefinitions($entity_type_id);
 
   /**
-   * Collects a lightweight map of fields across bundles.
+   * Returns a lightweight map of fields across bundles.
    *
    * @return array
    *   An array keyed by entity type. Each value is an array which keys are
@@ -92,15 +92,29 @@ interface EntityManagerInterface extends PluginManagerInterface {
   public function getFieldMap();
 
   /**
-   * Creates a new access controller instance.
+   * Returns a lightweight map of fields across bundles filtered by field type.
+   *
+   * @param string $field_type
+   *   The field type to filter by.
+   *
+   * @return array
+   *   An array keyed by entity type. Each value is an array which keys are
+   *   field names and value is an array with two entries:
+   *   - type: The field type.
+   *   - bundles: The bundles in which the field appears.
+   */
+  public function getFieldMapByFieldType($field_type);
+
+  /**
+   * Creates a new access control handler instance.
    *
    * @param string $entity_type
-   *   The entity type for this access controller.
+   *   The entity type for this access control handler.
    *
-   * @return \Drupal\Core\Entity\EntityAccessControllerInterface.
-   *   A access controller instance.
+   * @return \Drupal\Core\Entity\EntityAccessControlHandlerInterface.
+   *   A access control handler instance.
    */
-  public function getAccessController($entity_type);
+  public function getAccessControlHandler($entity_type);
 
   /**
    * Returns the route information for an entity type's bundle.

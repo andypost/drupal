@@ -7,6 +7,7 @@
 namespace Drupal\locale\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Configure locale settings for this site.
@@ -21,9 +22,9 @@ class LocaleSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Implements \Drupal\Core\Form\FormInterface::buildForm().
+   * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('locale.settings');
 
     $form['update_interval_days'] = array(
@@ -83,18 +84,18 @@ class LocaleSettingsForm extends ConfigFormBase {
   /**
    * Implements \Drupal\Core\Form\FormInterface::validateForm().
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
 
     if (empty($form['#translation_directory']) && $form_state['values']['use_source'] == LOCALE_TRANSLATION_USE_SOURCE_LOCAL) {
-      $this->setFormError('use_source', $form_state, $this->t('You have selected local translation source, but no <a href="@url">Interface translation directory</a> was configured.', array('@url' => url('admin/config/media/file-system'))));
+      $form_state->setErrorByName('use_source', $this->t('You have selected local translation source, but no <a href="@url">Interface translation directory</a> was configured.', array('@url' => url('admin/config/media/file-system'))));
     }
   }
 
   /**
-   * Implements \Drupal\Core\Form\FormInterface::submitForm().
+   * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state['values'];
 
     $config = $this->config('locale.settings');

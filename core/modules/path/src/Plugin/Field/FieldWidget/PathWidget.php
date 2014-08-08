@@ -9,6 +9,7 @@ namespace Drupal\path\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\WidgetBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 
@@ -28,7 +29,7 @@ class PathWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
-  public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, array &$form_state) {
+  public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $entity = $items->getEntity();
     $path = array();
     if (!$entity->isNew()) {
@@ -79,20 +80,19 @@ class PathWidget extends WidgetBase {
    *
    * @param array $element
    *   The form element.
-   * @param array $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
    */
-  public static function validateFormElement(array &$element, array &$form_state) {
+  public static function validateFormElement(array &$element, FormStateInterface $form_state) {
     // Trim the submitted value.
     $alias = trim($element['alias']['#value']);
     if (!empty($alias)) {
-      $form_builder = \Drupal::formBuilder();
-      $form_builder->setValue($element['alias'], $alias, $form_state);
+      $form_state->setValueForElement($element['alias'], $alias);
 
       // Validate that the submitted alias does not exist yet.
       $is_exists = \Drupal::service('path.alias_storage')->aliasExists($alias, $element['langcode']['#value'], $element['source']['#value']);
       if ($is_exists) {
-        $form_builder->setError($element, $form_state, t('The alias is already in use.'));
+        $form_state->setError($element, t('The alias is already in use.'));
       }
     }
   }
@@ -100,7 +100,7 @@ class PathWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
-  public function errorElement(array $element, ConstraintViolationInterface $violation, array $form, array &$form_state) {
+  public function errorElement(array $element, ConstraintViolationInterface $violation, array $form, FormStateInterface $form_state) {
     return $element['alias'];
   }
 

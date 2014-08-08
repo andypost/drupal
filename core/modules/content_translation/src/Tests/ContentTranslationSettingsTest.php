@@ -36,7 +36,7 @@ class ContentTranslationSettingsTest extends WebTestBase {
     $this->container->get('comment.manager')->addDefaultField('node', 'article', 'comment_article', CommentItemInterface::OPEN, 'comment_article');
     $this->container->get('comment.manager')->addDefaultField('node', 'page', 'comment_page');
 
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer languages', 'administer content translation', 'administer content types', 'administer node fields', 'administer comment fields', 'administer comments', 'administer comment types'));
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer languages', 'administer content translation', 'administer content types', 'administer node fields', 'administer comment fields', 'administer comments', 'administer comment types', 'administer account settings'));
     $this->drupalLogin($admin_user);
   }
 
@@ -44,7 +44,7 @@ class ContentTranslationSettingsTest extends WebTestBase {
    * Tests that the settings UI works as expected.
    */
   function testSettingsUI() {
-    // Check for the content_translation_menu_link_defaults_alter() changes.
+    // Check for the content_translation_menu_links_discovered_alter() changes.
     $this->drupalGet('admin/config');
     $this->assertLink('Content language and translation');
     $this->assertText('Configure language and translation support for content.');
@@ -181,6 +181,23 @@ class ContentTranslationSettingsTest extends WebTestBase {
       $this->assertEqual($definitions['body']->isTranslatable(), $translatable, 'Field translatability correctly switched.');
       $this->assertEqual($instance->isTranslatable(), $definitions['body']->isTranslatable(), 'Configurable field translatability correctly switched.');
     }
+  }
+
+  /**
+   * Tests the language settings checkbox on account settings page.
+   */
+  function testAccountLanguageSettingsUI() {
+    // Make sure the checkbox is available and not checked by default.
+    $this->drupalGet('admin/config/people/accounts');
+    $this->assertField('language[content_translation]');
+    $this->assertNoFieldChecked('edit-language-content-translation');
+
+    $edit = array(
+      'language[content_translation]' => TRUE,
+    );
+    $this->drupalPostForm('admin/config/people/accounts', $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/people/accounts');
+    $this->assertFieldChecked('edit-language-content-translation');
   }
 
   /**

@@ -344,11 +344,11 @@ class LocaleUpdateTest extends LocaleUpdateBase {
   }
 
   /**
-   * Tests automatic translation import when a langauge is added.
+   * Tests automatic translation import when a language is added.
    *
    * When a language is added, the system will check for translations files of
    * enabled modules and will import them. When a language is removed the system
-   * will remove all translations of that langugue from the database.
+   * will remove all translations of that language from the database.
    */
   public function testEnableLanguage() {
     // Make the hidden test modules look like a normal custom module.
@@ -392,7 +392,7 @@ class LocaleUpdateTest extends LocaleUpdateBase {
   }
 
   /**
-   * Tests automatic translation import when a custom langauge is added.
+   * Tests automatic translation import when a custom language is added.
    */
   public function testEnableCustomLanguage() {
     // Make the hidden test modules look like a normal custom module.
@@ -407,7 +407,7 @@ class LocaleUpdateTest extends LocaleUpdateBase {
     // Create a custom language with language code 'xx' and a random
     // name.
     $langcode = 'xx';
-    $name = $this->randomName(16);
+    $name = $this->randomMachineName(16);
     $edit = array(
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,

@@ -10,6 +10,7 @@ namespace Drupal\update\Form;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\FileTransfer\Local;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Updater\Updater;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -54,7 +55,7 @@ class UpdateManagerInstall extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $this->moduleHandler->loadInclude('update', 'inc', 'update.manager');
     if (!_update_manager_check_backends($form, 'install')) {
       return $form;
@@ -101,17 +102,17 @@ class UpdateManagerInstall extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     $uploaded_file = $this->getRequest()->files->get('files[project_upload]', NULL, TRUE);
     if (!($form_state['values']['project_url'] XOR !empty($uploaded_file))) {
-      $this->setFormError('project_url', $form_state, $this->t('You must either provide a URL or upload an archive file to install.'));
+      $form_state->setErrorByName('project_url', $this->t('You must either provide a URL or upload an archive file to install.'));
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $local_cache = NULL;
     if ($form_state['values']['project_url']) {
       $local_cache = update_manager_file_get($form_state['values']['project_url']);
@@ -215,7 +216,7 @@ class UpdateManagerInstall extends FormBase {
     // whatever FileTransfer object authorize.php creates for us.
     else {
       system_authorized_init('update_authorize_run_install', drupal_get_path('module', 'update') . '/update.authorize.inc', $arguments, $this->t('Update manager'));
-      $form_state['redirect'] = system_authorized_get_url();
+      $form_state->setRedirectUrl(system_authorized_get_url());
     }
   }
 

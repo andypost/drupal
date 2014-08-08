@@ -25,7 +25,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
  *       "default" = "Drupal\config_test\ConfigTestForm",
  *       "delete" = "Drupal\config_test\Form\ConfigTestDeleteForm"
  *     },
- *     "access" = "Drupal\config_test\ConfigTestAccessController"
+ *     "access" = "Drupal\config_test\ConfigTestAccessControlHandler"
  *   },
  *   config_prefix = "dynamic",
  *   entity_keys = {
@@ -34,10 +34,10 @@ use Drupal\Core\Entity\EntityStorageInterface;
  *     "status" = "status"
  *   },
  *   links = {
- *     "edit-form" = "config_test.entity",
- *     "delete-form" = "config_test.entity_delete",
- *     "enable" = "config_test.entity_enable",
- *     "disable" = "config_test.entity_disable"
+ *     "edit-form" = "entity.config_test.edit_form",
+ *     "delete-form" = "entity.config_test.delete_form",
+ *     "enable" = "entity.config_test.enable",
+ *     "disable" = "entity.config_test.disable"
  *   }
  * )
  */

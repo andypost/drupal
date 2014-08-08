@@ -190,7 +190,7 @@ All arguments are long options.
               as the names of test groups as shown at
               admin/config/development/testing.
               These group names typically correspond to module names like "User"
-              or "Profile" or "System", but there is also a group "XML-RPC".
+              or "Profile" or "System", but there is also a group "Database".
               If --class is specified then these are interpreted as the names of
               specific test classes whose test methods will be run. Tests must
               be separated by commas. Ignored if --all is specified.
@@ -957,7 +957,7 @@ function simpletest_script_reporter_write_xml_results() {
 function simpletest_script_reporter_timer_stop() {
   echo "\n";
   $end = Timer::stop('run-tests');
-  echo "Test run duration: " . format_interval($end['time'] / 1000);
+  echo "Test run duration: " . \Drupal::service('date.formatter')->formatInterval($end['time'] / 1000);
   echo "\n\n";
 }
 

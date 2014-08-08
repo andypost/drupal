@@ -23,7 +23,7 @@ use Drupal\taxonomy\TermInterface;
  *   controllers = {
  *     "storage" = "Drupal\taxonomy\TermStorage",
  *     "view_builder" = "Drupal\taxonomy\TermViewBuilder",
- *     "access" = "Drupal\taxonomy\TermAccessController",
+ *     "access" = "Drupal\taxonomy\TermAccessControlHandler",
  *     "form" = {
  *       "default" = "Drupal\taxonomy\TermForm",
  *       "delete" = "Drupal\taxonomy\Form\TermDeleteForm"
@@ -31,6 +31,7 @@ use Drupal\taxonomy\TermInterface;
  *     "translation" = "Drupal\taxonomy\TermTranslationHandler"
  *   },
  *   base_table = "taxonomy_term_data",
+ *   data_table = "taxonomy_term_field_data",
  *   fieldable = TRUE,
  *   translatable = TRUE,
  *   entity_keys = {
@@ -121,6 +122,7 @@ class Term extends ContentEntityBase implements TermInterface {
     $fields['name'] = FieldDefinition::create('string')
       ->setLabel(t('Name'))
       ->setDescription(t('The term name.'))
+      ->setTranslatable(TRUE)
       ->setRequired(TRUE)
       ->setSetting('max_length', 255)
       ->setDisplayOptions('view', array(
@@ -137,6 +139,7 @@ class Term extends ContentEntityBase implements TermInterface {
     $fields['description'] = FieldDefinition::create('text_long')
       ->setLabel(t('Description'))
       ->setDescription(t('A description of the term.'))
+      ->setTranslatable(TRUE)
       ->setSetting('text_processing', 1)
       ->setDisplayOptions('view', array(
         'label' => 'hidden',

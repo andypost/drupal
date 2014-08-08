@@ -19,7 +19,7 @@ use Drupal\system\DateFormatInterface;
  *   id = "date_format",
  *   label = @Translation("Date format"),
  *   controllers = {
- *     "access" = "Drupal\system\DateFormatAccessController",
+ *     "access" = "Drupal\system\DateFormatAccessControlHandler",
  *     "list_builder" = "Drupal\system\DateFormatListBuilder",
  *     "form" = {
  *       "add" = "Drupal\system\Form\DateFormatAddForm",
@@ -33,8 +33,8 @@ use Drupal\system\DateFormatInterface;
  *   },
  *   admin_permission = "administer site configuration",
  *   links = {
- *     "delete-form" = "system.date_format_delete",
- *     "edit-form" = "system.date_format_edit"
+ *     "delete-form" = "entity.date_format.delete_form",
+ *     "edit-form" = "entity.date_format.edit_form"
  *   }
  * )
  */

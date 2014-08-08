@@ -10,6 +10,7 @@ namespace Drupal\field_ui\Form;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Component\Utility\String;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\field\FieldInstanceConfigInterface;
 use Drupal\field_ui\FieldUI;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -62,7 +63,7 @@ class FieldInstanceEditForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state, FieldInstanceConfigInterface $field_instance_config = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, FieldInstanceConfigInterface $field_instance_config = NULL) {
     $this->instance = $form_state['instance'] = $field_instance_config;
 
     $bundle = $this->instance->bundle;
@@ -164,7 +165,7 @@ class FieldInstanceEditForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     if (isset($form['instance']['default_value'])) {
       $items = $form['#entity']->get($this->instance->getName());
       $items->defaultValuesFormValidate($form['instance']['default_value'], $form, $form_state);
@@ -174,7 +175,7 @@ class FieldInstanceEditForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     // Handle the default value.
     $default_value = array();
     if (isset($form['instance']['default_value'])) {
@@ -194,22 +195,17 @@ class FieldInstanceEditForm extends FormBase {
     $request = $this->getRequest();
     if (($destinations = $request->query->get('destinations')) && $next_destination = FieldUI::getNextDestination($destinations)) {
       $request->query->remove('destinations');
-      if (isset($next_destination['route_name'])) {
-        $form_state['redirect_route'] = $next_destination;
-      }
-      else {
-        $form_state['redirect'] = $next_destination;
-      }
+      $form_state->setRedirectUrl($next_destination);
     }
     else {
-      $form_state['redirect_route'] = FieldUI::getOverviewRouteInfo($this->instance->entity_type, $this->instance->bundle);
+      $form_state->setRedirectUrl(FieldUI::getOverviewRouteInfo($this->instance->entity_type, $this->instance->bundle));
     }
   }
 
   /**
    * Redirects to the field instance deletion form.
    */
-  public function delete(array &$form, array &$form_state) {
+  public function delete(array &$form, FormStateInterface $form_state) {
     $destination = array();
     $request = $this->getRequest();
     if ($request->query->has('destination')) {
@@ -217,15 +213,13 @@ class FieldInstanceEditForm extends FormBase {
       $request->query->remove('destination');
     }
     $entity_type = $this->entityManager->getDefinition($this->instance->entity_type);
-    $form_state['redirect_route'] = array(
-      'route_name' => 'field_ui.delete_' . $this->instance->entity_type,
-      'route_parameters' => array(
+    $form_state->setRedirect(
+      'field_ui.delete_' . $this->instance->entity_type,
+      array(
         $entity_type->getBundleEntityType() => $this->instance->bundle,
         'field_instance_config' => $this->instance->id(),
       ),
-      'options' => array(
-        'query' => $destination,
-      ),
+      array('query' => $destination)
     );
   }
 

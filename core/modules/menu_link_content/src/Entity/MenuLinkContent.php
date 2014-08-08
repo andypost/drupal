@@ -12,6 +12,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\FieldDefinition;
 use Drupal\Core\Url;
+use Drupal\menu_link_content\MenuLinkContentInterface;
 
 /**
  * Defines the menu link content entity class.
@@ -21,7 +22,7 @@ use Drupal\Core\Url;
  *   label = @Translation("Custom menu link"),
  *   controllers = {
  *     "storage" = "Drupal\Core\Entity\ContentEntityDatabaseStorage",
- *     "access" = "Drupal\menu_link_content\MenuLinkContentAccessController",
+ *     "access" = "Drupal\menu_link_content\MenuLinkContentAccessControlHandler",
  *     "form" = {
  *       "default" = "Drupal\menu_link_content\Form\MenuLinkContentForm",
  *       "delete" = "Drupal\menu_link_content\Form\MenuLinkContentDeleteForm"
@@ -39,9 +40,9 @@ use Drupal\Core\Url;
  *     "bundle" = "bundle"
  *   },
  *   links = {
- *     "canonical" = "menu_link_content.link_edit",
- *     "edit-form" = "menu_link_content.link_edit",
- *     "delete-form" = "menu_link_content.link_delete",
+ *     "canonical" = "entity.menu_link_content.canonical",
+ *     "edit-form" = "entity.menu_link_content.canonical",
+ *     "delete-form" = "entity.menu_link_content.delete_form",
  *   }
  * )
  */

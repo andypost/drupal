@@ -22,7 +22,7 @@ use Drupal\language\LanguageInterface;
  *   label = @Translation("Language"),
  *   controllers = {
  *     "list_builder" = "Drupal\language\LanguageListBuilder",
- *     "access" = "Drupal\language\LanguageAccessController",
+ *     "access" = "Drupal\language\LanguageAccessControlHandler",
  *     "form" = {
  *       "add" = "Drupal\language\Form\LanguageAddForm",
  *       "edit" = "Drupal\language\Form\LanguageEditForm",
@@ -37,8 +37,8 @@ use Drupal\language\LanguageInterface;
  *     "weight" = "weight"
  *   },
  *   links = {
- *     "delete-form" = "language.delete",
- *     "edit-form" = "language.edit"
+ *     "delete-form" = "entity.language_entity.delete_form",
+ *     "edit-form" = "entity.language_entity.edit_form"
  *   }
  * )
  */

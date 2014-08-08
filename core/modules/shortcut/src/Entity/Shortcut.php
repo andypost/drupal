@@ -22,7 +22,7 @@ use Drupal\shortcut\ShortcutInterface;
  *   id = "shortcut",
  *   label = @Translation("Shortcut link"),
  *   controllers = {
- *     "access" = "Drupal\shortcut\ShortcutAccessController",
+ *     "access" = "Drupal\shortcut\ShortcutAccessControlHandler",
  *     "form" = {
  *       "default" = "Drupal\shortcut\ShortcutForm",
  *       "add" = "Drupal\shortcut\ShortcutForm",
@@ -41,10 +41,10 @@ use Drupal\shortcut\ShortcutInterface;
  *     "label" = "title"
  *   },
  *   links = {
- *     "canonical" = "shortcut.link_edit",
- *     "delete-form" = "shortcut.link_delete",
- *     "edit-form" = "shortcut.link_edit",
- *     "admin-form" = "shortcut.link_edit"
+ *     "canonical" = "entity.shortcut.canonical",
+ *     "delete-form" = "entity.shortcut.delete_form",
+ *     "edit-form" = "entity.shortcut.canonical",
+ *     "admin-form" = "entity.shortcut.canonical"
  *   },
  *   bundle_entity_type = "shortcut_set"
  * )

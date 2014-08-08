@@ -71,7 +71,7 @@ class LocaleContentTest extends WebTestBase {
     // Code for the language.
     $langcode = 'xx';
     // The English name for the language.
-    $name = $this->randomName(16);
+    $name = $this->randomMachineName(16);
     $edit = array(
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
@@ -105,8 +105,8 @@ class LocaleContentTest extends WebTestBase {
     $this->assertText($name, 'Language present.');
 
     // Create a node.
-    $node_title = $this->randomName();
-    $node_body = $this->randomName();
+    $node_title = $this->randomMachineName();
+    $node_body = $this->randomMachineName();
     $edit = array(
       'type' => $type2->type,
       'title' => $node_title,
@@ -197,32 +197,6 @@ class LocaleContentTest extends WebTestBase {
     // Check if Spanish node does not have dir="ltr" tag.
     $pattern = '|class="[^"]*node[^"]*"[^<>]*lang="es" dir="ltr"|';
     $this->assertNoPattern($pattern, 'The dir tag has not been assigned to the Spanish node.');
-  }
-
-
-  /**
-   * Test filtering Node content by language.
-   */
-  public function testNodeAdminLanguageFilter() {
-    \Drupal::moduleHandler()->install(array('views'));
-    // User to add and remove language.
-    $admin_user = $this->drupalCreateUser(array('administer languages', 'access administration pages', 'access content overview', 'administer nodes', 'bypass node access'));
-
-    // Log in as admin.
-    $this->drupalLogin($admin_user);
-
-    // Enable multiple languages.
-    $this->drupalPostForm('admin/config/regional/language/edit/en', array('locale_translate_english' => TRUE), t('Save language'));
-    $this->drupalPostForm('admin/config/regional/language/add', array('predefined_langcode' => 'zh-hant'), t('Add language'));
-
-    // Create two nodes: English and Chinese.
-    $node_en = $this->drupalCreateNode(array('langcode' => 'en'));
-    $node_zh_hant = $this->drupalCreateNode(array('langcode' => 'zh-hant'));
-
-    // Verify filtering by language.
-    $this->drupalGet('admin/content', array('query' => array('langcode' => 'zh-hant')));
-    $this->assertLinkByHref('node/' . $node_zh_hant->id() . '/edit');
-    $this->assertNoLinkByHref('node/' . $node_en->id() . '/edit');
   }
 
 }

@@ -9,6 +9,7 @@ namespace Drupal\Core;
 
 use Drupal\Core\Cache\CacheContextsPass;
 use Drupal\Core\Cache\ListCacheBinsPass;
+use Drupal\Core\DependencyInjection\Compiler\BackendCompilerPass;
 use Drupal\Core\DependencyInjection\ServiceProviderInterface;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\DependencyInjection\Compiler\ModifyServiceDefinitionsPass;
@@ -33,6 +34,8 @@ use Symfony\Component\DependencyInjection\Compiler\PassConfig;
  *
  * Modules wishing to register services to the container should use
  * modulename.services.yml in their respective directories.
+ *
+ * @ingroup container
  */
 class CoreServiceProvider implements ServiceProviderInterface  {
 
@@ -48,6 +51,8 @@ class CoreServiceProvider implements ServiceProviderInterface  {
     // service definitions. This pass must come first so that later
     // list-building passes are operating on the post-alter services list.
     $container->addCompilerPass(new ModifyServiceDefinitionsPass());
+
+    $container->addCompilerPass(new BackendCompilerPass());
 
     // Collect tagged handler services as method calls on consumer services.
     $container->addCompilerPass(new TaggedHandlersPass());
@@ -81,6 +86,9 @@ class CoreServiceProvider implements ServiceProviderInterface  {
       ->addArgument(DRUPAL_ROOT);
     $container->setAlias('twig.loader', 'twig.loader.filesystem');
 
+     $twig_extension = new Definition('Drupal\Core\Template\TwigExtension');
+     $twig_extension->addMethodCall('setGenerators', array(new Reference('url_generator')));
+
     $container->register('twig', 'Drupal\Core\Template\TwigEnvironment')
       ->addArgument(new Reference('twig.loader'))
       ->addArgument(array(
@@ -96,7 +104,7 @@ class CoreServiceProvider implements ServiceProviderInterface  {
       ))
       ->addArgument(new Reference('module_handler'))
       ->addArgument(new Reference('theme_handler'))
-      ->addMethodCall('addExtension', array(new Definition('Drupal\Core\Template\TwigExtension')))
+      ->addMethodCall('addExtension', array($twig_extension))
       // @todo Figure out what to do about debugging functions.
       // @see http://drupal.org/node/1804998
       ->addMethodCall('addExtension', array(new Definition('Twig_Extension_Debug')))

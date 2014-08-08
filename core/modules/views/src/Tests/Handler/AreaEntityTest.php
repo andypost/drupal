@@ -8,6 +8,7 @@
 namespace Drupal\views\Tests\Handler;
 
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Form\FormState;
 use Drupal\views\Tests\ViewTestBase;
 use Drupal\views\Views;
 
@@ -74,7 +75,7 @@ class AreaEntityTest extends ViewTestBase {
 
     $entities = array();
     for ($i = 0; $i < 3; $i++) {
-      $random_label = $this->randomName();
+      $random_label = $this->randomMachineName();
       $data = array('bundle' => 'entity_test', 'name' => $random_label);
       $entity_test = $this->container->get('entity.manager')->getStorage('entity_test')->create($data);
       $entity_test->save();
@@ -121,7 +122,7 @@ class AreaEntityTest extends ViewTestBase {
 
     // Test the available view mode options.
     $form = array();
-    $form_state = array();
+    $form_state = new FormState();
     $form_state['type'] = 'header';
     $view->display_handler->getHandler('header', 'entity_entity_test')->buildOptionsForm($form, $form_state);
     $this->assertTrue(isset($form['view_mode']['#options']['test']), 'Ensure that the test view mode is available.');

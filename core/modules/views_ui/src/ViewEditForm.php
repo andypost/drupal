@@ -7,13 +7,17 @@
 
 namespace Drupal\views_ui;
 
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\String;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Url;
 use Drupal\user\TempStoreFactory;
 use Drupal\views\Views;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -39,16 +43,26 @@ class ViewEditForm extends ViewFormBase {
   protected $requestStack;
 
   /**
+   * The date formatter service.
+   *
+   * @var \Drupal\Core\Datetime\DateFormatter
+   */
+  protected $dateFormatter;
+
+  /**
    * Constructs a new ViewEditForm object.
    *
    * @param \Drupal\user\TempStoreFactory $temp_store_factory
    *   The factory for the temp store object.
    * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
    *   The request stack object.
+   * @param \Drupal\Core\Datetime\DateFormatter $date_formatter
+   *   The date Formatter service.
    */
-  public function __construct(TempStoreFactory $temp_store_factory, RequestStack $requestStack) {
+  public function __construct(TempStoreFactory $temp_store_factory, RequestStack $requestStack, DateFormatter $date_formatter) {
     $this->tempStore = $temp_store_factory->get('views');
     $this->requestStack = $requestStack;
+    $this->dateFormatter = $date_formatter;
   }
 
   /**
@@ -57,14 +71,15 @@ class ViewEditForm extends ViewFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('user.tempstore'),
-      $container->get('request_stack')
+      $container->get('request_stack'),
+      $container->get('date.formatter')
     );
   }
 
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $view = $this->entity;
     $display_id = $this->displayID;
     // Do not allow the form to be cached, because $form_state['view'] can become
@@ -125,7 +140,7 @@ class ViewEditForm extends ViewFormBase {
       );
       $lock_message_substitutions = array(
         '!user' => drupal_render($username),
-        '!age' => format_interval(REQUEST_TIME - $view->lock->updated),
+        '!age' => $this->dateFormatter->formatInterval(REQUEST_TIME - $view->lock->updated),
         '!break' => $view->url('break-lock'),
       );
       $form['locked'] = array(
@@ -218,7 +233,7 @@ class ViewEditForm extends ViewFormBase {
   /**
    * {@inheritdoc}
    */
-  protected function actions(array $form, array &$form_state) {
+  protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
     unset($actions['delete']);
 
@@ -239,16 +254,16 @@ class ViewEditForm extends ViewFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validate(array $form, array &$form_state) {
+  public function validate(array $form, FormStateInterface $form_state) {
     parent::validate($form, $form_state);
 
     $view = $this->entity;
     if ($view->isLocked()) {
-      $this->setFormError('', $form_state, $this->t('Changes cannot be made to a locked view.'));
+      $form_state->setErrorByName('', $this->t('Changes cannot be made to a locked view.'));
     }
     foreach ($view->getExecutable()->validate() as $display_errors) {
       foreach ($display_errors as $error) {
-        $this->setFormError('', $form_state, $error);
+        $form_state->setErrorByName('', $error);
       }
     }
   }
@@ -256,7 +271,7 @@ class ViewEditForm extends ViewFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submit(array $form, array &$form_state) {
+  public function submit(array $form, FormStateInterface $form_state) {
     parent::submit($form, $form_state);
 
     $view = $this->entity;
@@ -283,10 +298,10 @@ class ViewEditForm extends ViewFormBase {
         unset($displays[$id]);
 
         // Redirect the user to the renamed display to be sure that the page itself exists and doesn't throw errors.
-        $form_state['redirect_route'] = array(
-          'route_name' => 'views_ui.edit_display',
-          'route_parameters' => array('view' => $view->id(), 'display_id' => $new_id),
-        );
+        $form_state->setRedirect('views_ui.edit_display', array(
+          'view' => $view->id(),
+          'display_id' => $new_id,
+        ));
       }
     }
     $view->set('display', $displays);
@@ -311,7 +326,10 @@ class ViewEditForm extends ViewFormBase {
           $query->remove('destination');
         }
       }
-      $form_state['redirect'] = $destination;
+      if (!UrlHelper::isExternal($destination)) {
+        $destination = $GLOBALS['base_url'] . '/' . $destination;
+      }
+      $form_state->setRedirectUrl(Url::createFromPath($destination));
     }
 
     $view->save();
@@ -326,14 +344,14 @@ class ViewEditForm extends ViewFormBase {
    *
    * @param array $form
    *   An associative array containing the structure of the form.
-   * @param array $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    */
-  public function cancel(array $form, array &$form_state) {
+  public function cancel(array $form, FormStateInterface $form_state) {
     // Remove this view from cache so edits will be lost.
     $view = $this->entity;
     $this->tempStore->delete($view->id());
-    $form_state['redirect_route']['route_name'] = 'views_ui.list';
+    $form_state->setRedirect('views_ui.list');
   }
 
   /**
@@ -564,7 +582,7 @@ class ViewEditForm extends ViewFormBase {
   /**
    * Submit handler to add a restore a removed display to a view.
    */
-  public function submitDisplayUndoDelete($form, &$form_state) {
+  public function submitDisplayUndoDelete($form, FormStateInterface $form_state) {
     $view = $this->entity;
     // Create the new display
     $id = $form_state['display_id'];
@@ -576,16 +594,16 @@ class ViewEditForm extends ViewFormBase {
     $view->cacheSet();
 
     // Redirect to the top-level edit page.
-    $form_state['redirect_route'] = array(
-      'route_name' => 'views_ui.edit_display',
-      'route_parameters' => array('view' => $view->id(), 'display_id' => $id),
-    );
+    $form_state->setRedirect('views_ui.edit_display', array(
+      'view' => $view->id(),
+      'display_id' => $id,
+    ));
   }
 
   /**
    * Submit handler to enable a disabled display.
    */
-  public function submitDisplayEnable($form, &$form_state) {
+  public function submitDisplayEnable($form, FormStateInterface $form_state) {
     $view = $this->entity;
     $id = $form_state['display_id'];
     // setOption doesn't work because this would might affect upper displays
@@ -595,16 +613,16 @@ class ViewEditForm extends ViewFormBase {
     $view->cacheSet();
 
     // Redirect to the top-level edit page.
-    $form_state['redirect_route'] = array(
-      'route_name' => 'views_ui.edit_display',
-      'route_parameters' => array('view' => $view->id(), 'display_id' => $id),
-    );
+    $form_state->setRedirect('views_ui.edit_display', array(
+      'view' => $view->id(),
+      'display_id' => $id,
+    ));
   }
 
   /**
    * Submit handler to disable display.
    */
-  public function submitDisplayDisable($form, &$form_state) {
+  public function submitDisplayDisable($form, FormStateInterface $form_state) {
     $view = $this->entity;
     $id = $form_state['display_id'];
     $view->getExecutable()->displayHandlers->get($id)->setOption('enabled', FALSE);
@@ -613,16 +631,16 @@ class ViewEditForm extends ViewFormBase {
     $view->cacheSet();
 
     // Redirect to the top-level edit page.
-    $form_state['redirect_route'] = array(
-      'route_name' => 'views_ui.edit_display',
-      'route_parameters' => array('view' => $view->id(), 'display_id' => $id),
-    );
+    $form_state->setRedirect('views_ui.edit_display', array(
+      'view' => $view->id(),
+      'display_id' => $id,
+    ));
   }
 
   /**
    * Submit handler to delete a display from a view.
    */
-  public function submitDisplayDelete($form, &$form_state) {
+  public function submitDisplayDelete($form, FormStateInterface $form_state) {
     $view = $this->entity;
     $display_id = $form_state['display_id'];
 
@@ -634,7 +652,7 @@ class ViewEditForm extends ViewFormBase {
 
     // Redirect to the top-level edit page. The first remaining display will
     // become the active display.
-    $form_state['redirect_route'] = $view->urlInfo('edit-form');
+    $form_state->setRedirectUrl($view->urlInfo('edit-form'));
   }
 
   /**
@@ -764,30 +782,36 @@ class ViewEditForm extends ViewFormBase {
    * contextual link). This handler can be added to buttons whose form submission
    * should not yet redirect to the destination.
    */
-  public function submitDelayDestination($form, &$form_state) {
-    $query = $this->requestStack->getCurrentRequest()->query;
-    // @todo: Revisit this when http://drupal.org/node/1668866 is in.
-    $destination = $query->get('destination');
-    if (isset($destination) && $form_state['redirect'] !== FALSE) {
-      if (!isset($form_state['redirect'])) {
-        $form_state['redirect'] = current_path();
+  public function submitDelayDestination($form, FormStateInterface $form_state) {
+    $request = $this->requestStack->getCurrentRequest();
+    $destination = $request->query->get('destination');
+
+    $redirect = $form_state->getRedirect();
+    // If there is a destination, and redirects are not explicitly disabled, add
+    // the destination as a query string to the redirect and suppress it for the
+    // current request.
+    if (isset($destination) && $redirect !== FALSE) {
+      // Create a valid redirect if one does not exist already.
+      if (!($redirect instanceof Url)) {
+        $redirect = Url::createFromRequest($request);
       }
-      if (is_string($form_state['redirect'])) {
-        $form_state['redirect'] = array($form_state['redirect']);
-      }
-      $options = isset($form_state['redirect'][1]) ? $form_state['redirect'][1] : array();
+
+      // Add the current destination to the redirect unless one exists already.
+      $options = $redirect->getOptions();
       if (!isset($options['query']['destination'])) {
         $options['query']['destination'] = $destination;
+        $redirect->setOptions($options);
       }
-      $form_state['redirect'][1] = $options;
-      $query->remove('destination');
+
+      $form_state->setRedirectUrl($redirect);
+      $request->query->remove('destination');
     }
   }
 
   /**
    * Submit handler to duplicate a display for a view.
    */
-  public function submitDisplayDuplicate($form, &$form_state) {
+  public function submitDisplayDuplicate($form, FormStateInterface $form_state) {
     $view = $this->entity;
     $display_id = $this->displayID;
 
@@ -805,16 +829,16 @@ class ViewEditForm extends ViewFormBase {
     $view->cacheSet();
 
     // Redirect to the new display's edit page.
-    $form_state['redirect_route'] = array(
-      'route_name' => 'views_ui.edit_display',
-      'route_parameters' => array('view' => $view->id(), 'display_id' => $new_display_id),
-    );
+    $form_state->setRedirect('views_ui.edit_display', array(
+      'view' => $view->id(),
+      'display_id' => $new_display_id,
+    ));
   }
 
   /**
    * Submit handler to add a display to a view.
    */
-  public function submitDisplayAdd($form, &$form_state) {
+  public function submitDisplayAdd($form, FormStateInterface $form_state) {
     $view = $this->entity;
     // Create the new display.
     $parents = $form_state['triggering_element']['#parents'];
@@ -827,16 +851,16 @@ class ViewEditForm extends ViewFormBase {
     $view->cacheSet();
 
     // Redirect to the new display's edit page.
-    $form_state['redirect_route'] = array(
-      'route_name' => 'views_ui.edit_display',
-      'route_parameters' => array('view' => $view->id(), 'display_id' => $display_id),
-    );
+    $form_state->setRedirect('views_ui.edit_display', array(
+      'view' => $view->id(),
+      'display_id' => $display_id,
+    ));
   }
 
   /**
    * Submit handler to Duplicate a display as another display type.
    */
-  public function submitDuplicateDisplayAsType($form, &$form_state) {
+  public function submitDuplicateDisplayAsType($form, FormStateInterface $form_state) {
     $view = $this->entity;
     $display_id = $this->displayID;
 
@@ -863,10 +887,10 @@ class ViewEditForm extends ViewFormBase {
     $view->cacheSet();
 
     // Redirect to the new display's edit page.
-    $form_state['redirect_route'] = array(
-      'route_name' => 'views_ui.edit_display',
-      'route_parameters' => array('view' => $view->id(), 'display_id' => $new_display_id),
-    );
+    $form_state->setRedirect('views_ui.edit_display', array(
+      'view' => $view->id(),
+      'display_id' => $new_display_id,
+    ));
   }
 
   /**

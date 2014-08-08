@@ -8,10 +8,11 @@
 namespace Drupal\menu_link_content\Form;
 
 use Drupal\Component\Utility\UrlHelper;
-use Drupal\Core\Access\AccessManager;
+use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Menu\Form\MenuLinkFormInterface;
@@ -37,7 +38,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * The content menu link.
    *
-   * @var \Drupal\menu_link_content\Entity\MenuLinkContentInterface
+   * @var \Drupal\menu_link_content\MenuLinkContentInterface
    */
   protected $entity;
 
@@ -65,7 +66,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * The access manager.
    *
-   * @var \Drupal\Core\Access\AccessManager
+   * @var \Drupal\Core\Access\AccessManagerInterface
    */
   protected $accessManager;
 
@@ -91,12 +92,12 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
    *   The request context.
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager.
-   * @param \Drupal\Core\Access\AccessManager $access_manager
+   * @param \Drupal\Core\Access\AccessManagerInterface $access_manager
    *   The access manager.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The current user.
    */
-  public function __construct(EntityManagerInterface $entity_manager, MenuParentFormSelectorInterface $menu_parent_selector, AliasManagerInterface $alias_manager, ModuleHandlerInterface $module_handler, RequestContext $request_context, LanguageManagerInterface $language_manager, AccessManager $access_manager, AccountInterface $account) {
+  public function __construct(EntityManagerInterface $entity_manager, MenuParentFormSelectorInterface $menu_parent_selector, AliasManagerInterface $alias_manager, ModuleHandlerInterface $module_handler, RequestContext $request_context, LanguageManagerInterface $language_manager, AccessManagerInterface $access_manager, AccountInterface $account) {
     parent::__construct($entity_manager, $language_manager);
     $this->menuParentSelector = $menu_parent_selector;
     $this->pathAliasManager = $alias_manager;
@@ -143,14 +144,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, array &$form_state) {
-    return $this->buildEditForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildEditForm(array &$form, array &$form_state) {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $this->setOperation('default');
     $this->init($form_state);
 
@@ -160,33 +154,17 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array &$form, array &$form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     $this->doValidate($form, $form_state);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function validateEditForm(array &$form, array &$form_state) {
-    $this->doValidate($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitConfigurationForm(array &$form, array &$form_state) {
-    return $this->submitEditForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitEditForm(array &$form, array &$form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     // Remove button and internal Form API values from submitted values.
-    form_state_values_clean($form_state);
-    $this->entity = $this->buildEntity($form, $form_state);
-    $this->entity->save();
-    return $form_state;
+    parent::submit($form, $form_state);
+    $this->save($form, $form_state);
   }
 
   /**
@@ -232,9 +210,9 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function extractFormValues(array &$form, array &$form_state) {
+  public function extractFormValues(array &$form, FormStateInterface $form_state) {
     $new_definition = array();
-    $new_definition['expanded'] = !empty($form_state['values']['expanded']) ? 1 : 0;
+    $new_definition['expanded'] = !empty($form_state['values']['expanded']['value']) ? 1 : 0;
     $new_definition['hidden'] = empty($form_state['values']['enabled']) ? 1 : 0;
     list($menu_name, $parent) = explode(':', $form_state['values']['menu_parent'], 2);
     if (!empty($menu_name)) {
@@ -263,7 +241,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
 
     // We always show the internal path here.
@@ -337,7 +315,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  protected function actions(array $form, array &$form_state) {
+  protected function actions(array $form, FormStateInterface $form_state) {
     $element = parent::actions($form, $form_state);
     $element['submit']['#button_type'] = 'primary';
     $element['delete']['#access'] = $this->entity->access('delete');
@@ -348,7 +326,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function validate(array $form, array &$form_state) {
+  public function validate(array $form, FormStateInterface $form_state) {
     $this->doValidate($form, $form_state);
 
     parent::validate($form, $form_state);
@@ -357,8 +335,8 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function buildEntity(array $form, array &$form_state) {
-    /** @var \Drupal\menu_link_content\Entity\MenuLinkContentInterface $entity */
+  public function buildEntity(array $form, FormStateInterface $form_state) {
+    /** @var \Drupal\menu_link_content\MenuLinkContentInterface $entity */
     $entity = parent::buildEntity($form, $form_state);
     $new_definition = $this->extractFormValues($form, $form_state);
 
@@ -378,18 +356,16 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
   /**
    * {@inheritdoc}
    */
-  public function save(array $form, array &$form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     // The entity is rebuilt in parent::submit().
     $menu_link = $this->entity;
     $saved = $menu_link->save();
 
     if ($saved) {
       drupal_set_message($this->t('The menu link has been saved.'));
-      $form_state['redirect_route'] = array(
-        'route_name' => 'menu_link_content.link_edit',
-        'route_parameters' => array(
-          'menu_link_content' => $menu_link->id(),
-        ),
+      $form_state->setRedirect(
+        'entity.menu_link_content.canonical',
+        array('menu_link_content' => $menu_link->id())
       );
     }
     else {
@@ -406,10 +382,10 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
    *
    * @param array $form
    *   A nested array form elements comprising the form.
-   * @param array $form_state
-   *   An associative array containing the current state of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    */
-  protected function doValidate(array $form, array &$form_state) {
+  protected function doValidate(array $form, FormStateInterface $form_state) {
     $extracted = $this->extractUrl($form_state['values']['url']);
 
     // If both URL and route_name are empty, the entered value is not valid.
@@ -423,7 +399,7 @@ class MenuLinkContentForm extends ContentEntityForm implements MenuLinkFormInter
       $valid = $this->accessManager->checkNamedRoute($extracted['route_name'], $extracted['route_parameters'], $this->account);
     }
     if (!$valid) {
-      $this->setFormError('url', $form_state, $this->t("The path '@link_path' is either invalid or you do not have access to it.", array('@link_path' => $form_state['values']['url'])));
+      $form_state->setErrorByName('url', $this->t("The path '@link_path' is either invalid or you do not have access to it.", array('@link_path' => $form_state['values']['url'])));
     }
     elseif ($extracted['route_name']) {
       // The user entered a Drupal path.

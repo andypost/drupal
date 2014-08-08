@@ -10,6 +10,7 @@ namespace Drupal\shortcut\Form;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Access\AccessInterface;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\shortcut\Entity\ShortcutSet;
 use Drupal\shortcut\ShortcutSetStorageInterface;
@@ -75,7 +76,7 @@ class SwitchShortcutSet extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state, UserInterface $user = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, UserInterface $user = NULL) {
     $account = $this->currentUser();
 
     $this->user = $user;
@@ -169,15 +170,15 @@ class SwitchShortcutSet extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     if ($form_state['values']['set'] == 'new') {
       // Check to prevent creating a shortcut set with an empty title.
       if (trim($form_state['values']['label']) == '') {
-        $this->setFormError('new', $form_state, $this->t('The new set label is required.'));
+        $form_state->setErrorByName('new', $this->t('The new set label is required.'));
       }
       // Check to prevent a duplicate title.
       if (shortcut_set_title_exists($form_state['values']['label'])) {
-        $this->setFormError('label', $form_state, $this->t('The shortcut set %name already exists. Choose another name.', array('%name' => $form_state['values']['label'])));
+        $form_state->setErrorByName('label', $this->t('The shortcut set %name already exists. Choose another name.', array('%name' => $form_state['values']['label'])));
       }
     }
   }
@@ -185,7 +186,7 @@ class SwitchShortcutSet extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $account = $this->currentUser();
 
     $account_is_user = $this->user->id() == $account->id();
@@ -210,11 +211,9 @@ class SwitchShortcutSet extends FormBase {
       else {
         drupal_set_message($this->t('%user is now using a new shortcut set called %set_name. You can edit it from this page.', $replacements));
       }
-      $form_state['redirect_route'] = array(
-        'route_name' => 'shortcut.set_customize',
-        'route_parameters' => array(
-          'shortcut_set' => $set->id(),
-        ),
+      $form_state->setRedirect(
+        'entity.shortcut_set.customize_form',
+        array('shortcut_set' => $set->id())
       );
     }
     else {

@@ -9,6 +9,7 @@ namespace Drupal\menu_ui\Form;
 
 use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Menu\MenuLinkInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -22,7 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class MenuLinkEditForm extends FormBase {
 
   /**
-   * The class resolver
+   * The class resolver.
    *
    * @var \Drupal\Core\DependencyInjection\ClassResolverInterface
    */
@@ -60,7 +61,7 @@ class MenuLinkEditForm extends FormBase {
    * @param \Drupal\Core\Menu\MenuLinkInterface $menu_link_plugin
    *   The plugin instance to use for this form.
    */
-  public function buildForm(array $form, array &$form_state, MenuLinkInterface $menu_link_plugin = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, MenuLinkInterface $menu_link_plugin = NULL) {
     $form['menu_link_id'] = array(
       '#type' => 'value',
       '#value' => $menu_link_plugin->getPluginId(),
@@ -83,22 +84,20 @@ class MenuLinkEditForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     $form['#plugin_form']->validateConfigurationForm($form, $form_state);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $link = $form['#plugin_form']->submitConfigurationForm($form, $form_state);
 
     drupal_set_message($this->t('The menu link has been saved.'));
-    $form_state['redirect_route'] = array(
-      'route_name' => 'menu_ui.menu_edit',
-      'route_parameters' => array(
-        'menu' => $link->getMenuName(),
-      ),
+    $form_state->setRedirect(
+      'menu_ui.menu_edit',
+      array('menu' => $link->getMenuName())
     );
   }
 

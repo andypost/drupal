@@ -9,6 +9,7 @@
  */
 
 use Drupal\Component\Utility\Xss;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -1053,7 +1054,7 @@ function node_view_multiple($nodes, $view_mode = 'teaser', $langcode = NULL) {
  * @see taxonomy_term_page()
  * @see node_form_system_site_information_settings_form_submit()
  */
-function node_form_system_site_information_settings_form_alter(&$form, &$form_state, $form_id) {
+function node_form_system_site_information_settings_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $options = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30);
   $form['front_page']['default_nodes_main'] = array(
     '#type' => 'select',
@@ -1071,7 +1072,7 @@ function node_form_system_site_information_settings_form_alter(&$form, &$form_st
  *
  * @see node_form_system_site_information_settings_form_alter()
  */
-function node_form_system_site_information_settings_form_submit($form, &$form_state) {
+function node_form_system_site_information_settings_form_submit($form, FormStateInterface $form_state) {
   \Drupal::config('node.settings')
     ->set('items_per_page', $form_state['values']['default_nodes_main'])
     ->save();
@@ -1084,7 +1085,7 @@ function node_form_system_site_information_settings_form_submit($form, &$form_st
  *
  * @see node_form_system_themes_admin_form_submit()
  */
-function node_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id) {
+function node_form_system_themes_admin_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $form['admin_theme']['use_admin_theme'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use the administration theme when editing or creating content'),
@@ -1098,7 +1099,7 @@ function node_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id
  *
  * @see node_form_system_themes_admin_form_alter()
  */
-function node_form_system_themes_admin_form_submit($form, &$form_state) {
+function node_form_system_themes_admin_form_submit($form, FormStateInterface $form_state) {
   \Drupal::config('node.settings')
     ->set('use_admin_theme', $form_state['values']['use_admin_theme'])
     ->save();
@@ -1110,7 +1111,7 @@ function node_form_system_themes_admin_form_submit($form, &$form_state) {
  * @{
  * The node access system determines who can do what to which nodes.
  *
- * In determining access rights for a node, \Drupal\node\NodeAccessController
+ * In determining access rights for a node, \Drupal\node\NodeAccessControlHandler
  * first checks whether the user has the "bypass node access" permission. Such
  * users have unrestricted access to all nodes. user 1 will always pass this
  * check.
@@ -1314,7 +1315,7 @@ function node_access_view_all_nodes($account = NULL) {
     $access[$account->id()] = TRUE;
   }
   else {
-    $access[$account->id()] = \Drupal::entityManager()->getAccessController('node')->checkAllGrants($account);
+    $access[$account->id()] = \Drupal::entityManager()->getAccessControlHandler('node')->checkAllGrants($account);
   }
 
   return $access[$account->id()];
@@ -1438,8 +1439,8 @@ function node_access_needs_rebuild($rebuild = NULL) {
  * @see node_access_needs_rebuild()
  */
 function node_access_rebuild($batch_mode = FALSE) {
-  $access_controller = \Drupal::entityManager()->getAccessController('node');
-  $access_controller->deleteGrants();
+  $access_control_handler = \Drupal::entityManager()->getAccessControlHandler('node');
+  $access_control_handler->deleteGrants();
   // Only recalculate if the site is using a node_access module.
   if (count(\Drupal::moduleHandler()->getImplementations('node_grants'))) {
     if ($batch_mode) {
@@ -1466,14 +1467,14 @@ function node_access_rebuild($batch_mode = FALSE) {
         // To preserve database integrity, only write grants if the node
         // loads successfully.
         if (!empty($node)) {
-          $access_controller->writeGrants($node);
+          $access_control_handler->writeGrants($node);
         }
       }
     }
   }
   else {
     // Not using any node_access modules. Add the default grant.
-    $access_controller->writeDefaultGrant();
+    $access_control_handler->writeDefaultGrant();
   }
 
   if (!isset($batch)) {
@@ -1512,7 +1513,7 @@ function _node_access_rebuild_batch_operation(&$context) {
     // To preserve database integrity, only write grants if the node
     // loads successfully.
     if (!empty($node)) {
-      \Drupal::entityManager()->getAccessController('node')->writeGrants($node);
+      \Drupal::entityManager()->getAccessControlHandler('node')->writeGrants($node);
     }
     $context['sandbox']['progress']++;
     $context['sandbox']['current_node'] = $nid;
@@ -1596,15 +1597,6 @@ function node_modules_uninstalled($modules) {
   // straightforward, we can do it right now.
   if (node_access_needs_rebuild() && count(\Drupal::moduleHandler()->getImplementations('node_grants')) == 0) {
     node_access_rebuild();
-  }
-}
-
-/**
- * Implements hook_file_download_access().
- */
-function node_file_download_access($field, EntityInterface $entity, File $file) {
-  if ($entity->getEntityTypeId() == 'node') {
-    return $entity->access('view');
   }
 }
 

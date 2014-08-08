@@ -10,6 +10,7 @@ namespace Drupal\node;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Component\Utility\String;
 
@@ -43,9 +44,9 @@ class NodeForm extends ContentEntityForm {
   }
 
   /**
-   * Overrides Drupal\Core\Entity\EntityForm::form().
+   * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\node\NodeInterface $node */
     $node = $this->entity;
 
@@ -209,9 +210,9 @@ class NodeForm extends ContentEntityForm {
   }
 
   /**
-   * Overrides Drupal\Core\Entity\EntityForm::actions().
+   * {@inheritdoc}
    */
-  protected function actions(array $form, array &$form_state) {
+  protected function actions(array $form, FormStateInterface $form_state) {
     $element = parent::actions($form, $form_state);
     $node = $this->entity;
     $preview_mode = $this->settings['preview'];
@@ -290,13 +291,13 @@ class NodeForm extends ContentEntityForm {
   }
 
   /**
-   * Overrides Drupal\Core\Entity\EntityForm::validate().
+   * {@inheritdoc}
    */
-  public function validate(array $form, array &$form_state) {
+  public function validate(array $form, FormStateInterface $form_state) {
     $node = $this->buildEntity($form, $form_state);
 
     if ($node->id() && (node_last_changed($node->id(), $this->getFormLangcode($form_state)) > $node->getChangedTime())) {
-      $this->setFormError('changed', $form_state, $this->t('The content on this page has either been modified by another user, or you have already submitted modifications using this form. As a result, your changes cannot be saved.'));
+      $form_state->setErrorByName('changed', $this->t('The content on this page has either been modified by another user, or you have already submitted modifications using this form. As a result, your changes cannot be saved.'));
     }
 
     // Validate the "authored by" field.
@@ -304,14 +305,14 @@ class NodeForm extends ContentEntityForm {
       // The use of empty() is mandatory in the context of usernames
       // as the empty string denotes the anonymous user. In case we
       // are dealing with an anonymous user we set the user ID to 0.
-      $this->setFormError('uid', $form_state, $this->t('The username %name does not exist.', array('%name' => $form_state['values']['uid'])));
+      $form_state->setErrorByName('uid', $this->t('The username %name does not exist.', array('%name' => $form_state['values']['uid'])));
     }
 
     // Validate the "authored on" field.
     // The date element contains the date object.
     $date = $node->date instanceof DrupalDateTime ? $node->date : new DrupalDateTime($node->date);
     if ($date->hasErrors()) {
-      $this->setFormError('date', $form_state, $this->t('You have to specify a valid date.'));
+      $form_state->setErrorByName('date', $this->t('You have to specify a valid date.'));
     }
 
     // Invoke hook_node_validate() for validation needed by modules.
@@ -331,10 +332,8 @@ class NodeForm extends ContentEntityForm {
    * This function can be called by a "Next" button of a wizard to update the
    * form state's entity with the current step's values before proceeding to the
    * next step.
-   *
-   * Overrides Drupal\Core\Entity\EntityForm::submit().
    */
-  public function submit(array $form, array &$form_state) {
+  public function submit(array $form, FormStateInterface $form_state) {
     // Build the node object from the submitted values.
     $node = parent::submit($form, $form_state);
 
@@ -364,9 +363,9 @@ class NodeForm extends ContentEntityForm {
    * @param $form
    *   An associative array containing the structure of the form.
    * @param $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   *   The current state of the form.
    */
-  public function preview(array $form, array &$form_state) {
+  public function preview(array $form, FormStateInterface $form_state) {
     // @todo Remove this: we should not have explicit includes in autoloaded
     //   classes.
     module_load_include('inc', 'node', 'node.pages');
@@ -380,9 +379,9 @@ class NodeForm extends ContentEntityForm {
    * @param $form
    *   An associative array containing the structure of the form.
    * @param $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   *   The current state of the form.
    */
-  public function publish(array $form, array &$form_state) {
+  public function publish(array $form, FormStateInterface $form_state) {
     $node = $this->entity;
     $node->setPublished(TRUE);
     return $node;
@@ -394,9 +393,9 @@ class NodeForm extends ContentEntityForm {
    * @param $form
    *   An associative array containing the structure of the form.
    * @param $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   *   The current state of the form.
    */
-  public function unpublish(array $form, array &$form_state) {
+  public function unpublish(array $form, FormStateInterface $form_state) {
     $node = $this->entity;
     $node->setPublished(FALSE);
     return $node;
@@ -405,7 +404,7 @@ class NodeForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function buildEntity(array $form, array &$form_state) {
+  public function buildEntity(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\node\NodeInterface $entity */
     $entity = parent::buildEntity($form, $form_state);
     // A user might assign the node author by entering a user name in the node
@@ -426,24 +425,23 @@ class NodeForm extends ContentEntityForm {
     return $entity;
   }
 
-
   /**
-   * Overrides Drupal\Core\Entity\EntityForm::save().
+   * {@inheritdoc}
    */
-  public function save(array $form, array &$form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     $node = $this->entity;
     $insert = $node->isNew();
     $node->save();
     $node_link = l(t('View'), 'node/' . $node->id());
-    $watchdog_args = array('@type' => $node->getType(), '%title' => $node->label());
+    $context = array('@type' => $node->getType(), '%title' => $node->label(), 'link' => $node_link);
     $t_args = array('@type' => node_get_type_label($node), '%title' => $node->label());
 
     if ($insert) {
-      watchdog('content', '@type: added %title.', $watchdog_args, WATCHDOG_NOTICE, $node_link);
+      $this->logger('content')->notice('@type: added %title.', $context);
       drupal_set_message(t('@type %title has been created.', $t_args));
     }
     else {
-      watchdog('content', '@type: updated %title.', $watchdog_args, WATCHDOG_NOTICE, $node_link);
+      $this->logger('content')->notice('@type: updated %title.', $context);
       drupal_set_message(t('@type %title has been updated.', $t_args));
     }
 
@@ -451,15 +449,13 @@ class NodeForm extends ContentEntityForm {
       $form_state['values']['nid'] = $node->id();
       $form_state['nid'] = $node->id();
       if ($node->access('view')) {
-        $form_state['redirect_route'] = array(
-          'route_name' => 'node.view',
-          'route_parameters' => array(
-            'node' => $node->id(),
-          ),
+        $form_state->setRedirect(
+          'node.view',
+          array('node' => $node->id())
         );
       }
       else {
-        $form_state['redirect_route']['route_name'] = '<front>';
+        $form_state->setRedirect('<front>');
       }
     }
     else {

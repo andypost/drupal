@@ -55,7 +55,7 @@ class NodeTokenReplaceTest extends TokenReplaceUnitTestBase {
       'tnid' => 0,
       'uid' => $account->id(),
       'title' => '<blink>Blinking Text</blink>',
-      'body' => array(array('value' => $this->randomName(32), 'summary' => $this->randomName(16), 'format' => 'plain_text')),
+      'body' => array(array('value' => $this->randomMachineName(32), 'summary' => $this->randomMachineName(16), 'format' => 'plain_text')),
     ));
     $node->save();
 
@@ -74,8 +74,8 @@ class NodeTokenReplaceTest extends TokenReplaceUnitTestBase {
     $tests['[node:author]'] = String::checkPlain($account->getUsername());
     $tests['[node:author:uid]'] = $node->getOwnerId();
     $tests['[node:author:name]'] = String::checkPlain($account->getUsername());
-    $tests['[node:created:since]'] = \Drupal::service('date')->formatInterval(REQUEST_TIME - $node->getCreatedTime(), 2, $this->interfaceLanguage->id);
-    $tests['[node:changed:since]'] = \Drupal::service('date')->formatInterval(REQUEST_TIME - $node->getChangedTime(), 2, $this->interfaceLanguage->id);
+    $tests['[node:created:since]'] = \Drupal::service('date.formatter')->formatInterval(REQUEST_TIME - $node->getCreatedTime(), 2, $this->interfaceLanguage->id);
+    $tests['[node:changed:since]'] = \Drupal::service('date.formatter')->formatInterval(REQUEST_TIME - $node->getChangedTime(), 2, $this->interfaceLanguage->id);
 
     // Test to make sure that we generated something for each token.
     $this->assertFalse(in_array(0, array_map('strlen', $tests)), 'No empty tokens generated.');
@@ -102,7 +102,7 @@ class NodeTokenReplaceTest extends TokenReplaceUnitTestBase {
       'type' => 'article',
       'uid' => $account->id(),
       'title' => '<blink>Blinking Text</blink>',
-      'body' => array(array('value' => $this->randomName(32), 'format' => 'plain_text')),
+      'body' => array(array('value' => $this->randomMachineName(32), 'format' => 'plain_text')),
     ));
     $node->save();
 

@@ -8,9 +8,9 @@
 namespace Drupal\views_ui;
 
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Timer;
 use Drupal\Component\Utility\Xss;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Views;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\views\ViewExecutable;
@@ -241,7 +241,7 @@ class ViewUI implements ViewStorageInterface {
    * to apply to the default display or to the current display, and dispatches
    * control appropriately.
    */
-  public function standardSubmit($form, &$form_state) {
+  public function standardSubmit($form, FormStateInterface $form_state) {
     // Determine whether the values the user entered are intended to apply to
     // the current display or the default display.
 
@@ -296,13 +296,13 @@ class ViewUI implements ViewStorageInterface {
   /**
    * Submit handler for cancel button
    */
-  public function standardCancel($form, &$form_state) {
+  public function standardCancel($form, FormStateInterface $form_state) {
     if (!empty($this->changed) && isset($this->form_cache)) {
       unset($this->form_cache);
       $this->cacheSet();
     }
 
-    $form_state['redirect_route'] = $this->urlInfo('edit-form');
+    $form_state->setRedirectUrl($this->urlInfo('edit-form'));
   }
 
   /**
@@ -313,7 +313,7 @@ class ViewUI implements ViewStorageInterface {
    * TODO: Is the hidden op operator still here somewhere, or is that part of the
    * docblock outdated?
    */
-  public function getStandardButtons(&$form, &$form_state, $form_id, $name = NULL) {
+  public function getStandardButtons(&$form, FormStateInterface $form_state, $form_id, $name = NULL) {
     $form['actions'] = array(
       '#type' => 'actions',
     );
@@ -399,7 +399,7 @@ class ViewUI implements ViewStorageInterface {
   /**
    * Return the was_defaulted, is_defaulted and revert state of a form.
    */
-  public function getOverrideValues($form, $form_state) {
+  public function getOverrideValues($form, FormStateInterface $form_state) {
     // Make sure the dropdown exists in the first place.
     if (isset($form_state['values']['override']['dropdown'])) {
       // #default_value is used to determine whether it was the default value or not.
@@ -475,7 +475,7 @@ class ViewUI implements ViewStorageInterface {
   /**
    * Submit handler for adding new item(s) to a view.
    */
-  public function submitItemAdd($form, &$form_state) {
+  public function submitItemAdd($form, FormStateInterface $form_state) {
     $type = $form_state['type'];
     $types = ViewExecutable::getHandlerTypes();
     $section = $types[$type]['plural'];
@@ -679,8 +679,8 @@ class ViewUI implements ViewStorageInterface {
               }
             }
             $rows['query'][] = array(
-              SafeMarkup::set('<strong>' . t('Query') . '</strong>'),
-              SafeMarkup::set('<pre>' . String::checkPlain(strtr($query_string, $quoted)) . '</pre>'),
+              array('data' => array('#type' => 'inline_template', '#template' => "<strong>{% trans 'Query' %}</strong>")),
+              array('data' => array('#type' => 'inline_template', '#template' => '<pre>{{ query }}</pre>', '#context' => array('query' => strtr($query_string, $quoted)))),
             );
             if (!empty($this->additionalQueries)) {
               $queries = '<strong>' . t('These queries were run during view rendering:') . '</strong>';
@@ -693,14 +693,14 @@ class ViewUI implements ViewStorageInterface {
               }
 
               $rows['query'][] = array(
-                SafeMarkup::set('<strong>' . t('Other queries') . '</strong>'),
+                array('data' => array('#type' => 'inline_template', '#template' => "<strong>{% trans 'Other queries' %}</strong>")),
                 SafeMarkup::set('<pre>' . $queries . '</pre>'),
               );
             }
           }
           if ($show_info) {
             $rows['query'][] = array(
-              SafeMarkup::set('<strong>' . t('Title') . '</strong>'),
+              array('data' => array('#type' => 'inline_template', '#template' => "<strong>{% trans 'Title' %}</strong>")),
               Xss::filterAdmin($this->executable->getTitle()),
             );
             if (isset($path)) {

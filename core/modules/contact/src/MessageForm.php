@@ -11,6 +11,7 @@ use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Flood\FloodInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
@@ -72,7 +73,7 @@ class MessageForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $user = $this->currentUser();
     $message = $this->entity;
     $form = parent::form($form, $form_state, $message);
@@ -107,8 +108,8 @@ class MessageForm extends ContentEntityForm {
       '#required' => TRUE,
     );
     if ($user->isAnonymous()) {
-      $form['#attached']['library'][] = 'core/jquery.cookie';
-      $form['#attributes']['class'][] = 'user-info-from-cookie';
+      $form['#attached']['library'][] = 'core/drupal.form';
+      $form['#attributes']['data-user-info-from-browser'] = TRUE;
     }
     // Do not allow authenticated users to alter the name or email values to
     // prevent the impersonation of other users.
@@ -150,7 +151,7 @@ class MessageForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function actions(array $form, array &$form_state) {
+  public function actions(array $form, FormStateInterface $form_state) {
     $elements = parent::actions($form, $form_state);
     $elements['submit']['#value'] = $this->t('Send message');
     $elements['preview'] = array(
@@ -169,7 +170,7 @@ class MessageForm extends ContentEntityForm {
   /**
    * Form submission handler for the 'preview' action.
    */
-  public function preview(array $form, array &$form_state) {
+  public function preview(array $form, FormStateInterface $form_state) {
     $message = $this->entity;
     $message->preview = TRUE;
     $form_state['rebuild'] = TRUE;
@@ -178,7 +179,7 @@ class MessageForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function save(array $form, array &$form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     $user = $this->currentUser();
 
     $language_interface = $this->languageManager->getCurrentLanguage();
@@ -190,9 +191,7 @@ class MessageForm extends ContentEntityForm {
       // over the submitted form values.
       $sender->name = $message->getSenderName();
       $sender->mail = $message->getSenderMail();
-      // Save the anonymous user information to a cookie for reuse.
-      // @todo remove when https://www.drupal.org/node/749748 is in.
-      user_cookie_save(array('name' => $message->getSenderName(), 'mail' => $message->getSenderMail()));
+
       // For the email message, clarify that the sender name is not verified; it
       // could potentially clash with a username on this site.
       $sender->name = $this->t('!name (not verified)', array('!name' => $message->getSenderName()));
@@ -238,14 +237,14 @@ class MessageForm extends ContentEntityForm {
 
     $this->flood->register('contact', $this->config('contact.settings')->get('flood.interval'));
     if (!$message->isPersonal()) {
-      watchdog('contact', '%sender-name (@sender-from) sent an email regarding %category.', array(
+      $this->logger('contact')->notice('%sender-name (@sender-from) sent an email regarding %category.', array(
         '%sender-name' => $sender->getUsername(),
         '@sender-from' => $sender->getEmail(),
         '%category' => $category->label(),
       ));
     }
     else {
-      watchdog('contact', '%sender-name (@sender-from) sent %recipient-name an email.', array(
+      $this->logger('contact')->notice('%sender-name (@sender-from) sent %recipient-name an email.', array(
         '%sender-name' => $sender->getUsername(),
         '@sender-from' => $sender->getEmail(),
         '%recipient-name' => $message->getPersonalRecipient()->getUsername(),
@@ -257,10 +256,10 @@ class MessageForm extends ContentEntityForm {
     // To avoid false error messages caused by flood control, redirect away from
     // the contact form; either to the contacted user account or the front page.
     if ($message->isPersonal() && $user->hasPermission('access user profiles')) {
-      $form_state['redirect_route'] = $message->getPersonalRecipient()->urlInfo();
+      $form_state->setRedirectUrl($message->getPersonalRecipient()->urlInfo());
     }
     else {
-      $form_state['redirect_route']['route_name'] = '<front>';
+      $form_state->setRedirect('<front>');
     }
     // Save the message. In core this is a no-op but should contrib wish to
     // implement message storage, this will make the task of swapping in a real
@@ -271,7 +270,7 @@ class MessageForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  protected function init(array &$form_state) {
+  protected function init(FormStateInterface $form_state) {
     $message = $this->entity;
 
     // Make the message inherit the current content language unless specifically

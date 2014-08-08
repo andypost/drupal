@@ -10,6 +10,7 @@ namespace Drupal\simpletest\Form;
 use Drupal\Component\Utility\SortArray;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * List tests arranged in groups that can be selected and run.
@@ -26,7 +27,7 @@ class SimpletestTestForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -183,7 +184,7 @@ class SimpletestTestForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     // Test discovery does not run upon form submission.
     simpletest_classloader_register();
 
@@ -214,11 +215,9 @@ class SimpletestTestForm extends FormBase {
     }
     if (!empty($tests_list)) {
       $test_id = simpletest_run_tests($tests_list, 'drupal');
-      $form_state['redirect_route'] = array(
-        'route_name' => 'simpletest.result_form',
-        'route_parameters' => array(
-          'test_id' => $test_id,
-        ),
+      $form_state->setRedirect(
+        'simpletest.result_form',
+        array('test_id' => $test_id)
       );
     }
   }

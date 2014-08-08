@@ -25,7 +25,7 @@ use Drupal\user\UserInterface;
  *   bundle_label = @Translation("Content type"),
  *   controllers = {
  *     "storage" = "Drupal\comment\CommentStorage",
- *     "access" = "Drupal\comment\CommentAccessController",
+ *     "access" = "Drupal\comment\CommentAccessControlHandler",
  *     "view_builder" = "Drupal\comment\CommentViewBuilder",
  *     "form" = {
  *       "default" = "Drupal\comment\CommentForm",
@@ -45,10 +45,10 @@ use Drupal\user\UserInterface;
  *     "uuid" = "uuid"
  *   },
  *   links = {
- *     "canonical" = "comment.permalink",
- *     "delete-form" = "comment.confirm_delete",
- *     "edit-form" = "comment.edit_page",
- *     "admin-form" = "comment.type_edit"
+ *     "canonical" = "entity.comment.canonical",
+ *     "delete-form" = "entity.comment.delete_form",
+ *     "edit-form" = "entity.comment.edit_form",
+ *     "admin-form" = "entity.comment_type.edit_form"
  *   },
  *   bundle_entity_type = "comment_type"
  * )

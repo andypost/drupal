@@ -310,6 +310,7 @@ function drupal_get_feeds() {
  *     not available, the current path.
  *
  * @see current_path()
+ * @ingroup form_api
  */
 function drupal_get_destination() {
   $destination = &drupal_static(__FUNCTION__);
@@ -581,29 +582,6 @@ function format_size($size, $langcode = NULL) {
 }
 
 /**
- * Formats a time interval with the requested granularity.
- *
- * @param $interval
- *   The length of the interval in seconds.
- * @param $granularity
- *   How many different units to display in the string.
- * @param $langcode
- *   Optional language code to translate to a language other than
- *   what is used to display the page.
- *
- * @return
- *   A translated string representation of the interval.
- *
- * @see \Drupal\Core\Datetime\Date::formatInterval()
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::service('date')->formatInterval().
- */
-function format_interval($interval, $granularity = 2, $langcode = NULL) {
-  return \Drupal::service('date')->formatInterval($interval, $granularity, $langcode);
-}
-
-/**
  * Formats a date, using a date type or a custom date format string.
  *
  * @param $timestamp
@@ -633,10 +611,10 @@ function format_interval($interval, $granularity = 2, $langcode = NULL) {
  * @return
  *   A translated date string in the requested format.
  *
- * @see \Drupal\Component\Datetime\Date::format()
+ * @see \Drupal\Component\Datetime\DateFormatter::format()
  */
 function format_date($timestamp, $type = 'medium', $format = '', $timezone = NULL, $langcode = NULL) {
-  return \Drupal::service('date')->format($timestamp, $type, $format, $timezone, $langcode);
+  return \Drupal::service('date.formatter')->format($timestamp, $type, $format, $timezone, $langcode);
 }
 
 /**
@@ -3051,7 +3029,7 @@ function drupal_render_page($page) {
  *     @code
  *     array(
  *       '#theme' => 'image',
- *       '#attributes' => array('class' => 'foo'),
+ *       '#attributes' => array('class' => array('foo')),
  *       '#theme_wrappers' => array('container'),
  *     );
  *     @endcode
@@ -3060,10 +3038,10 @@ function drupal_render_page($page) {
  *     @code
  *     array(
  *       '#theme' => 'image',
- *       '#attributes' => array('class' => 'foo'),
+ *       '#attributes' => array('class' => array('foo')),
  *       '#theme_wrappers' => array(
  *         'container' => array(
- *           '#attributes' => array('class' => 'bar'),
+ *           '#attributes' => array('class' => array('bar')),
  *         ),
  *       ),
  *     );
@@ -4183,58 +4161,3 @@ function drupal_get_filetransfer_info() {
   }
   return $info;
 }
-
-/**
- * @defgroup queue Queue operations
- * @{
- * Queue items to allow later processing.
- *
- * The queue system allows placing items in a queue and processing them later.
- * The system tries to ensure that only one consumer can process an item.
- *
- * Before a queue can be used it needs to be created by
- * Drupal\Core\Queue\QueueInterface::createQueue().
- *
- * Items can be added to the queue by passing an arbitrary data object to
- * Drupal\Core\Queue\QueueInterface::createItem().
- *
- * To process an item, call Drupal\Core\Queue\QueueInterface::claimItem() and
- * specify how long you want to have a lease for working on that item.
- * When finished processing, the item needs to be deleted by calling
- * Drupal\Core\Queue\QueueInterface::deleteItem(). If the consumer dies, the
- * item will be made available again by the Drupal\Core\Queue\QueueInterface
- * implementation once the lease expires. Another consumer will then be able to
- * receive it when calling Drupal\Core\Queue\QueueInterface::claimItem().
- * Due to this, the processing code should be aware that an item might be handed
- * over for processing more than once.
- *
- * The $item object used by the Drupal\Core\Queue\QueueInterface can contain
- * arbitrary metadata depending on the implementation. Systems using the
- * interface should only rely on the data property which will contain the
- * information passed to Drupal\Core\Queue\QueueInterface::createItem().
- * The full queue item returned by Drupal\Core\Queue\QueueInterface::claimItem()
- * needs to be passed to Drupal\Core\Queue\QueueInterface::deleteItem() once
- * processing is completed.
- *
- * There are two kinds of queue backends available: reliable, which preserves
- * the order of messages and guarantees that every item will be executed at
- * least once. The non-reliable kind only does a best effort to preserve order
- * in messages and to execute them at least once but there is a small chance
- * that some items get lost. For example, some distributed back-ends like
- * Amazon SQS will be managing jobs for a large set of producers and consumers
- * where a strict FIFO ordering will likely not be preserved. Another example
- * would be an in-memory queue backend which might lose items if it crashes.
- * However, such a backend would be able to deal with significantly more writes
- * than a reliable queue and for many tasks this is more important. See
- * aggregator_cron() for an example of how to effectively utilize a
- * non-reliable queue. Another example is doing Twitter statistics -- the small
- * possibility of losing a few items is insignificant next to power of the
- * queue being able to keep up with writes. As described in the processing
- * section, regardless of the queue being reliable or not, the processing code
- * should be aware that an item might be handed over for processing more than
- * once (because the processing code might time out before it finishes).
- */
-
-/**
- * @} End of "defgroup queue".
- */

@@ -18,7 +18,7 @@ use Drupal\Component\Utility\NestedArray;
  * hook_field_schema().
  *
  * Field types are plugins annotated with class
- * \Drupal\Core\Entity\Annotation\FieldType, and implement plugin interface
+ * \Drupal\Core\Field\Annotation\FieldType, and implement plugin interface
  * \Drupal\Core\Field\FieldItemInterface. Field Type plugins are managed by the
  * \Drupal\Core\Field\FieldTypePluginManager class. Field type classes usually
  * extend base class \Drupal\Core\Field\FieldItemBase. Field-type plugins need
@@ -56,6 +56,46 @@ function hook_field_info_alter(&$info) {
 }
 
 /**
+ * Forbid a field storage update from occurring.
+ *
+ * Any module may forbid any update for any reason. For example, the
+ * field's storage module might forbid an update if it would change
+ * the storage schema while data for the field exists. A field type
+ * module might forbid an update if it would change existing data's
+ * semantics, or if there are external dependencies on field settings
+ * that cannot be updated.
+ *
+ * To forbid the update from occurring, throw a
+ * \Drupal\Core\Entity\Exception\FieldStorageDefinitionUpdateForbiddenException.
+ *
+ * @param \Drupal\field\FieldStorageConfigInterface $field_storage
+ *   The field storage as it will be post-update.
+ * @param \Drupal\field\FieldStorageConfigInterface $prior_field_storage
+ *   The field storage as it is pre-update.
+ *
+ * @see entity_crud
+ */
+function hook_field_storage_config_update_forbid(\Drupal\field\FieldStorageConfigInterface $field_storage, \Drupal\field\FieldStorageConfigInterface $prior_field_storage) {
+  // A 'list' field stores integer keys mapped to display values. If
+  // the new field will have fewer values, and any data exists for the
+  // abandoned keys, the field will have no way to display them. So,
+  // forbid such an update.
+  if ($field_storage->hasData() && count($field_storage['settings']['allowed_values']) < count($prior_field_storage['settings']['allowed_values'])) {
+    // Identify the keys that will be lost.
+    $lost_keys = array_diff(array_keys($field_storage['settings']['allowed_values']), array_keys($prior_field_storage['settings']['allowed_values']));
+    // If any data exist for those keys, forbid the update.
+    $query = new EntityFieldQuery();
+    $found = $query
+      ->fieldCondition($prior_field_storage['field_name'], 'value', $lost_keys)
+      ->range(0, 1)
+      ->execute();
+    if ($found) {
+      throw new \Drupal\Core\Entity\Exception\FieldStorageDefinitionUpdateForbiddenException("Cannot update a list field storage not to include keys with existing data");
+    }
+  }
+}
+
+/**
  * @} End of "defgroup field_types".
  */
 
@@ -71,7 +111,7 @@ function hook_field_info_alter(&$info) {
  *
  * Widgets are Plugins managed by the
  * \Drupal\Core\Field\WidgetPluginManager class. A widget is a plugin annotated
- * with class \Drupal\Core\Entity\Annotation\FieldWidget that implements
+ * with class \Drupal\Core\Field\Annotation\FieldWidget that implements
  * \Drupal\Core\Field\WidgetInterface (in most cases, by
  * subclassing \Drupal\Core\Field\WidgetBase). Widget plugins need to be in the
  * namespace \Drupal\{your_module}\Plugin\Field\FieldWidget.
@@ -105,7 +145,7 @@ function hook_field_widget_info_alter(array &$info) {
  * @param $element
  *   The field widget form element as constructed by hook_field_widget_form().
  * @param $form_state
- *   An associative array containing the current state of the form.
+ *   The current state of the form.
  * @param $context
  *   An associative array containing the following key-value pairs:
  *   - form: The form structure to which widgets are being attached. This may be
@@ -120,7 +160,7 @@ function hook_field_widget_info_alter(array &$info) {
  * @see \Drupal\Core\Field\WidgetBase::formSingleElement()
  * @see hook_field_widget_WIDGET_TYPE_form_alter()
  */
-function hook_field_widget_form_alter(&$element, &$form_state, $context) {
+function hook_field_widget_form_alter(&$element, \Drupal\Core\Form\FormStateInterface $form_state, $context) {
   // Add a css class to widget form elements for all fields of type mytype.
   $field_definition = $context['items']->getFieldDefinition();
   if ($field_definition->getType() == 'mytype') {
@@ -139,7 +179,7 @@ function hook_field_widget_form_alter(&$element, &$form_state, $context) {
  * @param $element
  *   The field widget form element as constructed by hook_field_widget_form().
  * @param $form_state
- *   An associative array containing the current state of the form.
+ *   The current state of the form.
  * @param $context
  *   An associative array. See hook_field_widget_form_alter() for the structure
  *   and content of the array.
@@ -147,7 +187,7 @@ function hook_field_widget_form_alter(&$element, &$form_state, $context) {
  * @see \Drupal\Core\Field\WidgetBase::formSingleElement()
  * @see hook_field_widget_form_alter()
  */
-function hook_field_widget_WIDGET_TYPE_form_alter(&$element, &$form_state, $context) {
+function hook_field_widget_WIDGET_TYPE_form_alter(&$element, \Drupal\Core\Form\FormStateInterface $form_state, $context) {
   // Code here will only act on widgets of type WIDGET_TYPE.  For example,
   // hook_field_widget_mymodule_autocomplete_form_alter() will only act on
   // widgets of type 'mymodule_autocomplete'.
@@ -172,7 +212,7 @@ function hook_field_widget_WIDGET_TYPE_form_alter(&$element, &$form_state, $cont
  *
  * Formatters are Plugins managed by the
  * \Drupal\Core\Field\FormatterPluginManager class. A formatter is a plugin
- * annotated with class \Drupal\Core\Entity\Annotation\FieldFormatter that
+ * annotated with class \Drupal\Core\Field\Annotation\FieldFormatter that
  * implements \Drupal\Core\Field\FormatterInterface (in most cases, by
  * subclassing \Drupal\Core\Field\FormatterBase). Formatter plugins need to be
  * in the namespace \Drupal\{your_module}\Plugin\Field\FieldFormatter.
@@ -235,46 +275,6 @@ function hook_field_info_max_weight($entity_type, $bundle, $context, $context_mo
  * @addtogroup field_purge
  * @{
  */
-
-/**
- * Forbid a field storage update from occurring.
- *
- * Any module may forbid any update for any reason. For example, the
- * field's storage module might forbid an update if it would change
- * the storage schema while data for the field exists. A field type
- * module might forbid an update if it would change existing data's
- * semantics, or if there are external dependencies on field settings
- * that cannot be updated.
- *
- * To forbid the update from occurring, throw a
- * \Drupal\Core\Entity\Exception\StorageDefinitionUpdateForbiddenException.
- *
- * @param \Drupal\field\FieldStorageConfigInterface $field_storage
- *   The field storage as it will be post-update.
- * @param \Drupal\field\FieldStorageConfigInterface $prior_field_storage
- *   The field storage as it is pre-update.
- *
- * @see entity_crud
- */
-function hook_field_storage_config_update_forbid(\Drupal\field\FieldStorageConfigInterface $field_storage, \Drupal\field\FieldStorageConfigInterface $prior_field_storage) {
-  // A 'list' field stores integer keys mapped to display values. If
-  // the new field will have fewer values, and any data exists for the
-  // abandoned keys, the field will have no way to display them. So,
-  // forbid such an update.
-  if ($field_storage->hasData() && count($field_storage['settings']['allowed_values']) < count($prior_field_storage['settings']['allowed_values'])) {
-    // Identify the keys that will be lost.
-    $lost_keys = array_diff(array_keys($field_storage['settings']['allowed_values']), array_keys($prior_field_storage['settings']['allowed_values']));
-    // If any data exist for those keys, forbid the update.
-    $query = new EntityFieldQuery();
-    $found = $query
-      ->fieldCondition($prior_field_storage['field_name'], 'value', $lost_keys)
-      ->range(0, 1)
-      ->execute();
-    if ($found) {
-      throw new \Drupal\Core\Entity\Exception\FieldStorageDefinitionUpdateForbiddenException("Cannot update a list field storage not to include keys with existing data");
-    }
-  }
-}
 
 /**
  * Acts when a field storage definition is being purged.
