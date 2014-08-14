@@ -7,6 +7,7 @@
 
 namespace Drupal\views\Tests\Wizard;
 
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Language\Language;
 use Drupal\views\Tests\ViewUnitTestBase;
 use Drupal\views_ui\ViewUI;
@@ -24,7 +25,7 @@ class WizardPluginBaseUnitTest extends ViewUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('language', 'system', 'user');
+  public static $modules = array('language', 'system', 'user', 'views_ui');
 
   /**
    * Contains thw wizard plugin manager.
@@ -38,8 +39,6 @@ class WizardPluginBaseUnitTest extends ViewUnitTestBase {
 
     $this->installConfig(array('language'));
 
-    $this->enableModules(array('views_ui'));
-
     $this->wizard = $this->container->get('plugin.manager.views.wizard')->createInstance('standard:views_test_data', array());
   }
 
@@ -50,11 +49,11 @@ class WizardPluginBaseUnitTest extends ViewUnitTestBase {
    */
   public function testCreateView() {
     $form = array();
-    $form_state = array();
+    $form_state = new FormState();
     $form = $this->wizard->buildForm($form, $form_state);
-    $random_id = strtolower($this->randomName());
-    $random_label = $this->randomName();
-    $random_description = $this->randomName();
+    $random_id = strtolower($this->randomMachineName());
+    $random_label = $this->randomMachineName();
+    $random_description = $this->randomMachineName();
 
     // Add a new language and mark it as default.
     $language = new Language(array(
@@ -64,12 +63,12 @@ class WizardPluginBaseUnitTest extends ViewUnitTestBase {
     ));
     language_save($language);
 
-    $form_state['values'] = array(
+    $form_state->set('values', array(
       'id' => $random_id,
       'label' => $random_label,
       'description' => $random_description,
       'base_table' => 'views_test_data',
-    );
+    ));
 
     $this->wizard->validateView($form, $form_state);
     $view = $this->wizard->createView($form, $form_state);

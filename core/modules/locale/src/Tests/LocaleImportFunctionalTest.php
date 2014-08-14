@@ -91,7 +91,7 @@ class LocaleImportFunctionalTest extends WebTestBase {
     $this->assertRaw(t('One translation file could not be imported. <a href="@url">See the log</a> for details.', array('@url' => url('admin/reports/dblog'))), 'The empty translation file was successfully imported.');
 
     // Try importing a .po file which doesn't exist.
-    $name = $this->randomName(16);
+    $name = $this->randomMachineName(16);
     $this->drupalPostForm('admin/config/regional/translate/import', array(
       'langcode' => 'fr',
       'files[file]' => $name,
@@ -263,7 +263,7 @@ class LocaleImportFunctionalTest extends WebTestBase {
     $edit = array(
       'predefined_langcode' => 'custom',
       'langcode' => $langcode,
-      'name' => $this->randomName(16),
+      'name' => $this->randomMachineName(16),
       'direction' => LanguageInterface::DIRECTION_LTR,
     );
     $this->drupalPostForm('admin/config/regional/language/add', $edit, t('Add custom language'));
@@ -293,14 +293,11 @@ class LocaleImportFunctionalTest extends WebTestBase {
       $this->assertText($config_string[1], format_string('Translation of @string found.', array('@string' => $config_string[0])));
     }
 
-    $locale_config = $this->container->get('locale.config.typed');
-    // Translations got recorded in the config system.
+    // Test that translations got recorded in the config system.
+    $overrides = \Drupal::service('language.config_factory_override');
     foreach ($config_strings as $config_key => $config_string) {
-      $wrapper = $locale_config->get($config_key);
-      $translation = $wrapper->getTranslation($langcode);
-      $properties = $translation->getProperties();
-      $this->assertEqual(count($properties), 1, 'Got the right number of properties with strict translation');
-      $this->assertEqual($properties[$config_string[2]]->getValue(), $config_string[1]);
+      $override = $overrides->getOverride($langcode, $config_key);
+      $this->assertEqual($override->get($config_string[2]), $config_string[1]);
     }
   }
 

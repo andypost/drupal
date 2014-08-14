@@ -9,6 +9,7 @@ namespace Drupal\node;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\content_translation\ContentTranslationHandler;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Defines the translation handler for nodes.
@@ -18,7 +19,7 @@ class NodeTranslationHandler extends ContentTranslationHandler {
   /**
    * {@inheritdoc}
    */
-  public function entityFormAlter(array &$form, array &$form_state, EntityInterface $entity) {
+  public function entityFormAlter(array &$form, FormStateInterface $form_state, EntityInterface $entity) {
     parent::entityFormAlter($form, $form_state, $entity);
 
     // Move the translation fieldset to a vertical tab.
@@ -73,15 +74,15 @@ class NodeTranslationHandler extends ContentTranslationHandler {
   /**
    * {@inheritdoc}
    */
-  public function entityFormEntityBuild($entity_type, EntityInterface $entity, array $form, array &$form_state) {
-    if (isset($form_state['values']['content_translation'])) {
+  public function entityFormEntityBuild($entity_type, EntityInterface $entity, array $form, FormStateInterface $form_state) {
+    if ($form_state->hasValue('content_translation')) {
       $form_controller = content_translation_form_controller($form_state);
-      $translation = &$form_state['values']['content_translation'];
+      $translation = &$form_state->getValue('content_translation');
       $translation['status'] = $form_controller->getEntity()->isPublished();
       // $form['content_translation']['name'] is the equivalent field
       // for translation author uid.
-      $translation['name'] = $form_state['values']['uid'];
-      $translation['created'] = $form_state['values']['created'];
+      $translation['name'] = $form_state->getValue('uid');
+      $translation['created'] = $form_state->getValue('created');
     }
     parent::entityFormEntityBuild($entity_type, $entity, $form, $form_state);
   }

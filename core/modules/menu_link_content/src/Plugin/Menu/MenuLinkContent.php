@@ -37,7 +37,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
     'parent' => 1,
     'weight' => 1,
     'expanded' => 1,
-    'hidden' => 1,
+    'enabled' => 1,
     'title' => 1,
     'description' => 1,
     'route_name' => 1,
@@ -49,7 +49,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
   /**
    * The menu link content entity connected to this plugin instance.
    *
-   * @var \Drupal\menu_link_content\Entity\MenuLinkContentInterface
+   * @var \Drupal\menu_link_content\MenuLinkContentInterface
    */
   protected $entity;
 
@@ -92,7 +92,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
     }
 
     $this->entityManager = $entity_manager;
-    $this->langaugeManager = $language_manager;
+    $this->languageManager = $language_manager;
   }
 
   /**
@@ -111,7 +111,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
   /**
    * Loads the entity associated with this menu link.
    *
-   * @return \Drupal\menu_link_content\Entity\MenuLinkContentInterface
+   * @return \Drupal\menu_link_content\MenuLinkContentInterface
    *   The menu link content entity.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginException
@@ -133,7 +133,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
       }
       if (!$entity) {
         // Fallback to the loading by the UUID.
-        $uuid = $this->getDerivativeId();
+        $uuid = $this->getUuid();
         $loaded_entities = $storage->loadByProperties(array('uuid' => $uuid));
         $entity = reset($loaded_entities);
       }
@@ -143,7 +143,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
       // Clone the entity object to avoid tampering with the static cache.
       $this->entity = clone $entity;
       $the_entity = $this->entityManager->getTranslationFromContext($this->entity);
-      /** @var \Drupal\menu_link_content\Entity\MenuLinkContentInterface $the_entity */
+      /** @var \Drupal\menu_link_content\MenuLinkContentInterface $the_entity */
       $this->entity = $the_entity;
       $this->entity->setInsidePlugin();
     }
@@ -157,7 +157,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
     // We only need to get the title from the actual entity if it may be a
     // translation based on the current language context. This can only happen
     // if the site is configured to be multilingual.
-    if ($this->langaugeManager->isMultilingual()) {
+    if ($this->languageManager->isMultilingual()) {
       return $this->getEntity()->getTitle();
     }
     return $this->pluginDefinition['title'];
@@ -170,7 +170,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
     // We only need to get the description from the actual entity if it may be a
     // translation based on the current language context. This can only happen
     // if the site is configured to be multilingual.
-    if ($this->langaugeManager->isMultilingual()) {
+    if ($this->languageManager->isMultilingual()) {
       return $this->getEntity()->getDescription();
     }
     return $this->pluginDefinition['description'];
@@ -181,7 +181,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
    */
   public function getDeleteRoute() {
     return array(
-      'route_name' => 'menu_link_content.link_delete',
+      'route_name' => 'entity.menu_link_content.delete_form',
       'route_parameters' => array('menu_link_content' => $this->getEntity()->id()),
     );
   }
@@ -191,7 +191,7 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
    */
   public function getEditRoute() {
     return array(
-      'route_name' => 'menu_link_content.link_edit',
+      'route_name' => 'entity.menu_link_content.canonical',
       'route_parameters' => array('menu_link_content' => $this->getEntity()->id()),
     );
   }
@@ -205,6 +205,16 @@ class MenuLinkContent extends MenuLinkBase implements ContainerFactoryPluginInte
       'route_name' => 'content_translation.translation_overview_' . $entity_type,
       'route_parameters' => array( $entity_type => $this->getEntity()->id()),
     );
+  }
+
+  /**
+   * Returns the unique ID representing the menu link.
+   *
+   * @return string
+   *   The menu link ID.
+   */
+  protected function getUuid() {
+    $this->getDerivativeId();
   }
 
   /**

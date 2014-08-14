@@ -8,6 +8,7 @@
 namespace Drupal\form_test\Form;
 
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\form_test\Callbacks;
 
 /**
@@ -16,7 +17,7 @@ use Drupal\form_test\Callbacks;
  * Serves for testing form processing and alterations by form validation
  * handlers, especially for the case of a validation error:
  * - form_set_value() should be able to alter submitted values in
- *   $form_state['values'] without affecting the form element.
+ *   $form_state->getValues() without affecting the form element.
  * - #element_validate handlers should be able to alter the $element in the form
  *   structure and the alterations should be contained in the rebuilt form.
  * - #validate handlers should be able to alter the $form and the alterations
@@ -34,7 +35,7 @@ class FormTestValidateForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $object = new Callbacks();
 
     $form['name'] = array(
@@ -58,14 +59,14 @@ class FormTestValidateForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
-    if ($form_state['values']['name'] == 'validate') {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    if ($form_state->getValue('name') == 'validate') {
       // Alter the form element.
       $form['name']['#value'] = '#value changed by #validate';
       // Alter the submitted value in $form_state.
       form_set_value($form['name'], 'value changed by form_set_value() in #validate', $form_state);
       // Output the element's value from $form_state.
-      drupal_set_message(t('@label value: @value', array('@label' => $form['name']['#title'], '@value' => $form_state['values']['name'])));
+      drupal_set_message(t('@label value: @value', array('@label' => $form['name']['#title'], '@value' => $form_state->getValue('name'))));
 
       // Trigger a form validation error to see our changes.
       form_set_error('', $form_state);
@@ -75,7 +76,7 @@ class FormTestValidateForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
   }
 
 }

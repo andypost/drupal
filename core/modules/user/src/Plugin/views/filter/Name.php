@@ -8,6 +8,7 @@
 namespace Drupal\user\Plugin\views\filter;
 
 use Drupal\Component\Utility\Tags;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\filter\InOperator;
 
 /**
@@ -21,7 +22,7 @@ class Name extends InOperator {
 
   protected $alwaysMultiple = TRUE;
 
-  protected function valueForm(&$form, &$form_state) {
+  protected function valueForm(&$form, FormStateInterface $form_state) {
     $values = array();
     if ($this->value) {
       $result = entity_load_multiple_by_properties('user', array('uid' => $this->value));
@@ -50,12 +51,10 @@ class Name extends InOperator {
     }
   }
 
-  protected function valueValidate($form, &$form_state) {
-    $values = Tags::explode($form_state['values']['options']['value']);
-    $uids = $this->validate_user_strings($form['value'], $form_state, $values);
-
-    if ($uids) {
-      $form_state['values']['options']['value'] = $uids;
+  protected function valueValidate($form, FormStateInterface $form_state) {
+    $values = Tags::explode($form_state->getValue(array('options', 'value')));
+    if ($uids = $this->validate_user_strings($form['value'], $form_state, $values)) {
+      $form_state->setValue(array('options', 'value'), $uids);
     }
   }
 
@@ -72,7 +71,7 @@ class Name extends InOperator {
     return $rc;
   }
 
-  public function validateExposed(&$form, &$form_state) {
+  public function validateExposed(&$form, FormStateInterface $form_state) {
     if (empty($this->options['exposed'])) {
       return;
     }
@@ -82,7 +81,7 @@ class Name extends InOperator {
     }
 
     $identifier = $this->options['expose']['identifier'];
-    $input = $form_state['values'][$identifier];
+    $input = $form_state->getValue($identifier);
 
     if ($this->options['is_grouped'] && isset($this->options['group_info']['group_items'][$input])) {
       $this->operator = $this->options['group_info']['group_items'][$input]['operator'];
@@ -108,7 +107,7 @@ class Name extends InOperator {
    * or the exposed filter, this is abstracted out a bit so it can
    * handle the multiple input sources.
    */
-  function validate_user_strings(&$form, array &$form_state, $values) {
+  function validate_user_strings(&$form, FormStateInterface $form_state, $values) {
     $uids = array();
     $placeholders = array();
     $args = array();
@@ -140,7 +139,7 @@ class Name extends InOperator {
     return $uids;
   }
 
-  protected function valueSubmit($form, &$form_state) {
+  protected function valueSubmit($form, FormStateInterface $form_state) {
     // prevent array filter from removing our anonymous user.
   }
 

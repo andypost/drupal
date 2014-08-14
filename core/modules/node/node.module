@@ -9,6 +9,7 @@
  */
 
 use Drupal\Component\Utility\Xss;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -27,7 +28,7 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\Display\EntityFormDisplayInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\file\Entity\File;
-use Drupal\language\Entity\Language as LanguageEntity;
+use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\block\Entity\Block;
 use Drupal\Core\Session\AccountInterface;
 
@@ -137,10 +138,10 @@ function node_help($route_name, RouteMatchInterface $route_match) {
       return '<p>' . t('Content items can be displayed using different view modes: Teaser, Full content, Print, RSS, etc. <em>Teaser</em> is a short format that is typically used in lists of multiple content items. <em>Full content</em> is typically used when the content is displayed on its own page.') . '</p>' .
         '<p>' . t('Here, you can define which fields are shown and hidden when %type content is displayed in each view mode, and define how the fields are displayed in each view mode.', array('%type' => $type->label())) . '</p>';
 
-    case 'node.revision_overview':
+    case 'entity.node.version_history':
       return '<p>' . t('Revisions allow you to track differences between multiple versions of your content, and revert back to older versions.') . '</p>';
 
-    case 'node.page_edit':
+    case 'entity.node.edit_form':
       $node = $route_match->getParameter('node');
       $type = $node->getType();
       return (!empty($type->help) ? Xss::filterAdmin($type->help) : '');
@@ -544,7 +545,7 @@ function node_revision_delete($revision_id) {
  */
 function node_is_page(NodeInterface $node) {
   $route_match = \Drupal::routeMatch();
-  if ($route_match->getRouteName() == 'node.view') {
+  if ($route_match->getRouteName() == 'entity.node.canonical') {
     $page_node = $route_match->getParameter('node');
   }
   return (!empty($page_node) ? $page_node->id() == $node->id() : FALSE);
@@ -715,8 +716,8 @@ function node_permission() {
     ),
   );
 
-  // Generate standard node permissions for all applicable node types.
-  foreach (node_permissions_get_configured_types() as $type) {
+  // Generate node permissions for all node types.
+  foreach (NodeType::loadMultiple() as $type) {
     $perms += node_list_permissions($type);
   }
 
@@ -1053,7 +1054,7 @@ function node_view_multiple($nodes, $view_mode = 'teaser', $langcode = NULL) {
  * @see taxonomy_term_page()
  * @see node_form_system_site_information_settings_form_submit()
  */
-function node_form_system_site_information_settings_form_alter(&$form, &$form_state, $form_id) {
+function node_form_system_site_information_settings_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $options = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30);
   $form['front_page']['default_nodes_main'] = array(
     '#type' => 'select',
@@ -1071,9 +1072,9 @@ function node_form_system_site_information_settings_form_alter(&$form, &$form_st
  *
  * @see node_form_system_site_information_settings_form_alter()
  */
-function node_form_system_site_information_settings_form_submit($form, &$form_state) {
+function node_form_system_site_information_settings_form_submit($form, FormStateInterface $form_state) {
   \Drupal::config('node.settings')
-    ->set('items_per_page', $form_state['values']['default_nodes_main'])
+    ->set('items_per_page', $form_state->getValue('default_nodes_main'))
     ->save();
 }
 
@@ -1084,7 +1085,7 @@ function node_form_system_site_information_settings_form_submit($form, &$form_st
  *
  * @see node_form_system_themes_admin_form_submit()
  */
-function node_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id) {
+function node_form_system_themes_admin_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $form['admin_theme']['use_admin_theme'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use the administration theme when editing or creating content'),
@@ -1098,9 +1099,9 @@ function node_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id
  *
  * @see node_form_system_themes_admin_form_alter()
  */
-function node_form_system_themes_admin_form_submit($form, &$form_state) {
+function node_form_system_themes_admin_form_submit($form, FormStateInterface $form_state) {
   \Drupal::config('node.settings')
-    ->set('use_admin_theme', $form_state['values']['use_admin_theme'])
+    ->set('use_admin_theme', $form_state->getValue('use_admin_theme'))
     ->save();
   \Drupal::service('router.builder')->setRebuildNeeded();
 }
@@ -1110,7 +1111,7 @@ function node_form_system_themes_admin_form_submit($form, &$form_state) {
  * @{
  * The node access system determines who can do what to which nodes.
  *
- * In determining access rights for a node, \Drupal\node\NodeAccessController
+ * In determining access rights for a node, \Drupal\node\NodeAccessControlHandler
  * first checks whether the user has the "bypass node access" permission. Such
  * users have unrestricted access to all nodes. user 1 will always pass this
  * check.
@@ -1157,22 +1158,19 @@ function node_form_system_themes_admin_form_submit($form, &$form_state) {
 function node_node_access(NodeInterface $node, $op, $account) {
   $type = $node->bundle();
 
-  $configured_types = node_permissions_get_configured_types();
-  if (isset($configured_types[$type])) {
-    if ($op == 'create' && $account->hasPermission('create ' . $type . ' content', $account)) {
+  if ($op == 'create' && $account->hasPermission('create ' . $type . ' content', $account)) {
+    return NODE_ACCESS_ALLOW;
+  }
+
+  if ($op == 'update') {
+    if ($account->hasPermission('edit any ' . $type . ' content', $account) || ($account->hasPermission('edit own ' . $type . ' content', $account) && ($account->id() == $node->getOwnerId()))) {
       return NODE_ACCESS_ALLOW;
     }
+  }
 
-    if ($op == 'update') {
-      if ($account->hasPermission('edit any ' . $type . ' content', $account) || ($account->hasPermission('edit own ' . $type . ' content', $account) && ($account->id() == $node->getOwnerId()))) {
-        return NODE_ACCESS_ALLOW;
-      }
-    }
-
-    if ($op == 'delete') {
-      if ($account->hasPermission('delete any ' . $type . ' content', $account) || ($account->hasPermission('delete own ' . $type . ' content', $account) && ($account->id() == $node->getOwnerId()))) {
-        return NODE_ACCESS_ALLOW;
-      }
+  if ($op == 'delete') {
+    if ($account->hasPermission('delete any ' . $type . ' content', $account) || ($account->hasPermission('delete own ' . $type . ' content', $account) && ($account->id() == $node->getOwnerId()))) {
+      return NODE_ACCESS_ALLOW;
     }
   }
 
@@ -1219,31 +1217,6 @@ function node_list_permissions($type) {
     ),
   );
   return $perms;
-}
-
-/**
- * Returns an array of node types that should be managed by permissions.
- *
- * By default, this will include all node types in the system. To exclude a
- * specific node from getting permissions defined for it, set the
- * node_permissions_$type variable to 0. Core does not provide an interface for
- * doing so. However, contrib modules may exclude their own nodes in
- * hook_install(). Alternatively, contrib modules may configure all node types
- * at once, or decide to apply some other hook_node_access() implementation to
- * some or all node types.
- *
- * @return
- *   An array of node types managed by this module.
- */
-function node_permissions_get_configured_types() {
-  $configured_types = array();
-  foreach (node_type_get_types() as $name => $type) {
-    $node_settings = $type->getModuleSettings('node');
-    if (!isset($node_settings['permissions']) || !empty($node_settings['permissions'])) {
-      $configured_types[$name] = $type;
-    }
-  }
-  return $configured_types;
 }
 
 /**
@@ -1314,7 +1287,7 @@ function node_access_view_all_nodes($account = NULL) {
     $access[$account->id()] = TRUE;
   }
   else {
-    $access[$account->id()] = \Drupal::entityManager()->getAccessController('node')->checkAllGrants($account);
+    $access[$account->id()] = \Drupal::entityManager()->getAccessControlHandler('node')->checkAllGrants($account);
   }
 
   return $access[$account->id()];
@@ -1438,8 +1411,8 @@ function node_access_needs_rebuild($rebuild = NULL) {
  * @see node_access_needs_rebuild()
  */
 function node_access_rebuild($batch_mode = FALSE) {
-  $access_controller = \Drupal::entityManager()->getAccessController('node');
-  $access_controller->deleteGrants();
+  $access_control_handler = \Drupal::entityManager()->getAccessControlHandler('node');
+  $access_control_handler->deleteGrants();
   // Only recalculate if the site is using a node_access module.
   if (count(\Drupal::moduleHandler()->getImplementations('node_grants'))) {
     if ($batch_mode) {
@@ -1466,14 +1439,14 @@ function node_access_rebuild($batch_mode = FALSE) {
         // To preserve database integrity, only write grants if the node
         // loads successfully.
         if (!empty($node)) {
-          $access_controller->writeGrants($node);
+          $access_control_handler->writeGrants($node);
         }
       }
     }
   }
   else {
     // Not using any node_access modules. Add the default grant.
-    $access_controller->writeDefaultGrant();
+    $access_control_handler->writeDefaultGrant();
   }
 
   if (!isset($batch)) {
@@ -1512,7 +1485,7 @@ function _node_access_rebuild_batch_operation(&$context) {
     // To preserve database integrity, only write grants if the node
     // loads successfully.
     if (!empty($node)) {
-      \Drupal::entityManager()->getAccessController('node')->writeGrants($node);
+      \Drupal::entityManager()->getAccessControlHandler('node')->writeGrants($node);
     }
     $context['sandbox']['progress']++;
     $context['sandbox']['current_node'] = $nid;
@@ -1600,18 +1573,9 @@ function node_modules_uninstalled($modules) {
 }
 
 /**
- * Implements hook_file_download_access().
+ * Implements hook_ENTITY_TYPE_delete() for 'configurable_language'.
  */
-function node_file_download_access($field, EntityInterface $entity, File $file) {
-  if ($entity->getEntityTypeId() == 'node') {
-    return $entity->access('view');
-  }
-}
-
-/**
- * Implements hook_ENTITY_TYPE_delete() for 'language_entity'.
- */
-function node_language_entity_delete(LanguageEntity $language) {
+function node_configurable_language_delete(ConfigurableLanguage $language) {
   // On nodes with this language, unset the language.
   \Drupal::entityManager()->getStorage('node')->clearRevisionsLanguage($language);
 }

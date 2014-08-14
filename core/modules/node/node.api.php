@@ -82,7 +82,7 @@ function hook_node_grants(\Drupal\Core\Session\AccountInterface $account, $op) {
   if ($account->hasPermission('access private content')) {
     $grants['example'] = array(1);
   }
-  $grants['example_owner'] = array($account->id());
+  $grants['example_author'] = array($account->id());
   return $grants;
 }
 
@@ -326,22 +326,19 @@ function hook_node_grants_alter(&$grants, \Drupal\Core\Session\AccountInterface 
 function hook_node_access(\Drupal\node\NodeInterface $node, $op, \Drupal\Core\Session\AccountInterface $account, $langcode) {
   $type = is_string($node) ? $node : $node->getType();
 
-  $configured_types = node_permissions_get_configured_types();
-  if (isset($configured_types[$type])) {
-    if ($op == 'create' && $account->hasPermission('create ' . $type . ' content')) {
+  if ($op == 'create' && $account->hasPermission('create ' . $type . ' content')) {
+    return NODE_ACCESS_ALLOW;
+  }
+
+  if ($op == 'update') {
+    if ($account->hasPermission('edit any ' . $type . ' content', $account) || ($account->hasPermission('edit own ' . $type . ' content') && ($account->id() == $node->getOwnerId()))) {
       return NODE_ACCESS_ALLOW;
     }
+  }
 
-    if ($op == 'update') {
-      if ($account->hasPermission('edit any ' . $type . ' content', $account) || ($account->hasPermission('edit own ' . $type . ' content') && ($account->id() == $node->getOwnerId()))) {
-        return NODE_ACCESS_ALLOW;
-      }
-    }
-
-    if ($op == 'delete') {
-      if ($account->hasPermission('delete any ' . $type . ' content', $account) || ($account->hasPermission('delete own ' . $type . ' content') && ($account->id() == $node->getOwnerId()))) {
-        return NODE_ACCESS_ALLOW;
-      }
+  if ($op == 'delete') {
+    if ($account->hasPermission('delete any ' . $type . ' content', $account) || ($account->hasPermission('delete own ' . $type . ' content') && ($account->id() == $node->getOwnerId()))) {
+      return NODE_ACCESS_ALLOW;
     }
   }
 
@@ -420,11 +417,11 @@ function hook_node_update_index(\Drupal\node\NodeInterface $node, $langcode) {
  * @param $form
  *   The form being used to edit the node.
  * @param $form_state
- *   The form state array.
+ *   The current state of the form.
  *
  * @ingroup entity_crud
  */
-function hook_node_validate(\Drupal\node\NodeInterface $node, $form, &$form_state) {
+function hook_node_validate(\Drupal\node\NodeInterface $node, $form, \Drupal\Core\Form\FormStateInterface $form_state) {
   if (isset($node->end) && isset($node->start)) {
     if ($node->start > $node->end) {
       form_set_error('time', $form_state, t('An event may not end before it starts.'));
@@ -439,7 +436,7 @@ function hook_node_validate(\Drupal\node\NodeInterface $node, $form, &$form_stat
  * "Preview" button, after form values have been copied to the form state's node
  * object, but before the node is saved or previewed. It is a chance for modules
  * to adjust the node's properties from what they are simply after a copy from
- * $form_state['values']. This hook is intended for adjusting non-field-related
+ * $form_state->getValues(). This hook is intended for adjusting non-field-related
  * properties.
  *
  * @param \Drupal\node\NodeInterface $node
@@ -447,15 +444,16 @@ function hook_node_validate(\Drupal\node\NodeInterface $node, $form, &$form_stat
  * @param $form
  *   The form being used to edit the node.
  * @param $form_state
- *   The form state array.
+ *   The current state of the form.
  *
  * @ingroup entity_crud
  */
-function hook_node_submit(\Drupal\node\NodeInterface $node, $form, &$form_state) {
-  // Decompose the selected menu parent option into 'menu_name' and 'plid', if
+function hook_node_submit(\Drupal\node\NodeInterface $node, $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  // Decompose the selected menu parent option into 'menu_name' and 'parent', if
   // the form used the default parent selection widget.
-  if (!empty($form_state['values']['menu']['parent'])) {
-    list($node->menu['menu_name'], $node->menu['plid']) = explode(':', $form_state['values']['menu']['parent']);
+  $parent = $form_state->getValue(array('menu', 'parent'));
+  if (!empty($parent)) {
+    list($node->menu['menu_name'], $node->menu['parent']) = explode(':', $parent);
   }
 }
 

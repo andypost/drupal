@@ -15,6 +15,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -133,7 +134,7 @@ class BlockListBuilder extends ConfigEntityListBuilder implements FormInterface 
    *
    * Form constructor for the main block administration form.
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $placement = FALSE;
     if ($this->request->query->has('block-placement')) {
       $placement = $this->request->query->get('block-placement');
@@ -308,7 +309,7 @@ class BlockListBuilder extends ConfigEntityListBuilder implements FormInterface 
 
     $form['place_blocks']['title'] = array(
       '#type' => 'container',
-      '#children' => '<h3>' . t('Place blocks') . '</h3>',
+      '#markup' => '<h3>' . t('Place blocks') . '</h3>',
       '#attributes' => array(
         'class' => array(
           'entity-meta-header',
@@ -388,7 +389,7 @@ class BlockListBuilder extends ConfigEntityListBuilder implements FormInterface 
   /**
    * Implements \Drupal\Core\Form\FormInterface::validateForm().
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     // No validation.
   }
 
@@ -397,11 +398,12 @@ class BlockListBuilder extends ConfigEntityListBuilder implements FormInterface 
    *
    * Form submission handler for the main block administration form.
    */
-  public function submitForm(array &$form, array &$form_state) {
-    $entities = entity_load_multiple('block', array_keys($form_state['values']['blocks']));
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $entities = entity_load_multiple('block', array_keys($form_state->getValue('blocks')));
     foreach ($entities as $entity_id => $entity) {
-      $entity->set('weight', $form_state['values']['blocks'][$entity_id]['weight']);
-      $entity->set('region', $form_state['values']['blocks'][$entity_id]['region']);
+      $entity_values = $form_state->getValue(array('blocks', $entity_id));
+      $entity->set('weight', $entity_values['weight']);
+      $entity->set('region', $entity_values['region']);
       if ($entity->get('region') == BlockInterface::BLOCK_REGION_NONE) {
         $entity->disable();
       }

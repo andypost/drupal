@@ -323,19 +323,19 @@ class EntityManagerTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getAccessController() method.
+   * Tests the getAccessControlHandler() method.
    *
-   * @covers ::getAccessController()
+   * @covers ::getAccessControlHandler()
    */
-  public function testGetAccessController() {
+  public function testGetAccessControlHandler() {
     $class = $this->getTestControllerClass();
     $entity = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
     $entity->expects($this->once())
-      ->method('getAccessClass')
+      ->method('getAccessControlClass')
       ->will($this->returnValue($class));
     $this->setUpEntityManager(array('test_entity_type' => $entity));
 
-    $this->assertInstanceOf($class, $this->entityManager->getAccessController('test_entity_type'));
+    $this->assertInstanceOf($class, $this->entityManager->getAccessControlHandler('test_entity_type'));
   }
 
   /**
@@ -690,7 +690,7 @@ class EntityManagerTest extends UnitTestCase {
 
     // @todo Mock FieldDefinitionInterface once it exposes a proper provider
     //   setter. See https://drupal.org/node/2225961.
-    $field_definition = $this->getMockBuilder('Drupal\Core\Field\FieldDefinition')
+    $field_definition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
       ->disableOriginalConstructor()
       ->getMock();
 
@@ -722,7 +722,7 @@ class EntityManagerTest extends UnitTestCase {
    * @param string $field_definition_id
    *   (optional) The ID to use for the field definition. Defaults to 'id'.
    *
-   * @return \Drupal\Core\Field\FieldDefinition|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\Core\Field\BaseFieldDefinition|\PHPUnit_Framework_MockObject_MockObject
    *   A field definition object.
    */
   protected function setUpEntityWithFieldDefinition($custom_invoke_all = FALSE, $field_definition_id = 'id') {
@@ -742,7 +742,7 @@ class EntityManagerTest extends UnitTestCase {
       ->method('isSubclassOf')
       ->with($this->equalTo('\Drupal\Core\Entity\ContentEntityInterface'))
       ->will($this->returnValue(TRUE));
-    $field_definition = $this->getMockBuilder('Drupal\Core\Field\FieldDefinition')
+    $field_definition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
       ->disableOriginalConstructor()
       ->getMock();
     $entity_class::$baseFieldDefinitions = array(
@@ -985,8 +985,8 @@ class EntityManagerTest extends UnitTestCase {
   function testgetExtraFields() {
     $this->setUpEntityManager();
 
-    $entity_type_id = $this->randomName();
-    $bundle = $this->randomName();
+    $entity_type_id = $this->randomMachineName();
+    $bundle = $this->randomMachineName();
     $language_code = 'en';
     $hook_bundle_extra_fields = array(
       $entity_type_id => array(
@@ -1080,7 +1080,7 @@ class EntityManagerTest extends UnitTestCase {
 
 
     // Define an ID field definition as a base field.
-    $id_definition = $this->getMockBuilder('Drupal\Core\Field\FieldDefinition')
+    $id_definition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
       ->disableOriginalConstructor()
       ->getMock();
     $id_definition->expects($this->exactly(2))
@@ -1092,7 +1092,7 @@ class EntityManagerTest extends UnitTestCase {
     $entity_class::$baseFieldDefinitions = $base_field_definitions;
 
     // Set up a by bundle field definition that only exists on one bundle.
-    $bundle_definition = $this->getMockBuilder('Drupal\Core\Field\FieldDefinition')
+    $bundle_definition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
       ->disableOriginalConstructor()
       ->getMock();
     $bundle_definition->expects($this->once())
@@ -1159,6 +1159,180 @@ class EntityManagerTest extends UnitTestCase {
     // Call the field map twice to make sure the static cache works.
     $this->assertEquals($expected, $this->entityManager->getFieldMap());
     $this->assertEquals($expected, $this->entityManager->getFieldMap());
+  }
+
+  /**
+   * @covers ::getFieldMapByFieldType
+   */
+  public function testGetFieldMapByFieldType() {
+    // Set up a content entity type.
+    $entity_type = $this->getMock('Drupal\Core\Entity\ContentEntityTypeInterface');
+    $entity = $this->getMockBuilder('Drupal\Tests\Core\Entity\EntityManagerTestEntity')
+      ->disableOriginalConstructor()
+      ->getMockForAbstractClass();
+    $entity_class = get_class($entity);
+    $entity_type->expects($this->any())
+      ->method('getClass')
+      ->will($this->returnValue($entity_class));
+    $entity_type->expects($this->any())
+      ->method('getKeys')
+      ->will($this->returnValue(array()));
+    $entity_type->expects($this->any())
+      ->method('id')
+      ->will($this->returnValue('test_entity_type'));
+    $entity_type->expects($this->any())
+      ->method('isSubclassOf')
+      ->with('\Drupal\Core\Entity\ContentEntityInterface')
+      ->will($this->returnValue(TRUE));
+
+    // Set up the module handler to return two bundles for the fieldable entity
+    // type.
+    $this->moduleHandler = $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface');
+    $this->moduleHandler->expects($this->any())
+      ->method('alter');
+    $this->moduleHandler->expects($this->any())
+      ->method('getImplementations')
+      ->will($this->returnValue(array()));
+    $module_implements_value_map = array(
+      array(
+        'entity_bundle_info', array(),
+        array(
+          'test_entity_type' => array(
+            'first_bundle' => array(),
+            'second_bundle' => array(),
+          ),
+        ),
+      ),
+    );
+    $this->moduleHandler->expects($this->any())
+      ->method('invokeAll')
+      ->will($this->returnValueMap($module_implements_value_map));
+
+
+    // Define an ID field definition as a base field.
+    $id_definition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $id_definition->expects($this->exactly(2))
+      ->method('getType')
+      ->will($this->returnValue('integer'));
+    $base_field_definitions = array(
+      'id' => $id_definition,
+    );
+    $entity_class::$baseFieldDefinitions = $base_field_definitions;
+
+    // Set up a by bundle field definition that only exists on one bundle.
+    $bundle_definition = $this->getMockBuilder('Drupal\Core\Field\BaseFieldDefinition')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $bundle_definition->expects($this->once())
+      ->method('getType')
+      ->will($this->returnValue('string'));
+    $entity_class::$bundleFieldDefinitions = array(
+      'test_entity_type' => array(
+        'first_bundle' => array(),
+        'second_bundle' => array(
+          'by_bundle' => $bundle_definition,
+        ),
+      ),
+    );
+
+    $this->setUpEntityManager(array(
+      'test_entity_type' => $entity_type,
+    ));
+
+    $integerFields = $this->entityManager->getFieldMapByFieldType('integer');
+    $this->assertCount(1, $integerFields['test_entity_type']);
+    $this->assertArrayNotHasKey('non_fieldable', $integerFields);
+    $this->assertArrayHasKey('id', $integerFields['test_entity_type']);
+    $this->assertArrayNotHasKey('by_bundle', $integerFields['test_entity_type']);
+
+    $stringFields = $this->entityManager->getFieldMapByFieldType('string');
+    $this->assertCount(1, $stringFields['test_entity_type']);
+    $this->assertArrayNotHasKey('non_fieldable', $stringFields);
+    $this->assertArrayHasKey('by_bundle', $stringFields['test_entity_type']);
+    $this->assertArrayNotHasKey('id', $stringFields['test_entity_type']);
+  }
+
+  /**
+   * @covers ::getEntityTypeFromClass()
+   */
+  public function testGetEntityTypeFromClass() {
+    $apple = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $apple->expects($this->exactly(2))
+      ->method('getOriginalClass')
+      ->will($this->returnValue('\Drupal\apple\Entity\Apple'));
+    $banana = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $banana->expects($this->exactly(2))
+      ->method('getOriginalClass')
+      ->will($this->returnValue('\Drupal\banana\Entity\Banana'));
+    $banana->expects($this->once())
+      ->method('getClass')
+      ->will($this->returnValue('\Drupal\mango\Entity\Mango'));
+    $banana->expects($this->exactly(2))
+      ->method('id')
+      ->will($this->returnValue('banana'));
+    $this->setUpEntityManager(array(
+      'apple' => $apple,
+      'banana' => $banana,
+    ));
+
+    $entity_type_id = $this->entityManager->getEntityTypeFromClass('\Drupal\banana\Entity\Banana');
+    $this->assertSame('banana', $entity_type_id);
+    $entity_type_id = $this->entityManager->getEntityTypeFromClass('\Drupal\mango\Entity\Mango');
+    $this->assertSame('banana', $entity_type_id);
+  }
+
+  /**
+   * @covers ::getEntityTypeFromClass()
+   *
+   * @expectedException \Drupal\Core\Entity\Exception\NoCorrespondingEntityClassException
+   * @expectedExceptionMessage The \Drupal\pear\Entity\Pear class does not correspond to an entity type.
+   */
+  public function testGetEntityTypeFromClassNoMatch() {
+    $apple = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $apple->expects($this->once())
+      ->method('getOriginalClass')
+      ->will($this->returnValue('\Drupal\apple\Entity\Apple'));
+    $banana = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $banana->expects($this->once())
+      ->method('getOriginalClass')
+      ->will($this->returnValue('\Drupal\banana\Entity\Banana'));
+    $this->setUpEntityManager(array(
+      'apple' => $apple,
+      'banana' => $banana,
+    ));
+
+    $this->entityManager->getEntityTypeFromClass('\Drupal\pear\Entity\Pear');
+  }
+
+  /**
+   * @covers ::getEntityTypeFromClass()
+   *
+   * @expectedException \Drupal\Core\Entity\Exception\AmbiguousEntityClassException
+   * @expectedExceptionMessage Multiple entity types found for \Drupal\apple\Entity\Apple.
+   */
+  public function testGetEntityTypeFromClassAmbiguous() {
+    $boskoop = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $boskoop->expects($this->once())
+      ->method('getOriginalClass')
+      ->will($this->returnValue('\Drupal\apple\Entity\Apple'));
+    $boskoop->expects($this->once())
+      ->method('id')
+      ->will($this->returnValue('boskop'));
+    $gala = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+    $gala->expects($this->once())
+      ->method('getOriginalClass')
+      ->will($this->returnValue('\Drupal\apple\Entity\Apple'));
+    $gala->expects($this->once())
+      ->method('id')
+      ->will($this->returnValue('gala'));
+    $this->setUpEntityManager(array(
+      'boskoop' => $boskoop,
+      'gala' => $gala,
+    ));
+
+    $this->entityManager->getEntityTypeFromClass('\Drupal\apple\Entity\Apple');
   }
 
   /**

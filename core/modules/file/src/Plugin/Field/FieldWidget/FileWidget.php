@@ -12,6 +12,7 @@ use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\WidgetBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 
 /**
@@ -39,7 +40,7 @@ class FileWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, array &$form_state) {
+  public function settingsForm(array $form, FormStateInterface $form_state) {
     $element['progress_indicator'] = array(
       '#type' => 'radios',
       '#title' => t('Progress indicator'),
@@ -69,13 +70,13 @@ class FileWidget extends WidgetBase {
    *
    * Special handling for draggable multiple widgets and 'add more' button.
    */
-  protected function formMultipleElements(FieldItemListInterface $items, array &$form, array &$form_state) {
+  protected function formMultipleElements(FieldItemListInterface $items, array &$form, FormStateInterface $form_state) {
     $field_name = $this->fieldDefinition->getName();
     $parents = $form['#parents'];
 
-    // Load the items for form rebuilds from the field state as they might not be
-    // in $form_state['values'] because of validation limitations. Also, they are
-    // only passed in as $items when editing existing entities.
+    // Load the items for form rebuilds from the field state as they might not
+    // be in $form_state->getValues() because of validation limitations. Also,
+    // they are only passed in as $items when editing existing entities.
     $field_state = static::getWidgetState($parents, $field_name, $form_state);
     if (isset($field_state['items'])) {
       $items->setValue($field_state['items']);
@@ -186,7 +187,7 @@ class FileWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
-  public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, array &$form_state) {
+  public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $field_settings = $this->getFieldSettings();
 
     // The field settings include defaults for the field type. However, this
@@ -256,7 +257,7 @@ class FileWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
-  public function massageFormValues(array $values, array $form, array &$form_state) {
+  public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
     // Since file upload widget now supports uploads of more than one file at a
     // time it always returns an array of fids. We have to translate this to a
     // single fid, as field expects single value.
@@ -278,7 +279,7 @@ class FileWidget extends WidgetBase {
    *
    * This method is assigned as a #value_callback in formElement() method.
    */
-  public static function value($element, $input = FALSE, $form_state) {
+  public static function value($element, $input = FALSE, FormStateInterface $form_state) {
     if ($input) {
       // Checkboxes lose their value when empty.
       // If the display field is present make sure its unchecked value is saved.
@@ -306,9 +307,9 @@ class FileWidget extends WidgetBase {
    *
    * This validator is used only when cardinality not set to 1 or unlimited.
    */
-  public static function validateMultipleCount($element, &$form_state, $form) {
+  public static function validateMultipleCount($element, FormStateInterface $form_state, $form) {
     $parents = $element['#parents'];
-    $values = NestedArray::getValue($form_state['values'], $parents);
+    $values = NestedArray::getValue($form_state->getValues(), $parents);
 
     array_pop($parents);
     $current = count(Element::children(NestedArray::getValue($form, $parents))) - 1;
@@ -329,7 +330,7 @@ class FileWidget extends WidgetBase {
       $message = t('Field %field can only hold @max values but there were @count uploaded. The following files have been omitted as a result: %list.', $args);
       drupal_set_message($message, 'warning');
       $values['fids'] = array_slice($values['fids'], 0, $keep);
-      NestedArray::setValue($form_state['values'], $element['#parents'], $values);
+      NestedArray::setValue($form_state->getValues(), $element['#parents'], $values);
     }
   }
 
@@ -341,7 +342,7 @@ class FileWidget extends WidgetBase {
    *
    * This method is assigned as a #process callback in formElement() method.
    */
-  public static function process($element, &$form_state, $form) {
+  public static function process($element, FormStateInterface $form_state, $form) {
     $item = $element['#value'];
     $item['fids'] = $element['fids']['#value'];
 
@@ -419,7 +420,7 @@ class FileWidget extends WidgetBase {
    * This method on is assigned as a #process callback in formMultipleElements()
    * method.
    */
-  public static function processMultiple($element, &$form_state, $form) {
+  public static function processMultiple($element, FormStateInterface $form_state, $form) {
     $element_children = Element::children($element, TRUE);
     $count = count($element_children);
 
@@ -484,7 +485,7 @@ class FileWidget extends WidgetBase {
    *
    * @see file_managed_file_submit()
    */
-  public static function submit($form, &$form_state) {
+  public static function submit($form, FormStateInterface $form_state) {
     // During the form rebuild, formElement() will create field item widget
     // elements using re-indexed deltas, so clear out $form_state['input'] to
     // avoid a mismatch between old and new deltas. The rebuilt elements will
@@ -500,7 +501,7 @@ class FileWidget extends WidgetBase {
     $field_name = $element['#field_name'];
     $parents = $element['#field_parents'];
 
-    $submitted_values = NestedArray::getValue($form_state['values'], array_slice($button['#parents'], 0, -2));
+    $submitted_values = NestedArray::getValue($form_state->getValues(), array_slice($button['#parents'], 0, -2));
     foreach ($submitted_values as $delta => $submitted_value) {
       if (empty($submitted_value['fids'])) {
         unset($submitted_values[$delta]);
@@ -527,7 +528,7 @@ class FileWidget extends WidgetBase {
     $submitted_values = array_values($new_values);
 
     // Update form_state values.
-    NestedArray::setValue($form_state['values'], array_slice($button['#parents'], 0, -2), $submitted_values);
+    NestedArray::setValue($form_state->getValues(), array_slice($button['#parents'], 0, -2), $submitted_values);
 
     // Update items.
     $field_state = static::getWidgetState($parents, $field_name, $form_state);

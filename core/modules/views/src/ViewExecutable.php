@@ -8,6 +8,7 @@
 namespace Drupal\views;
 
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewStorageInterface;
@@ -126,7 +127,7 @@ class ViewExecutable {
   // Exposed widget input
 
   /**
-   * All the form data from $form_state['values'].
+   * All the form data from $form_state->getValues().
    *
    * @var array
    */
@@ -140,7 +141,7 @@ class ViewExecutable {
   public $exposed_input = array();
 
   /**
-   * Exposed widget input directly from the $form_state['values'].
+   * Exposed widget input directly from the $form_state->getValues().
    *
    * @var array
    */
@@ -1073,7 +1074,7 @@ class ViewExecutable {
     if ($this->display_handler->usesExposed()) {
       $exposed_form = $this->display_handler->getPlugin('exposed_form');
       $this->exposed_widgets = $exposed_form->renderExposedForm();
-      if (\Drupal::formBuilder()->getAnyErrors() || !empty($this->build_info['abort'])) {
+      if (FormState::hasAnyErrors() || !empty($this->build_info['abort'])) {
         $this->built = TRUE;
         // Don't execute the query, $form_state, but rendering will still be executed to display the empty text.
         $this->executed = TRUE;
@@ -1509,17 +1510,16 @@ class ViewExecutable {
   }
 
   /**
-   * Returns default menu links from the view and the named display handler.
+   * Returns menu links from the view and the named display handler.
    *
    * @param string $display_id
    *   A display ID.
-   * @param array $links
-   *   An array of default menu link items passed from
-   *   views_menu_link_defaults_alter().
    *
    * @return array|bool
+   *   The generated menu links for this view and display, FALSE if the call
+   *   to ::setDisplay failed.
    */
-  public function executeHookMenuLinkDefaults($display_id = NULL, &$links = array()) {
+  public function getMenuLinks($display_id = NULL) {
     // Prepare the view with the information we have. This was probably already
     // called, but it's good to be safe.
     if (!$this->setDisplay($display_id)) {
@@ -1528,7 +1528,7 @@ class ViewExecutable {
 
     // Execute the hook.
     if (isset($this->display_handler)) {
-      return $this->display_handler->executeHookMenuLinkDefaults($links);
+      return $this->display_handler->getMenuLinks();
     }
   }
 

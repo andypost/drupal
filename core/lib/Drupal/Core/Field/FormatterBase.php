@@ -7,6 +7,8 @@
 
 namespace Drupal\Core\Field;
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * Base class for 'Field formatter' plugin implementations.
  *
@@ -106,7 +108,7 @@ abstract class FormatterBase extends PluginSettingsBase implements FormatterInte
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, array &$form_state) {
+  public function settingsForm(array $form, FormStateInterface $form_state) {
     return array();
   }
 
@@ -143,6 +145,14 @@ abstract class FormatterBase extends PluginSettingsBase implements FormatterInte
    */
   protected function getFieldSetting($setting_name) {
     return $this->fieldDefinition->getSetting($setting_name);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function isApplicable(FieldDefinitionInterface $field_definition) {
+    // By default, formatters are available for all fields.
+    return TRUE;
   }
 
 }

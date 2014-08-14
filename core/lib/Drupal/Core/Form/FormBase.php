@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Provides a base class for forms.
+ *
+ * @ingroup form_api
  */
 abstract class FormBase implements FormInterface, ContainerInjectionInterface {
   use StringTranslationTrait;
@@ -45,11 +47,11 @@ abstract class FormBase implements FormInterface, ContainerInjectionInterface {
   protected $configFactory;
 
   /**
-   * The form error handler.
+   * The logger factory.
    *
-   * @var \Drupal\Core\Form\FormErrorInterface
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
    */
-  protected $errorHandler;
+  protected $loggerFactory;
 
   /**
    * {@inheritdoc}
@@ -61,7 +63,7 @@ abstract class FormBase implements FormInterface, ContainerInjectionInterface {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     // Validation is optional.
   }
 
@@ -172,35 +174,19 @@ abstract class FormBase implements FormInterface, ContainerInjectionInterface {
   }
 
   /**
-   * Returns the form error handler.
+   * Gets the logger for a specific channel.
    *
-   * @return \Drupal\Core\Form\FormErrorInterface
-   *   The form error handler.
+   * @param string $channel
+   *   The name of the channel.
+   *
+   * @return \Psr\Log\LoggerInterface
+   *   The logger for this channel.
    */
-  protected function errorHandler() {
-    if (!$this->errorHandler) {
-      $this->errorHandler = \Drupal::service('form_builder');
+  protected function logger($channel) {
+    if (!$this->loggerFactory) {
+      $this->loggerFactory = $this->container()->get('logger.factory');
     }
-    return $this->errorHandler;
-  }
-
-  /**
-   * Files an error against a form element.
-   *
-   * @param string $name
-   *   The name of the form element.
-   * @param array $form_state
-   *   An associative array containing the current state of the form.
-   * @param string $message
-   *   (optional) The error message to present to the user.
-   *
-   * @see \Drupal\Core\Form\FormErrorInterface::setErrorByName()
-   *
-   * @return $this
-   */
-  protected function setFormError($name, array &$form_state, $message = '') {
-    $this->errorHandler()->setErrorByName($name, $form_state, $message);
-    return $this;
+    return $this->loggerFactory->get($channel);
   }
 
 }

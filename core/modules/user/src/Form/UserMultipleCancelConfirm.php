@@ -10,7 +10,9 @@ namespace Drupal\user\Form;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\ConfirmFormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
+use Drupal\Core\Url;
 use Drupal\user\TempStoreFactory;
 use Drupal\user\UserStorageInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -86,7 +88,8 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getCancelRoute() {
+  public function getCancelUrl() {
+    return new Url('user.admin_account');
   }
 
   /**
@@ -99,7 +102,7 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     // Retrieve the accounts to be canceled from the temp store.
     $accounts = $this->tempStoreFactory
       ->get('user_user_operations_cancel')
@@ -160,21 +163,19 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
 
     $form = parent::buildForm($form, $form_state);
 
-    // @todo Convert to getCancelRoute() after https://drupal.org/node/1938884.
-    $form['actions']['cancel']['#href'] = 'admin/people';
     return $form;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $current_user_id = $this->currentUser()->id();
 
     // Clear out the accounts from the temp store.
     $this->tempStoreFactory->get('user_user_operations_cancel')->delete($current_user_id);
-    if ($form_state['values']['confirm']) {
-      foreach ($form_state['values']['accounts'] as $uid => $value) {
+    if ($form_state->getValue('confirm')) {
+      foreach ($form_state->getValue('accounts') as $uid => $value) {
         // Prevent programmatic form submissions from cancelling user 1.
         if ($uid <= 1) {
           continue;
@@ -183,7 +184,7 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
         if ($uid == $current_user_id) {
           $admin_form_mock = array();
           $admin_form_state = $form_state;
-          unset($admin_form_state['values']['user_cancel_confirm']);
+          $admin_form_state->unsetValue('user_cancel_confirm');
           // The $user global is not a complete user entity, so load the full
           // entity.
           $account = $this->userStorage->load($uid);
@@ -194,11 +195,11 @@ class UserMultipleCancelConfirm extends ConfirmFormBase {
           $admin_form->submit($admin_form_mock, $admin_form_state);
         }
         else {
-          user_cancel($form_state['values'], $uid, $form_state['values']['user_cancel_method']);
+          user_cancel($form_state->getValues(), $uid, $form_state->getValue('user_cancel_method'));
         }
       }
     }
-    $form_state['redirect_route']['route_name'] = 'user.admin_account';
+    $form_state->setRedirect('user.admin_account');
   }
 
 }

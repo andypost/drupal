@@ -23,6 +23,11 @@ abstract class RelationshipJoinTestBase extends PluginUnitTestBase {
   public static $modules = array('system', 'user', 'entity', 'field');
 
   /**
+   * @var \Drupal\user\Entity\User
+   */
+  protected $root_user;
+
+  /**
    * Overrides \Drupal\views\Tests\ViewUnitTestBase::setUpFixtures().
    */
   protected function setUpFixtures() {
@@ -32,7 +37,7 @@ abstract class RelationshipJoinTestBase extends PluginUnitTestBase {
 
     // Create a record for uid 1.
     $this->installSchema('system', 'sequences');
-    $this->root_user = entity_create('user', array('name' => $this->randomName()));
+    $this->root_user = entity_create('user', array('name' => $this->randomMachineName()));
     $this->root_user->save();
   }
 

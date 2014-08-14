@@ -8,6 +8,8 @@
 namespace Drupal\form_test\Form;
 
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Form builder to detect form redirect.
@@ -24,7 +26,7 @@ class FormTestRedirectForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form['redirection'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use redirection'),
@@ -49,12 +51,14 @@ class FormTestRedirectForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    if (!empty($form_state['values']['redirection'])) {
-      $form_state['redirect'] = !empty($form_state['values']['destination']) ? $form_state['values']['destination'] : NULL;
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    if (!$form_state->isValueEmpty('redirection')) {
+      if (!$form_state->isValueEmpty('destination')) {
+        $form_state->setRedirectUrl(Url::createFromPath($GLOBALS['base_url'] . '/' . $form_state->getValue('destination')));
+      }
     }
     else {
-      $form_state['redirect'] = FALSE;
+      $form_state['no_redirect'] = TRUE;
     }
   }
 

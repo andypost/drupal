@@ -31,6 +31,9 @@ class UserCreateTest extends WebTestBase {
     $user = $this->drupalCreateUser(array('administer users'));
     $this->drupalLogin($user);
 
+    $this->assertEqual($user->getCreatedTime(), REQUEST_TIME, 'Creating a user sets default "created" timestamp.');
+    $this->assertEqual($user->getChangedTime(), REQUEST_TIME, 'Creating a user sets default "changed" timestamp.');
+
     // Create a field and an instance.
     $field_name = 'test_field';
     entity_create('field_storage_config', array(
@@ -84,10 +87,10 @@ class UserCreateTest extends WebTestBase {
     // We create two users, notifying one and not notifying the other, to
     // ensure that the tests work in both cases.
     foreach (array(FALSE, TRUE) as $notify) {
-      $name = $this->randomName();
+      $name = $this->randomMachineName();
       $edit = array(
         'name' => $name,
-        'mail' => $this->randomName() . '@example.com',
+        'mail' => $this->randomMachineName() . '@example.com',
         'pass[pass1]' => $pass = $this->randomString(),
         'pass[pass2]' => $pass,
         'notify' => $notify,

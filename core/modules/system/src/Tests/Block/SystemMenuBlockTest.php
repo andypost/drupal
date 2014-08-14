@@ -24,15 +24,15 @@ class SystemMenuBlockTest extends DrupalUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('system', 'menu_link', 'block');
+  public static $modules = array('system', 'block');
 
   /**
    * Tests calculation of a system menu block's configuration dependencies.
    */
   public function testSystemMenuBlockConfigDependencies() {
     // Add a new custom menu.
-    $menu_name = $this->randomName(16);
-    $label = $this->randomName(16);
+    $menu_name = $this->randomMachineName(16);
+    $label = $this->randomMachineName(16);
 
     $menu = entity_create('menu', array(
       'id' => $menu_name,

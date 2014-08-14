@@ -10,7 +10,7 @@ namespace Drupal\block_content\Entity;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\block_content\BlockContentInterface;
 
 /**
@@ -22,7 +22,7 @@ use Drupal\block_content\BlockContentInterface;
  *   bundle_label = @Translation("Custom Block type"),
  *   controllers = {
  *     "storage" = "Drupal\block_content\BlockContentStorage",
- *     "access" = "Drupal\block_content\BlockContentAccessController",
+ *     "access" = "Drupal\block_content\BlockContentAccessControlHandler",
  *     "list_builder" = "Drupal\block_content\BlockContentListBuilder",
  *     "view_builder" = "Drupal\block_content\BlockContentViewBuilder",
  *     "form" = {
@@ -36,11 +36,12 @@ use Drupal\block_content\BlockContentInterface;
  *   admin_permission = "administer blocks",
  *   base_table = "block_content",
  *   revision_table = "block_content_revision",
+ *   data_table = "block_content_field_data",
  *   links = {
- *     "canonical" = "block_content.edit",
- *     "delete-form" = "block_content.delete",
- *     "edit-form" = "block_content.edit",
- *     "admin-form" = "block_content.type_edit"
+ *     "canonical" = "entity.block_content.canonical",
+ *     "delete-form" = "entity.block_content.delete_form",
+ *     "edit-form" = "entity.block_content.canonical",
+ *     "admin-form" = "entity.block_content_type.edit_form"
  *   },
  *   fieldable = TRUE,
  *   translatable = TRUE,
@@ -137,31 +138,33 @@ class BlockContent extends ContentEntityBase implements BlockContentInterface {
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    $fields['id'] = FieldDefinition::create('integer')
+    $fields['id'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Custom block ID'))
       ->setDescription(t('The custom block ID.'))
       ->setReadOnly(TRUE)
       ->setSetting('unsigned', TRUE);
 
-    $fields['uuid'] = FieldDefinition::create('uuid')
+    $fields['uuid'] = BaseFieldDefinition::create('uuid')
       ->setLabel(t('UUID'))
       ->setDescription(t('The custom block UUID.'))
       ->setReadOnly(TRUE);
 
-    $fields['revision_id'] = FieldDefinition::create('integer')
+    $fields['revision_id'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Revision ID'))
       ->setDescription(t('The revision ID.'))
       ->setReadOnly(TRUE)
       ->setSetting('unsigned', TRUE);
 
-    $fields['langcode'] = FieldDefinition::create('language')
+    $fields['langcode'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Language code'))
-      ->setDescription(t('The custom block language code.'));
+      ->setDescription(t('The custom block language code.'))
+      ->setRevisionable(TRUE);
 
-    $fields['info'] = FieldDefinition::create('string')
+    $fields['info'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Block description'))
       ->setDescription(t('A brief description of your block.'))
       ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
       ->setRequired(TRUE)
       ->setDisplayOptions('form', array(
         'type' => 'string',
@@ -169,17 +172,17 @@ class BlockContent extends ContentEntityBase implements BlockContentInterface {
       ))
       ->setDisplayConfigurable('form', TRUE);
 
-    $fields['type'] = FieldDefinition::create('entity_reference')
+    $fields['type'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Block type'))
       ->setDescription(t('The block type.'))
       ->setSetting('target_type', 'block_content_type');
 
-    $fields['revision_log'] = FieldDefinition::create('string_long')
+    $fields['revision_log'] = BaseFieldDefinition::create('string_long')
       ->setLabel(t('Revision log message'))
       ->setDescription(t('The log entry explaining the changes in this revision.'))
       ->setRevisionable(TRUE);
 
-    $fields['changed'] = FieldDefinition::create('changed')
+    $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(t('Changed'))
       ->setDescription(t('The time that the custom block was last edited.'))
       ->setRevisionable(TRUE);

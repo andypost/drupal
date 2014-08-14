@@ -1,8 +1,18 @@
-base_field: nid
-base_table: node
-core: 8.x
-description: 'Find and manage content.'
+langcode: en
 status: true
+dependencies:
+  module:
+    - history
+    - node
+    - user
+id: content
+label: Content
+module: node
+description: 'Find and manage content.'
+tag: default
+base_table: node
+base_field: nid
+core: 8.x
 display:
   default:
     display_options:
@@ -184,7 +194,7 @@ display:
           provider: node
         name:
           id: name
-          table: users
+          table: users_field_data
           field: name
           relationship: uid
           label: Author
@@ -321,7 +331,6 @@ display:
           hide_alter_empty: true
           link_to_node: false
           comments: false
-          optional: true
           plugin_id: history_user_timestamp
           provider: history
       filters:
@@ -460,8 +469,14 @@ display:
           provider: views
         langcode:
           id: langcode
-          table: node_revision
+          table: node_field_data
           field: langcode
+          relationship: none
+          group_type: group
+          admin_label: ''
+          dependencies:
+            module:
+              - views
           operator: in
           value: {  }
           group: 1
@@ -469,13 +484,32 @@ display:
           expose:
             operator_id: langcode_op
             label: Language
+            description: ''
+            use_operator: false
             operator: langcode_op
             identifier: langcode
+            required: false
+            remember: false
+            multiple: false
             remember_roles:
               authenticated: authenticated
-          optional: true
+              anonymous: '0'
+              administrator: '0'
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
           plugin_id: language
-          provider: language
+          provider: views
       sorts: {  }
       title: Content
       empty:
@@ -502,6 +536,8 @@ display:
         operator: AND
         groups:
           1: AND
+      field_langcode: '***CURRENT_LANGUAGE***'
+      field_langcode_add_to_query: null
     display_plugin: default
     display_title: Master
     id: default
@@ -513,25 +549,18 @@ display:
         type: 'default tab'
         title: Content
         description: ''
-        name: admin
+        menu_name: admin
         weight: -10
         context: ''
       tab_options:
         type: normal
         title: Content
         description: 'Find and manage content'
-        name: admin
+        menu_name: admin
         weight: -10
+      field_langcode: '***CURRENT_LANGUAGE***'
+      field_langcode_add_to_query: null
     display_plugin: page
     display_title: Page
     id: page_1
     position: 1
-label: Content
-module: node
-id: content
-tag: default
-langcode: en
-dependencies:
-  module:
-    - node
-    - user

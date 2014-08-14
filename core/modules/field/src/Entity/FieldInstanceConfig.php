@@ -11,7 +11,7 @@ use Drupal\Component\Utility\String;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\TypedData\FieldItemDataDefinition;
 use Drupal\field\FieldException;
 use Drupal\field\FieldStorageConfigInterface;
@@ -24,7 +24,7 @@ use Drupal\field\FieldInstanceConfigInterface;
  *   id = "field_instance_config",
  *   label = @Translation("Field instance"),
  *   controllers = {
- *     "access" = "Drupal\field\FieldInstanceConfigAccessController",
+ *     "access" = "Drupal\field\FieldInstanceConfigAccessControlHandler",
  *     "storage" = "Drupal\field\FieldInstanceConfigStorage"
  *   },
  *   config_prefix = "instance",
@@ -254,7 +254,8 @@ class FieldInstanceConfig extends ConfigEntityBase implements FieldInstanceConfi
     }
 
     // Discard the 'field_type' entry that is added in config records to ease
-    // schema generation. See self::toArray().
+    // schema generation and mapping settings from storage.
+    // @see Drupal\field\Entity\FieldInstanceConfig::toArray().
     unset($values['field_type']);
 
     parent::__construct($values, $entity_type);
@@ -288,7 +289,9 @@ class FieldInstanceConfig extends ConfigEntityBase implements FieldInstanceConfi
   public function toArray() {
     $properties = parent::toArray();
     // Additionally, include the field type, that is needed to be able to
-    // generate the field-type-dependant parts of the config schema.
+    // generate the field-type-dependant parts of the config schema and to
+    // allow for mapping settings from storage by field type.
+    // @see \Drupal\field\FieldInstanceConfigStorage::mapFromStorageRecords().
     $properties['field_type'] = $this->getType();
 
     return $properties;
@@ -614,7 +617,7 @@ class FieldInstanceConfig extends ConfigEntityBase implements FieldInstanceConfi
     return $this->bundle;
   }
 
-  /*
+  /**
    * Implements the magic __sleep() method.
    *
    * Using the Serialize interface and serialize() / unserialize() methods
@@ -622,20 +625,11 @@ class FieldInstanceConfig extends ConfigEntityBase implements FieldInstanceConfi
    * @todo Investigate in https://drupal.org/node/2074253.
    */
   public function __sleep() {
-    // Only serialize properties from self::toArray().
-    $properties = array_keys(array_intersect_key($this->toArray(), get_object_vars($this)));
-    // Serialize $entityTypeId property so that toArray() works when waking up.
-    $properties[] = 'entityTypeId';
-    return $properties;
-  }
-
-  /**
-   * Implements the magic __wakeup() method.
-   */
-  public function __wakeup() {
-    // Run the values from self::toArray() through __construct().
-    $values = array_intersect_key($this->toArray(), get_object_vars($this));
-    $this->__construct($values);
+    // Only serialize necessary properties, excluding those that can be
+    // recalculated.
+    $properties = get_object_vars($this);
+    unset($properties['fieldStorage'], $properties['itemDefinition'], $properties['bundle_rename_allowed']);
+    return array_keys($properties);
   }
 
   /**
@@ -644,7 +638,7 @@ class FieldInstanceConfig extends ConfigEntityBase implements FieldInstanceConfi
   public static function createFromDataType($type) {
     // Forward to the field definition class for creating new data definitions
     // via the typed manager.
-    return FieldDefinition::createFromDataType($type);
+    return BaseFieldDefinition::createFromDataType($type);
   }
 
   /**
@@ -653,7 +647,7 @@ class FieldInstanceConfig extends ConfigEntityBase implements FieldInstanceConfi
   public static function createFromItemType($item_type) {
     // Forward to the field definition class for creating new data definitions
     // via the typed manager.
-    return FieldDefinition::createFromItemType($item_type);
+    return BaseFieldDefinition::createFromItemType($item_type);
   }
 
   public function getDataType() {

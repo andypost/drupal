@@ -7,6 +7,7 @@
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Component\Utility\Tags;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ViewExecutable;
 use Drupal\views\Views;
 
@@ -68,7 +69,7 @@ function views_ui_add_ajax_trigger(&$wrapping_element, $trigger_key, $refresh_pa
     // triggering element only. We have to do this in #process since until the
     // form API has added the #parents property to the triggering element for
     // us, we don't have any (easy) way to find out where its submitted values
-    // will eventually appear in $form_state['values'].
+    // will eventually appear in $form_state->getValues().
     '#process' => array_merge(array('views_ui_add_limited_validation'), element_info_property('submit', '#process', array())),
     // Add an after-build function that inserts a wrapper around the region of
     // the form that needs to be refreshed by AJAX (so that the AJAX system can
@@ -120,7 +121,7 @@ function views_ui_add_ajax_trigger(&$wrapping_element, $trigger_key, $refresh_pa
 /**
  * Processes a non-JavaScript fallback submit button to limit its validation errors.
  */
-function views_ui_add_limited_validation($element, &$form_state) {
+function views_ui_add_limited_validation($element, FormStateInterface $form_state) {
   // Retrieve the AJAX triggering element so we can determine its parents. (We
   // know it's at the same level of the complete form array as the submit
   // button, so all we have to do to find it is swap out the submit button's
@@ -128,7 +129,7 @@ function views_ui_add_limited_validation($element, &$form_state) {
   $array_parents = $element['#array_parents'];
   array_pop($array_parents);
   $array_parents[] = $element['#views_ui_ajax_data']['trigger_key'];
-  $ajax_triggering_element = NestedArray::getValue($form_state['complete_form'], $array_parents);
+  $ajax_triggering_element = NestedArray::getValue($form_state->getCompleteForm(), $array_parents);
 
   // Limit this button's validation to the AJAX triggering element, so it can
   // update the form for that change without requiring that the rest of the
@@ -158,13 +159,13 @@ function views_ui_add_limited_validation($element, &$form_state) {
  * be refreshed by AJAX, based on information stored in the corresponding
  * submit button form element.
  */
-function views_ui_add_ajax_wrapper($element, &$form_state) {
+function views_ui_add_ajax_wrapper($element, FormStateInterface $form_state) {
   // Don't add the wrapper <div> if the same one was already inserted on this
   // form.
   if (empty($element['#views_ui_ajax_data']['duplicate_wrapper'])) {
     // Find the region of the complete form that needs to be refreshed by AJAX.
     // This was earlier stored in a property on the element.
-    $complete_form = &$form_state['complete_form'];
+    $complete_form = &$form_state->getCompleteForm();
     $refresh_parents = $element['#views_ui_ajax_data']['refresh_parents'];
     $refresh_element = NestedArray::getValue($complete_form, $refresh_parents);
 
@@ -192,7 +193,7 @@ function views_ui_add_ajax_wrapper($element, &$form_state) {
  * @return
  *   The part of the form that has changed.
  */
-function views_ui_ajax_update_form($form, $form_state) {
+function views_ui_ajax_update_form($form, FormStateInterface $form_state) {
   // The region that needs to be updated was stored in a property of the
   // triggering element by views_ui_add_ajax_trigger(), so all we have to do is
   // retrieve that here.
@@ -202,7 +203,7 @@ function views_ui_ajax_update_form($form, $form_state) {
 /**
  * Non-Javascript fallback for updating the add view form.
  */
-function views_ui_nojs_submit($form, &$form_state) {
+function views_ui_nojs_submit($form, FormStateInterface $form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
@@ -220,7 +221,7 @@ function views_ui_nojs_submit($form, &$form_state) {
  *
  * @see taxonomy_autocomplete_validate()
  */
-function views_ui_taxonomy_autocomplete_validate($element, &$form_state) {
+function views_ui_taxonomy_autocomplete_validate($element, FormStateInterface $form_state) {
   $value = array();
   if ($tags = $element['#value']) {
     // Get the machine names of the vocabularies we will search, keyed by the
@@ -261,7 +262,7 @@ function views_ui_taxonomy_autocomplete_validate($element, &$form_state) {
  * change whether this info is stored on the default display or on
  * the current display.
  */
-function views_ui_standard_display_dropdown(&$form, &$form_state, $section) {
+function views_ui_standard_display_dropdown(&$form, FormStateInterface $form_state, $section) {
   $view = $form_state['view'];
   $display_id = $form_state['display_id'];
   $executable = $view->getExecutable();
@@ -324,7 +325,7 @@ function views_ui_standard_display_dropdown(&$form, &$form_state, $section) {
  * Create the menu path for one of our standard AJAX forms based upon known
  * information about the form.
  */
-function views_ui_build_form_path($form_state) {
+function views_ui_build_form_path(FormStateInterface $form_state) {
   $ajax = empty($form_state['ajax']) ? 'nojs' : 'ajax';
   $name = $form_state['view']->id();
   $path = "admin/structure/views/$ajax/$form_state[form_key]/$name/$form_state[display_id]";
@@ -352,7 +353,7 @@ function views_ui_build_form_path($form_state) {
  * @see _form_builder_handle_input_element()
  * @see _form_button_was_clicked()
  */
-function views_ui_form_button_was_clicked($element, &$form_state) {
+function views_ui_form_button_was_clicked($element, FormStateInterface $form_state) {
   $process_input = empty($element['#disabled']) && ($form_state['programmed'] || ($form_state['process_input'] && (!isset($element['#access']) || $element['#access'])));
   if ($process_input && !isset($form_state['triggering_element']) && !empty($element['#is_button']) && isset($form_state['input'][$element['#name']]) && isset($element['#values']) && in_array($form_state['input'][$element['#name']], $element['#values'], TRUE)) {
     $form_state['triggering_element'] = $element;

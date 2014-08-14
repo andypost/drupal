@@ -10,7 +10,7 @@ namespace Drupal\taxonomy\Entity;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\taxonomy\TermInterface;
 
 /**
@@ -23,7 +23,7 @@ use Drupal\taxonomy\TermInterface;
  *   controllers = {
  *     "storage" = "Drupal\taxonomy\TermStorage",
  *     "view_builder" = "Drupal\taxonomy\TermViewBuilder",
- *     "access" = "Drupal\taxonomy\TermAccessController",
+ *     "access" = "Drupal\taxonomy\TermAccessControlHandler",
  *     "form" = {
  *       "default" = "Drupal\taxonomy\TermForm",
  *       "delete" = "Drupal\taxonomy\Form\TermDeleteForm"
@@ -31,6 +31,7 @@ use Drupal\taxonomy\TermInterface;
  *     "translation" = "Drupal\taxonomy\TermTranslationHandler"
  *   },
  *   base_table = "taxonomy_term_data",
+ *   data_table = "taxonomy_term_field_data",
  *   uri_callback = "taxonomy_term_uri",
  *   fieldable = TRUE,
  *   translatable = TRUE,
@@ -99,29 +100,30 @@ class Term extends ContentEntityBase implements TermInterface {
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    $fields['tid'] = FieldDefinition::create('integer')
+    $fields['tid'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Term ID'))
       ->setDescription(t('The term ID.'))
       ->setReadOnly(TRUE)
       ->setSetting('unsigned', TRUE);
 
-    $fields['uuid'] = FieldDefinition::create('uuid')
+    $fields['uuid'] = BaseFieldDefinition::create('uuid')
       ->setLabel(t('UUID'))
       ->setDescription(t('The term UUID.'))
       ->setReadOnly(TRUE);
 
-    $fields['vid'] = FieldDefinition::create('entity_reference')
+    $fields['vid'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Vocabulary'))
       ->setDescription(t('The vocabulary to which the term is assigned.'))
       ->setSetting('target_type', 'taxonomy_vocabulary');
 
-    $fields['langcode'] = FieldDefinition::create('language')
+    $fields['langcode'] = BaseFieldDefinition::create('language')
       ->setLabel(t('Language code'))
       ->setDescription(t('The term language code.'));
 
-    $fields['name'] = FieldDefinition::create('string')
+    $fields['name'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Name'))
       ->setDescription(t('The term name.'))
+      ->setTranslatable(TRUE)
       ->setRequired(TRUE)
       ->setSetting('max_length', 255)
       ->setDisplayOptions('view', array(
@@ -135,9 +137,10 @@ class Term extends ContentEntityBase implements TermInterface {
       ))
       ->setDisplayConfigurable('form', TRUE);
 
-    $fields['description'] = FieldDefinition::create('text_long')
+    $fields['description'] = BaseFieldDefinition::create('text_long')
       ->setLabel(t('Description'))
       ->setDescription(t('A description of the term.'))
+      ->setTranslatable(TRUE)
       ->setSetting('text_processing', 1)
       ->setDisplayOptions('view', array(
         'label' => 'hidden',
@@ -151,23 +154,23 @@ class Term extends ContentEntityBase implements TermInterface {
       ))
       ->setDisplayConfigurable('form', TRUE);
 
-    $fields['weight'] = FieldDefinition::create('integer')
+    $fields['weight'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Weight'))
       ->setDescription(t('The weight of this term in relation to other terms.'))
       ->setDefaultValue(0);
 
     // @todo Convert this to an entity_reference field, see
     // https://drupal.org/node/1915056
-    $fields['parent'] = FieldDefinition::create('integer')
+    $fields['parent'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Term Parents'))
       ->setDescription(t('The parents of this term.'))
-      ->setCardinality(FieldDefinition::CARDINALITY_UNLIMITED)
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       // Save new terms with no parents by default.
       ->setDefaultValue(0)
       ->setSetting('unsigned', TRUE)
       ->addConstraint('TermParent', array());
 
-    $fields['changed'] = FieldDefinition::create('changed')
+    $fields['changed'] = BaseFieldDefinition::create('changed')
       ->setLabel(t('Changed'))
       ->setDescription(t('The time that the term was last edited.'));
 

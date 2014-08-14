@@ -8,7 +8,7 @@
 namespace Drupal\batch_test\Form;
 
 use Drupal\Core\Form\FormBase;
-use Drupal\Core\Url;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Generate form of id batch_test_multistep_form.
@@ -25,7 +25,7 @@ class BatchTestMultiStepForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     if (empty($form_state['storage']['step'])) {
       $form_state['storage']['step'] = 1;
     }
@@ -44,7 +44,7 @@ class BatchTestMultiStepForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     batch_test_stack(NULL, TRUE);
 
     switch ($form_state['storage']['step']) {
@@ -61,7 +61,7 @@ class BatchTestMultiStepForm extends FormBase {
       $form_state['rebuild'] = TRUE;
     }
 
-    $form_state['redirect_route'] = new Url('batch_test.redirect');
+    $form_state->setRedirect('batch_test.redirect');
   }
 
 }

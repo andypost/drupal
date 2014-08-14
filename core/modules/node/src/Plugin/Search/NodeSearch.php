@@ -14,6 +14,7 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Database\Query\SelectExtender;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -398,7 +399,7 @@ class NodeSearch extends ConfigurableSearchPluginBase implements AccessibleInter
   /**
    * {@inheritdoc}
    */
-  public function searchFormAlter(array &$form, array &$form_state) {
+  public function searchFormAlter(array &$form, FormStateInterface $form_state) {
     // Add advanced search keyword-related boxes.
     $form['advanced'] = array(
       '#type' => 'details',
@@ -479,47 +480,47 @@ class NodeSearch extends ConfigurableSearchPluginBase implements AccessibleInter
   /*
    * {@inheritdoc}
    */
-  public function buildSearchUrlQuery($form_state) {
+  public function buildSearchUrlQuery(FormStateInterface $form_state) {
     // Read keyword and advanced search information from the form values,
     // and put these into the GET parameters.
-    $keys = trim($form_state['values']['keys']);
+    $keys = trim($form_state->getValue('keys'));
 
     // Collect extra filters.
     $filters = array();
-    if (isset($form_state['values']['type']) && is_array($form_state['values']['type'])) {
+    if ($form_state->hasValue('type') && is_array($form_state->getValue('type'))) {
       // Retrieve selected types - Form API sets the value of unselected
       // checkboxes to 0.
-      foreach ($form_state['values']['type'] as $type) {
+      foreach ($form_state->getValue('type') as $type) {
         if ($type) {
           $filters[] = 'type:' . $type;
         }
       }
     }
 
-    if (isset($form_state['values']['term']) && is_array($form_state['values']['term'])) {
-      foreach ($form_state['values']['term'] as $term) {
+    if ($form_state->hasValue('term') && is_array($form_state->getValue('term'))) {
+      foreach ($form_state->getValue('term') as $term) {
         $filters[] = 'term:' . $term;
       }
     }
-    if (isset($form_state['values']['language']) && is_array($form_state['values']['language'])) {
-      foreach ($form_state['values']['language'] as $language) {
+    if ($form_state->hasValue('language') && is_array($form_state->getValue('language'))) {
+      foreach ($form_state->getValue('language') as $language) {
         if ($language) {
           $filters[] = 'language:' . $language;
         }
       }
     }
-    if ($form_state['values']['or'] != '') {
-      if (preg_match_all('/ ("[^"]+"|[^" ]+)/i', ' ' . $form_state['values']['or'], $matches)) {
+    if ($form_state->getValue('or') != '') {
+      if (preg_match_all('/ ("[^"]+"|[^" ]+)/i', ' ' . $form_state->getValue('or'), $matches)) {
         $keys .= ' ' . implode(' OR ', $matches[1]);
       }
     }
-    if ($form_state['values']['negative'] != '') {
-      if (preg_match_all('/ ("[^"]+"|[^" ]+)/i', ' ' . $form_state['values']['negative'], $matches)) {
+    if ($form_state->getValue('negative') != '') {
+      if (preg_match_all('/ ("[^"]+"|[^" ]+)/i', ' ' . $form_state->getValue('negative'), $matches)) {
         $keys .= ' -' . implode(' -', $matches[1]);
       }
     }
-    if ($form_state['values']['phrase'] != '') {
-      $keys .= ' "' . str_replace('"', ' ', $form_state['values']['phrase']) . '"';
+    if ($form_state->getValue('phrase') != '') {
+      $keys .= ' "' . str_replace('"', ' ', $form_state->getValue('phrase')) . '"';
     }
     $keys = trim($keys);
 
@@ -560,7 +561,7 @@ class NodeSearch extends ConfigurableSearchPluginBase implements AccessibleInter
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, array &$form_state) {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     // Output form for defining rank factor weights.
     $form['content_ranking'] = array(
       '#type' => 'details',
@@ -589,10 +590,10 @@ class NodeSearch extends ConfigurableSearchPluginBase implements AccessibleInter
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, array &$form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     foreach ($this->getRankings() as $var => $values) {
-      if (!empty($form_state['values']["rankings_$var"])) {
-        $this->configuration['rankings'][$var] = $form_state['values']["rankings_$var"];
+      if (!$form_state->isValueEmpty("rankings_$var")) {
+        $this->configuration['rankings'][$var] = $form_state->getValue("rankings_$var");
       }
       else {
         unset($this->configuration['rankings'][$var]);

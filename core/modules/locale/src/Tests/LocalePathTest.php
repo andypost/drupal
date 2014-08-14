@@ -39,14 +39,14 @@ class LocalePathTest extends WebTestBase {
    */
   public function testPathLanguageConfiguration() {
     // User to add and remove language.
-    $admin_user = $this->drupalCreateUser(array('administer languages', 'create page content', 'administer url aliases', 'create url aliases', 'access administration pages'));
+    $admin_user = $this->drupalCreateUser(array('administer languages', 'create page content', 'administer url aliases', 'create url aliases', 'access administration pages', 'access content overview'));
 
     // Add custom language.
     $this->drupalLogin($admin_user);
     // Code for the language.
     $langcode = 'xx';
     // The English name for the language.
-    $name = $this->randomName(16);
+    $name = $this->randomMachineName(16);
     // The domain prefix.
     $prefix = $langcode;
     $edit = array(
@@ -71,7 +71,7 @@ class LocalePathTest extends WebTestBase {
 
     // Create a path alias in default language (English).
     $path = 'admin/config/search/path/add';
-    $english_path = $this->randomName(8);
+    $english_path = $this->randomMachineName(8);
     $edit = array(
       'source'   => 'node/' . $node->id(),
       'alias'    => $english_path,
@@ -80,7 +80,7 @@ class LocalePathTest extends WebTestBase {
     $this->drupalPostForm($path, $edit, t('Save'));
 
     // Create a path alias in new custom language.
-    $custom_language_path = $this->randomName(8);
+    $custom_language_path = $this->randomMachineName(8);
     $edit = array(
       'source'   => 'node/' . $node->id(),
       'alias'    => $custom_language_path,
@@ -97,7 +97,7 @@ class LocalePathTest extends WebTestBase {
     $this->assertText($node->label(), 'Custom language alias works.');
 
     // Create a custom path.
-    $custom_path = $this->randomName(8);
+    $custom_path = $this->randomMachineName(8);
 
     // Check priority of language for alias by source path.
     $edit = array(
@@ -135,11 +135,11 @@ class LocalePathTest extends WebTestBase {
     $this->container->get('path.alias_storage')->save($edit['source'], $edit['alias'], $edit['langcode']);
 
     // Test that both node titles link to our path alias.
-    $this->drupalGet('<front>');
+    $this->drupalGet('admin/content');
     $custom_path_url = base_path() . $GLOBALS['script_path'] . $custom_path;
-    $elements = $this->xpath('//a[@href=:href]/span[normalize-space(text())=:title]', array(':href' => $custom_path_url, ':title' => $first_node->label()));
+    $elements = $this->xpath('//a[@href=:href and normalize-space(text())=:title]', array(':href' => $custom_path_url, ':title' => $first_node->label()));
     $this->assertTrue(!empty($elements), 'First node links to the path alias.');
-    $elements = $this->xpath('//a[@href=:href]/span[normalize-space(text())=:title]', array(':href' => $custom_path_url, ':title' => $second_node->label()));
+    $elements = $this->xpath('//a[@href=:href and normalize-space(text())=:title]', array(':href' => $custom_path_url, ':title' => $second_node->label()));
     $this->assertTrue(!empty($elements), 'Second node links to the path alias.');
 
     // Confirm that the custom path leads to the first node.

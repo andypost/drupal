@@ -18,13 +18,6 @@ use Drupal\field\Tests\FieldUnitTestBase;
  */
 class EmailItemTest extends FieldUnitTestBase {
 
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = array('email');
-
   public function setUp() {
     parent::setUp();
 
@@ -56,7 +49,7 @@ class EmailItemTest extends FieldUnitTestBase {
     $entity = entity_create('entity_test');
     $value = 'test@example.com';
     $entity->field_email = $value;
-    $entity->name->value = $this->randomName();
+    $entity->name->value = $this->randomMachineName();
     $entity->save();
 
     // Verify entity has been created properly.
@@ -68,7 +61,7 @@ class EmailItemTest extends FieldUnitTestBase {
     $this->assertEqual($entity->field_email[0]->value, $value);
 
     // Verify changing the email value.
-    $new_value = $this->randomName();
+    $new_value = $this->randomMachineName();
     $entity->field_email->value = $new_value;
     $this->assertEqual($entity->field_email->value, $new_value);
 

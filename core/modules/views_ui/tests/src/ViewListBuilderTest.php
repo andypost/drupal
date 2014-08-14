@@ -56,7 +56,7 @@ class ViewListBuilderTest extends UnitTestCase {
           array(
             'id' => 'page',
             'title' => 'Page',
-            'uses_hook_menu' => TRUE,
+            'uses_menu_links' => TRUE,
             'uses_route' => TRUE,
             'contextual_links_locations' => array('page'),
             'theme' => 'views_view',
@@ -82,10 +82,9 @@ class ViewListBuilderTest extends UnitTestCase {
     );
     $route_provider = $this->getMock('Drupal\Core\Routing\RouteProviderInterface');
     $state = $this->getMock('\Drupal\Core\State\StateInterface');
-    $form_error = $this->getMock('Drupal\Core\Form\FormErrorInterface');
     $page_display = $this->getMock('Drupal\views\Plugin\views\display\Page',
       array('initDisplay', 'getPath'),
-      array(array(), 'default', $display_manager->getDefinition('page'), $route_provider, $state, $form_error)
+      array(array(), 'default', $display_manager->getDefinition('page'), $route_provider, $state)
     );
     $page_display->expects($this->any())
       ->method('getPath')

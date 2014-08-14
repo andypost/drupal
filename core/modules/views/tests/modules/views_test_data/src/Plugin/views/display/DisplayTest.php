@@ -8,6 +8,7 @@
 namespace Drupal\views_test_data\Plugin\views\display;
 
 use Drupal\Component\Utility\Xss;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 
 /**
@@ -74,7 +75,7 @@ class DisplayTest extends DisplayPluginBase {
   /**
    * Overrides Drupal\views\Plugin\views\display\DisplayPluginBase::buildOptionsForm().
    */
-  public function buildOptionsForm(&$form, &$form_state) {
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
 
     switch ($form_state['section']) {
@@ -93,12 +94,12 @@ class DisplayTest extends DisplayPluginBase {
   /**
    * Overrides Drupal\views\Plugin\views\display\DisplayPluginBase::validateOptionsForm().
    */
-  public function validateOptionsForm(&$form, &$form_state) {
+  public function validateOptionsForm(&$form, FormStateInterface $form_state) {
     parent::validateOptionsForm($form, $form_state);
-    watchdog('views', $form_state['values']['test_option']);
+    watchdog('views', $form_state->getValue('test_option'));
     switch ($form_state['section']) {
       case 'test_option':
-        if (!trim($form_state['values']['test_option'])) {
+        if (!trim($form_state->getValue('test_option'))) {
           form_error($form['test_option'], $form_state, t('You cannot have an empty option.'));
         }
         break;
@@ -108,11 +109,11 @@ class DisplayTest extends DisplayPluginBase {
   /**
    * Overrides Drupal\views\Plugin\views\display\DisplayPluginBase::submitOptionsForm().
    */
-  public function submitOptionsForm(&$form, &$form_state) {
+  public function submitOptionsForm(&$form, FormStateInterface $form_state) {
     parent::submitOptionsForm($form, $form_state);
     switch ($form_state['section']) {
       case 'test_option':
-        $this->setOption('test_option', $form_state['values']['test_option']);
+        $this->setOption('test_option', $form_state->getValue('test_option'));
         break;
     }
   }

@@ -22,7 +22,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
    *
    * @var array
    */
-  static $modules = array('config_test');
+  static $modules = array('entity', 'config_test');
 
   /**
    * Stores the search results for alter comparison.
@@ -49,7 +49,6 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
     parent::setUp();
 
     $this->entities = array();
-    $this->enableModules(array('entity'), TRUE);
     $this->factory = $this->container->get('entity.query');
 
     // These two are here to make sure that matchArray needs to go over several
@@ -59,7 +58,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
     // The tests match array.level1.level2.
     $array['level1']['level2'] = 1;
     $entity = entity_create('config_query_test', array(
-      'label' => $this->randomName(),
+      'label' => $this->randomMachineName(),
       'id' => '1',
       'number' => 31,
       'array' => $array,
@@ -70,7 +69,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
 
     $array['level1']['level2'] = 2;
     $entity = entity_create('config_query_test', array(
-      'label' => $this->randomName(),
+      'label' => $this->randomMachineName(),
       'id' => '2',
       'number' => 41,
       'array' => $array,
@@ -81,7 +80,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
 
     $array['level1']['level2'] = 1;
     $entity = entity_create('config_query_test', array(
-      'label' => 'test_prefix_' . $this->randomName(),
+      'label' => 'test_prefix_' . $this->randomMachineName(),
       'id' => '3',
       'number' => 59,
       'array' => $array,
@@ -92,7 +91,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
 
     $array['level1']['level2'] = 2;
     $entity = entity_create('config_query_test', array(
-      'label' => $this->randomName() . '_test_suffix',
+      'label' => $this->randomMachineName() . '_test_suffix',
       'id' => '4',
       'number' => 26,
       'array' => $array,
@@ -103,7 +102,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
 
     $array['level1']['level2'] = 3;
     $entity = entity_create('config_query_test', array(
-      'label' => $this->randomName() . '_TEST_contains_' . $this->randomName(),
+      'label' => $this->randomMachineName() . '_TEST_contains_' . $this->randomMachineName(),
       'id' => '5',
       'number' => 53,
       'array' => $array,
@@ -346,7 +345,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
   /**
    * Tests count query.
    */
-  protected function testCount() {
+  public function testCount() {
     // Test count on no conditions.
     $count = $this->factory->get('config_query_test')
       ->count()
@@ -372,7 +371,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
   /**
    * Tests sorting and range on config entity queries.
    */
-  protected function testSortRange() {
+  public function testSortRange() {
     // Sort by simple ascending/descending.
     $this->queryResults = $this->factory->get('config_query_test')
       ->sort('number', 'DESC')
@@ -428,7 +427,7 @@ class ConfigEntityQueryTest extends DrupalUnitTestBase {
   /**
    * Tests dotted path matching.
    */
-  protected function testDotted() {
+  public function testDotted() {
     $this->queryResults = $this->factory->get('config_query_test')
       ->condition('array.level1.*', 1)
       ->execute();

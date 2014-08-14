@@ -39,20 +39,23 @@ class MigrateBlockTest extends MigrateDrupalTestBase {
     $entities = array(
       entity_create('menu', array('id' => 'primary-links')),
       entity_create('menu', array('id' => 'secondary-links')),
-      entity_create('block_content', array('id' => 1, 'type' => 'basic', 'info' => $this->randomName(8))),
-      entity_create('block_content', array('id' => 2, 'type' => 'basic', 'info' => $this->randomName(8))),
+      entity_create('block_content', array('id' => 1, 'type' => 'basic', 'info' => $this->randomMachineName(8))),
+      entity_create('block_content', array('id' => 2, 'type' => 'basic', 'info' => $this->randomMachineName(8))),
     );
     foreach ($entities as $entity) {
       $entity->enforceIsNew(TRUE);
       $entity->save();
     }
-    $this->prepareIdMappings(array(
+    $this->prepareMigrations(array(
       'd6_custom_block'  => array(
         array(array(10), array(1)),
         array(array(11), array(2)),
         array(array(12), array(1)),
         array(array(13), array(2)),
-      )
+      ),
+      'd6_menu' => array(
+        array(array('menu1'), array('menu')),
+      ),
     ));
 
     // Set Bartik and Seven as the default public and admin theme.

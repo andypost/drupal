@@ -24,7 +24,7 @@ class RowEntityRenderersTest extends ViewUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('entity', 'field', 'filter', 'text', 'node', 'user', 'language', 'menu_link');
+  public static $modules = array('entity', 'field', 'filter', 'text', 'node', 'user', 'language');
 
   /**
    * Views used by this test.
@@ -51,7 +51,7 @@ class RowEntityRenderersTest extends ViewUnitTestBase {
     $this->installSchema('node', array('node_access'));
     $this->installConfig(array('node', 'language'));
 
-    // The node.view route must exist when nodes are rendered.
+    // The entity.node.canonical route must exist when nodes are rendered.
     $this->container->get('router.builder')->rebuild();
 
     $this->langcodes = array(\Drupal::languageManager()->getDefaultLanguage()->id);
@@ -85,7 +85,7 @@ class RowEntityRenderersTest extends ViewUnitTestBase {
 
       foreach ($langcodes as $langcode) {
         // Ensure we have a predictable result order.
-        $values[$i][$langcode] = $i . '-' . $langcode . '-' . $this->randomName();
+        $values[$i][$langcode] = $i . '-' . $langcode . '-' . $this->randomMachineName();
 
         if ($langcode != $default_langcode) {
           $node->addTranslation($langcode, array('title' => $values[$i][$langcode]));

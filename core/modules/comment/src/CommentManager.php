@@ -114,25 +114,8 @@ class CommentManager implements CommentManagerInterface {
       return array();
     }
 
-    $map = $this->getAllFields();
+    $map = $this->entityManager->getFieldMapByFieldType('comment');
     return isset($map[$entity_type_id]) ? $map[$entity_type_id] : array();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getAllFields() {
-    $map = $this->entityManager->getFieldMap();
-    // Build a list of comment fields only.
-    $comment_fields = array();
-    foreach ($map as $entity_type => $data) {
-      foreach ($data as $field_name => $field_info) {
-        if ($field_info['type'] == 'comment') {
-          $comment_fields[$entity_type][$field_name] = $field_info;
-        }
-      }
-    }
-    return $comment_fields;
   }
 
   /**
@@ -175,7 +158,7 @@ class CommentManager implements CommentManagerInterface {
     // Make sure the instance doesn't already exist.
     if (!array_key_exists($field_name, $this->entityManager->getFieldDefinitions($entity_type, $bundle))) {
       $instance = $this->entityManager->getStorage('field_instance_config')->create(array(
-        'label' => 'Comment settings',
+        'label' => 'Comments',
         'description' => '',
         'field_name' => $field_name,
         'entity_type' => $entity_type,
@@ -212,7 +195,7 @@ class CommentManager implements CommentManagerInterface {
       // Set default to display comment list.
       entity_get_display($entity_type, $bundle, 'default')
         ->setComponent($field_name, array(
-          'label' => 'hidden',
+          'label' => 'above',
           'type' => 'comment_default',
           'weight' => 20,
         ))

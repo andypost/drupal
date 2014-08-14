@@ -194,7 +194,6 @@ table.sticky-header {
   max-width: 100%;
   min-width: 100px;
   height: 16px;
-  background-color: #fff;
 }
 .progress__bar {
   background-color: #000;
@@ -251,6 +250,24 @@ tr .ajax-progress-throbber .throbber {
 }
 .ajax-progress-bar {
   width: 16em;
+}
+
+/* Full screen  throbber */
+.ajax-progress-fullscreen {
+  /* Can't do center:50% middle: 50%, so approximate it for a typical window size. */
+  left: 49%;
+  position: fixed;
+  top: 48.5%;
+  z-index: 1000;
+  background-color: #232323;
+  background-image: url("../../../misc/loading-small.gif");
+  background-position: center center;
+  background-repeat: no-repeat;
+  border-radius: 7px;
+  height: 24px;
+  opacity: 0.9;
+  padding: 4px;
+  width: 24px;
 }
 
 /**

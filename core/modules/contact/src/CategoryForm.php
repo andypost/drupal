@@ -9,6 +9,7 @@ namespace Drupal\contact;
 
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Base form for category edit forms.
@@ -18,7 +19,7 @@ class CategoryForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
 
     $category = $this->entity;
@@ -72,25 +73,25 @@ class CategoryForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function validate(array $form, array &$form_state) {
+  public function validate(array $form, FormStateInterface $form_state) {
     parent::validate($form, $form_state);
 
     // Validate and each email recipient.
-    $recipients = explode(',', $form_state['values']['recipients']);
+    $recipients = explode(',', $form_state->getValue('recipients'));
 
     foreach ($recipients as &$recipient) {
       $recipient = trim($recipient);
       if (!valid_email_address($recipient)) {
-        $this->setFormError('recipients', $form_state, $this->t('%recipient is an invalid email address.', array('%recipient' => $recipient)));
+        $form_state->setErrorByName('recipients', $this->t('%recipient is an invalid email address.', array('%recipient' => $recipient)));
       }
     }
-    $form_state['values']['recipients'] = $recipients;
+    $form_state->setValue('recipients', $recipients);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function save(array $form, array &$form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     $category = $this->entity;
     $status = $category->save();
     $contact_settings = $this->config('contact.settings');
@@ -99,15 +100,15 @@ class CategoryForm extends EntityForm {
 
     if ($status == SAVED_UPDATED) {
       drupal_set_message($this->t('Category %label has been updated.', array('%label' => $category->label())));
-      watchdog('contact', 'Category %label has been updated.', array('%label' => $category->label()), WATCHDOG_NOTICE, $edit_link);
+      $this->logger('contact')->notice('Category %label has been updated.', array('%label' => $category->label(), 'link' => $edit_link));
     }
     else {
       drupal_set_message($this->t('Category %label has been added.', array('%label' => $category->label())));
-      watchdog('contact', 'Category %label has been added.', array('%label' => $category->label()), WATCHDOG_NOTICE, $edit_link);
+      $this->logger('contact')->notice('Category %label has been added.', array('%label' => $category->label(), 'link' => $edit_link));
     }
 
     // Update the default category.
-    if ($form_state['values']['selected']) {
+    if ($form_state->getValue('selected')) {
       $contact_settings
         ->set('default_category', $category->id())
         ->save();
@@ -119,7 +120,7 @@ class CategoryForm extends EntityForm {
         ->save();
     }
 
-    $form_state['redirect_route']['route_name'] = 'contact.category_list';
+    $form_state->setRedirect('contact.category_list');
   }
 
 }

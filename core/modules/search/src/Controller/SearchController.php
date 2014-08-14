@@ -11,6 +11,7 @@ use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\search\SearchPageInterface;
 use Drupal\search\SearchPageRepositoryInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -27,23 +28,23 @@ class SearchController extends ControllerBase {
   protected $searchPageRepository;
 
   /**
-   * The configuration factory.
+   * A logger instance.
    *
-   * @var \Drupal\Core\Config\ConfigFactory
+   * @var \Psr\Log\LoggerInterface
    */
-  protected $configFactory;
+  protected $logger;
 
   /**
    * Constructs a new search controller.
    *
    * @param \Drupal\search\SearchPageRepositoryInterface $search_page_repository
    *   The search page repository.
-   * @param \Drupal\Core\Config\ConfigFactory $factory
-   *   The configuration factory object.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   A logger instance.
    */
-  public function __construct(SearchPageRepositoryInterface $search_page_repository, ConfigFactory $factory) {
+  public function __construct(SearchPageRepositoryInterface $search_page_repository, LoggerInterface $logger) {
     $this->searchPageRepository = $search_page_repository;
-    $this->configFactory = $factory;
+    $this->logger = $logger;
   }
 
   /**
@@ -52,7 +53,7 @@ class SearchController extends ControllerBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('search.search_page_repository'),
-      $container->get('config.factory')
+      $container->get('logger.factory')->get('search')
     );
   }
 
@@ -87,8 +88,8 @@ class SearchController extends ControllerBase {
     if ($request->query->has('keys')) {
       if ($plugin->isSearchExecutable()) {
         // Log the search.
-        if ($this->configFactory->get('search.settings')->get('logging')) {
-          watchdog('search', 'Searched %type for %keys.', array('%keys' => $keys, '%type' => $entity->label()), WATCHDOG_NOTICE);
+        if ($this->config('search.settings')->get('logging')) {
+          $this->logger->notice('Searched %type for %keys.', array('%keys' => $keys, '%type' => $entity->label()));
         }
 
         // Collect the search results.

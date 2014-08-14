@@ -13,6 +13,7 @@ use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\Core\Entity\EntityViewBuilderInterface;
 use Drupal\Core\Entity\EntityFormBuilderInterface;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FormatterBase;
@@ -220,9 +221,8 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
       }
 
       $elements[] = $output + array(
-        '#theme' => 'comment_wrapper__' . $entity->getEntityTypeId() . '__' . $entity->bundle() . '__' . $field_name,
-        '#entity' => $entity,
-        '#display_mode' => $this->getFieldSetting('default_mode'),
+        '#comment_type' => $this->getFieldSetting('comment_type'),
+        '#comment_display_mode' => $this->getFieldSetting('default_mode'),
         'comments' => array(),
         'comment_form' => array(),
       );
@@ -234,7 +234,7 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, array &$form_state) {
+  public function settingsForm(array $form, FormStateInterface $form_state) {
     $element = array();
     $element['pager_id'] = array(
       '#type' => 'select',

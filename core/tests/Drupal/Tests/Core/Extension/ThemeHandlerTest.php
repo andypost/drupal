@@ -71,6 +71,13 @@ class ThemeHandlerTest extends UnitTestCase {
   protected $extensionDiscovery;
 
   /**
+   * The CSS asset collection optimizer service.
+   *
+   * @var \Drupal\Core\Asset\AssetCollectionOptimizerInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $cssCollectionOptimizer;
+
+  /**
    * The tested theme handler.
    *
    * @var \Drupal\Core\Extension\ThemeHandler|\Drupal\Tests\Core\Extension\TestThemeHandler
@@ -100,7 +107,10 @@ class ThemeHandlerTest extends UnitTestCase {
     $this->extensionDiscovery = $this->getMockBuilder('Drupal\Core\Extension\ExtensionDiscovery')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->themeHandler = new TestThemeHandler($this->configFactory, $this->moduleHandler, $this->state, $this->infoParser, $this->configInstaller, $this->routeBuilder, $this->extensionDiscovery);
+    $this->cssCollectionOptimizer = $this->getMockBuilder('\Drupal\Core\Asset\CssCollectionOptimizer') //\Drupal\Core\Asset\AssetCollectionOptimizerInterface');
+      ->disableOriginalConstructor()
+      ->getMock();
+    $this->themeHandler = new TestThemeHandler($this->configFactory, $this->moduleHandler, $this->state, $this->infoParser, $this->cssCollectionOptimizer, $this->configInstaller, $this->routeBuilder, $this->extensionDiscovery);
 
     $cache_backend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
     $this->getContainerWithCacheBins($cache_backend);
@@ -156,8 +166,8 @@ class ThemeHandlerTest extends UnitTestCase {
     // Ensure that the css paths are set with the proper prefix.
     $this->assertEquals(array(
       'screen' => array(
-        'seven.base.css' => DRUPAL_ROOT . '/core/themes/seven/seven.base.css',
-        'style.css' => DRUPAL_ROOT . '/core/themes/seven/style.css',
+        'css/seven.base.css' => DRUPAL_ROOT . '/core/themes/seven/css/seven.base.css',
+        'css/style.css' => DRUPAL_ROOT . '/core/themes/seven/css/style.css',
         'css/layout.css' => DRUPAL_ROOT . '/core/themes/seven/css/layout.css',
         'css/components/buttons.css' => DRUPAL_ROOT . '/core/themes/seven/css/components/buttons.css',
         'css/components/buttons.theme.css' => DRUPAL_ROOT . '/core/themes/seven/css/components/buttons.theme.css',

@@ -36,11 +36,11 @@ class CommentTokenReplaceTest extends CommentTestBase {
 
     // Create a node and a comment.
     $node = $this->drupalCreateNode(array('type' => 'article'));
-    $parent_comment = $this->postComment($node, $this->randomName(), $this->randomName(), TRUE);
+    $parent_comment = $this->postComment($node, $this->randomMachineName(), $this->randomMachineName(), TRUE);
 
     // Post a reply to the comment.
     $this->drupalGet('comment/reply/node/' . $node->id() . '/comment/' . $parent_comment->id());
-    $child_comment = $this->postComment(NULL, $this->randomName(), $this->randomName());
+    $child_comment = $this->postComment(NULL, $this->randomMachineName(), $this->randomMachineName());
     $comment = Comment::load($child_comment->id());
     $comment->setHomepage('http://example.org/');
 
@@ -59,8 +59,8 @@ class CommentTokenReplaceTest extends CommentTestBase {
     $tests['[comment:body]'] = $comment->comment_body->processed;
     $tests['[comment:url]'] = url('comment/' . $comment->id(), $url_options + array('fragment' => 'comment-' . $comment->id()));
     $tests['[comment:edit-url]'] = url('comment/' . $comment->id() . '/edit', $url_options);
-    $tests['[comment:created:since]'] = format_interval(REQUEST_TIME - $comment->getCreatedTime(), 2, $language_interface->id);
-    $tests['[comment:changed:since]'] = format_interval(REQUEST_TIME - $comment->getChangedTime(), 2, $language_interface->id);
+    $tests['[comment:created:since]'] = \Drupal::service('date.formatter')->formatInterval(REQUEST_TIME - $comment->getCreatedTime(), 2, $language_interface->id);
+    $tests['[comment:changed:since]'] = \Drupal::service('date.formatter')->formatInterval(REQUEST_TIME - $comment->getChangedTime(), 2, $language_interface->id);
     $tests['[comment:parent:cid]'] = $comment->hasParentComment() ? $comment->getParentComment()->id() : NULL;
     $tests['[comment:parent:title]'] = String::checkPlain($parent_comment->getSubject());
     $tests['[comment:node:nid]'] = $comment->getCommentedEntityId();

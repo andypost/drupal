@@ -79,7 +79,7 @@ class Drupal {
   /**
    * The current system version.
    */
-  const VERSION = '8.0-dev';
+  const VERSION = '8.0.0-dev';
 
   /**
    * Core API compatibility.
@@ -640,11 +640,21 @@ class Drupal {
    *   The name of the channel. Can be any string, but the general practice is
    *   to use the name of the subsystem calling this.
    *
-   * @return \Drupal\Core\Logger\LoggerChannelInterface
+   * @return \Psr\Log\LoggerInterface
    *   The logger for this channel.
    */
   public static function logger($channel) {
     return static::$container->get('logger.factory')->get($channel);
+  }
+
+  /**
+   * Returns the menu tree.
+   *
+   * @return \Drupal\Core\Menu\MenuLinkTreeInterface
+   *   The menu tree.
+   */
+  public static function menuTree() {
+    return static::$container->get('menu.link_tree');
   }
 
 }

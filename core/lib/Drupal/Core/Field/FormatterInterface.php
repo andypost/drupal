@@ -7,6 +7,8 @@
 
 namespace Drupal\Core\Field;
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * Interface definition for field formatter plugins.
  *
@@ -23,13 +25,13 @@ interface FormatterInterface extends PluginSettingsInterface {
    *
    * @param array $form
    *   The form where the settings form is being included in.
-   * @param array $form_state
-   *   An associative array containing the current state of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    *
    * @return array
    *   The form elements for the formatter settings.
    */
-  public function settingsForm(array $form, array &$form_state);
+  public function settingsForm(array $form, FormStateInterface $form_state);
 
   /**
    * Returns a short summary for the current formatter settings.
@@ -84,5 +86,16 @@ interface FormatterInterface extends PluginSettingsInterface {
    *   consecutive numeric indexes starting from 0.
    */
   public function viewElements(FieldItemListInterface $items);
+
+  /**
+   * Returns if the formatter can be used for the provided field.
+   *
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+   *   The field definition that should be checked.
+   *
+   * @return bool
+   *   TRUE if the formatter can be used, FALSE otherwise.
+   */
+  public static function isApplicable(FieldDefinitionInterface $field_definition);
 
 }

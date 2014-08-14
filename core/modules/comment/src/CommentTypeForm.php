@@ -10,6 +10,7 @@ namespace Drupal\comment;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -58,7 +59,7 @@ class CommentTypeForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
 
     $comment_type = $this->entity;
@@ -132,7 +133,7 @@ class CommentTypeForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function save(array $form, array &$form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     $comment_type = $this->entity;
     $status = $comment_type->save();
 
@@ -146,7 +147,7 @@ class CommentTypeForm extends EntityForm {
       $this->logger->notice('Comment type %label has been added.', array('%label' => $comment_type->label(), 'link' =>  $edit_link));
     }
 
-    $form_state['redirect_route']['route_name'] = 'comment.type_list';
+    $form_state->setRedirect('comment.type_list');
   }
 
 }

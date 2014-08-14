@@ -12,6 +12,8 @@ use Drupal\block\Event\BlockEvents;
 use Drupal\Component\Plugin\ContextAwarePluginInterface;
 use Drupal\Core\Condition\ConditionAccessResolverTrait;
 use Drupal\Core\Condition\ConditionPluginBag;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContextAwarePluginBase;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\NestedArray;
@@ -65,7 +67,6 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-
     $this->setConfiguration($configuration);
   }
 
@@ -199,7 +200,7 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
    *
    * @see \Drupal\block\BlockBase::blockForm()
    */
-  public function buildConfigurationForm(array $form, array &$form_state) {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $definition = $this->getPluginDefinition();
     $form['provider'] = array(
       '#type' => 'value',
@@ -227,7 +228,7 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
     // Identical options to the ones for page caching.
     // @see \Drupal\system\Form\PerformanceForm::buildForm()
     $period = array(0, 60, 180, 300, 600, 900, 1800, 2700, 3600, 10800, 21600, 32400, 43200, 86400);
-    $period = array_map('format_interval', array_combine($period, $period));
+    $period = array_map(array(\Drupal::service('date.formatter'), 'formatInterval'), array_combine($period, $period));
     $period[0] = '<' . t('no caching') . '>';
     $period[\Drupal\Core\Cache\Cache::PERMANENT] = t('Forever');
     $form['cache'] = array(
@@ -324,7 +325,7 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
   /**
    * {@inheritdoc}
    */
-  public function blockForm($form, &$form_state) {
+  public function blockForm($form, FormStateInterface $form_state) {
     return array();
   }
 
@@ -336,19 +337,22 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
    *
    * @see \Drupal\block\BlockBase::blockValidate()
    */
-  public function validateConfigurationForm(array &$form, array &$form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     // Remove the admin_label form item element value so it will not persist.
-    unset($form_state['values']['admin_label']);
+    $form_state->unsetValue('admin_label');
 
     // Transform the #type = checkboxes value to a numerically indexed array.
-    $form_state['values']['cache']['contexts'] = array_values(array_filter($form_state['values']['cache']['contexts']));
+    $contexts = $form_state->getValue(array('cache', 'contexts'));
+    $form_state->setValue(array('cache', 'contexts'), array_values(array_filter($contexts)));
 
     foreach ($this->getVisibilityConditions() as $condition_id => $condition) {
       // Allow the condition to validate the form.
-      $condition_values = array(
-        'values' => &$form_state['values']['visibility'][$condition_id],
-      );
+      $condition_values = new FormState(array(
+        'values' => $form_state->getValue(array('visibility', $condition_id)),
+      ));
       $condition->validateConfigurationForm($form, $condition_values);
+      // Update the original form values.
+      $form_state->setValue(array('visibility', $condition_id), $condition_values['values']);
     }
 
     $this->blockValidate($form, $form_state);
@@ -357,7 +361,7 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
   /**
    * {@inheritdoc}
    */
-  public function blockValidate($form, &$form_state) {}
+  public function blockValidate($form, FormStateInterface $form_state) {}
 
   /**
    * {@inheritdoc}
@@ -367,19 +371,21 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
    *
    * @see \Drupal\block\BlockBase::blockSubmit()
    */
-  public function submitConfigurationForm(array &$form, array &$form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     // Process the block's submission handling if no errors occurred only.
     if (!form_get_errors($form_state)) {
-      $this->configuration['label'] = $form_state['values']['label'];
-      $this->configuration['label_display'] = $form_state['values']['label_display'];
-      $this->configuration['provider'] = $form_state['values']['provider'];
-      $this->configuration['cache'] = $form_state['values']['cache'];
+      $this->configuration['label'] = $form_state->getValue('label');
+      $this->configuration['label_display'] = $form_state->getValue('label_display');
+      $this->configuration['provider'] = $form_state->getValue('provider');
+      $this->configuration['cache'] = $form_state->getValue('cache');
       foreach ($this->getVisibilityConditions() as $condition_id => $condition) {
         // Allow the condition to submit the form.
-        $condition_values = array(
-          'values' => &$form_state['values']['visibility'][$condition_id],
-        );
+        $condition_values = new FormState(array(
+          'values' => $form_state->getValue(array('visibility', $condition_id)),
+        ));
         $condition->submitConfigurationForm($form, $condition_values);
+        // Update the original form values.
+        $form_state->setValue(array('visibility', $condition_id), $condition_values['values']);
       }
       $this->blockSubmit($form, $form_state);
     }
@@ -388,7 +394,7 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
   /**
    * {@inheritdoc}
    */
-  public function blockSubmit($form, &$form_state) {}
+  public function blockSubmit($form, FormStateInterface $form_state) {}
 
   /**
    * {@inheritdoc}

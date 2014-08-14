@@ -71,7 +71,7 @@ class CommentNonNodeTest extends WebTestBase {
     ));
 
     // Create a test entity.
-    $random_label = $this->randomName();
+    $random_label = $this->randomMachineName();
     $data = array('type' => 'entity_test', 'name' => $random_label);
     $this->entity = entity_create('entity_test', $data);
     $this->entity->save();
@@ -238,7 +238,7 @@ class CommentNonNodeTest extends WebTestBase {
     $this->drupalLogin($limited_user);
     // Test that default field exists.
     $this->drupalGet('entity_test/structure/entity_test/fields');
-    $this->assertText(t('Comment settings'));
+    $this->assertText(t('Comments'));
     $this->assertLinkByHref('entity_test/structure/entity_test/fields/entity_test.entity_test.comment');
     // Test widget hidden option is not visible when there's no comments.
     $this->drupalGet('entity_test/structure/entity_test/entity-test/fields/entity_test.entity_test.comment');
@@ -247,7 +247,7 @@ class CommentNonNodeTest extends WebTestBase {
     $this->drupalLogin($this->admin_user);
 
     // Post a comment.
-    $comment1 = $this->postComment($this->entity, $this->randomName(), $this->randomName());
+    $comment1 = $this->postComment($this->entity, $this->randomMachineName(), $this->randomMachineName());
     $this->assertTrue($this->commentExists($comment1), 'Comment on test entity exists.');
 
     // Assert the breadcrumb is valid.
@@ -270,7 +270,7 @@ class CommentNonNodeTest extends WebTestBase {
     $this->assertNoRaw('comments[' . $comment1->id() . ']', 'Comment was deleted.');
 
     // Post another comment.
-    $comment1 = $this->postComment($this->entity, $this->randomName(), $this->randomName());
+    $comment1 = $this->postComment($this->entity, $this->randomMachineName(), $this->randomMachineName());
     $this->assertTrue($this->commentExists($comment1), 'Comment on test entity exists.');
 
     // Check that the comment was found.
@@ -402,7 +402,7 @@ class CommentNonNodeTest extends WebTestBase {
     $this->assertEqual($field_storage->getSetting('comment_type'), 'foobar');
 
     // Test the new entity commenting inherits default.
-    $random_label = $this->randomName();
+    $random_label = $this->randomMachineName();
     $data = array('bundle' => 'entity_test', 'name' => $random_label);
     $new_entity = entity_create('entity_test', $data);
     $new_entity->save();

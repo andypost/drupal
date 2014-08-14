@@ -9,19 +9,14 @@ namespace Drupal\Core\Config;
 
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Config\Schema\ConfigSchemaDiscovery;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\TypedData\TypedDataManager;
 
 /**
  * Manages config type plugins.
  */
 class TypedConfigManager extends TypedDataManager implements TypedConfigManagerInterface {
-
-  /**
-   * The cache ID for the definitions.
-   *
-   * @var string
-   */
-  const CACHE_ID = 'typed_config_definitions';
 
   /**
    * A storage instance for reading configuration data.
@@ -45,13 +40,6 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
   protected $definitions;
 
   /**
-   * Cache backend for the definitions.
-   *
-   * @var \Drupal\Core\Cache\CacheBackendInterface
-   */
-  protected $cache;
-
-  /**
    * Creates a new typed configuration manager.
    *
    * @param \Drupal\Core\Config\StorageInterface $configStorage
@@ -61,10 +49,13 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
    * @param \Drupal\Core\Cache\CacheBackendInterface $cache
    *   The cache backend to use for caching the definitions.
    */
-  public function __construct(StorageInterface $configStorage, StorageInterface $schemaStorage, CacheBackendInterface $cache) {
+  public function __construct(StorageInterface $configStorage, StorageInterface $schemaStorage, CacheBackendInterface $cache, ModuleHandlerInterface $module_handler) {
     $this->configStorage = $configStorage;
     $this->schemaStorage = $schemaStorage;
-    $this->cache = $cache;
+    $this->setCacheBackend($cache, 'typed_config_definitions');
+    $this->discovery = new ConfigSchemaDiscovery($schemaStorage);
+    $this->alterInfo('config_schema_info');
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -90,7 +81,8 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
     // Add default values for data type and replace variables.
     $definition += array('type' => 'undefined');
 
-    if (strpos($definition['type'], ']')) {
+    $type = $definition['type'];
+    if (strpos($type, ']')) {
       // Replace variable names in definition.
       $replace = is_array($value) ? $value : array();
       if (isset($parent)) {
@@ -99,10 +91,13 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
       if (isset($name)) {
         $replace['%key'] = $name;
       }
-      $definition['type'] = $this->replaceName($definition['type'], $replace);
+      $type = $this->replaceName($type, $replace);
+      // Remove the type from the definition so that it is replaced with the
+      // concrete type from schema definitions.
+      unset($definition['type']);
     }
     // Add default values from type definition.
-    $definition += $this->getDefinition($definition['type']);
+    $definition += $this->getDefinition($type);
 
     $data_definition = $this->createDataDefinition($definition['type']);
 
@@ -150,43 +145,22 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
   /**
    * {@inheritdoc}
    */
-  public function getDefinitions() {
-    if (!isset($this->definitions)) {
-      if ($cache = $this->cache->get($this::CACHE_ID)) {
-        $this->definitions = $cache->data;
-      }
-      else {
-        $this->definitions = array();
-        foreach ($this->schemaStorage->readMultiple($this->schemaStorage->listAll()) as $schema) {
-          foreach ($schema as $type => $definition) {
-            $this->definitions[$type] = $definition;
-          }
-        }
-        $this->cache->set($this::CACHE_ID, $this->definitions);
-      }
-    }
-    return $this->definitions;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function clearCachedDefinitions() {
-    $this->definitions = NULL;
     $this->schemaStorage->reset();
-    $this->cache->delete($this::CACHE_ID);
+    parent::clearCachedDefinitions();
   }
 
   /**
-   * Gets fallback metadata name.
+   * Gets fallback configuration schema name.
    *
    * @param string $name
    *   Configuration name or key.
    *
    * @return null|string
-   *   Same name with the last part(s) replaced by the filesystem marker.
-   *   for example, breakpoint.breakpoint.module.toolbar.narrow check for
-   *   definition in below order:
+   *   The resolved schema name for the given configuration name or key. Returns
+   *   null if there is no schema name to fallback to. For example,
+   *   breakpoint.breakpoint.module.toolbar.narrow will check for definitions in
+   *   the following order:
    *     breakpoint.breakpoint.module.toolbar.*
    *     breakpoint.breakpoint.module.*.*
    *     breakpoint.breakpoint.module.*
@@ -194,12 +168,19 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
    *     breakpoint.breakpoint.*
    *     breakpoint.*.*.*.*
    *     breakpoint.*
-   *   Returns null, if no matching element.
+   *   Colons are also used, for example,
+   *   block.settings.system_menu_block:footer will check for definitions in the
+   *   following order:
+   *     block.settings.system_menu_block:*
+   *     block.settings.*:*
+   *     block.settings.*
+   *     block.*.*:*
+   *     block.*
    */
   protected function getFallbackName($name) {
     // Check for definition of $name with filesystem marker.
-    $replaced = preg_replace('/(\.[^\.]+)([\.\*]*)$/', '.*\2', $name);
-    if ($replaced != $name ) {
+    $replaced = preg_replace('/([^\.:]+)([\.:\*]*)$/', '*\2', $name);
+    if ($replaced != $name) {
       if (isset($this->definitions[$replaced])) {
         return $replaced;
       }
@@ -208,7 +189,7 @@ class TypedConfigManager extends TypedDataManager implements TypedConfigManagerI
         // wildcard to see if there is a greedy match. For example,
         // breakpoint.breakpoint.*.* becomes
         // breakpoint.breakpoint.*
-        $one_star = preg_replace('/\.([\.\*]*)$/', '.*', $replaced);
+        $one_star = preg_replace('/\.([:\.\*]*)$/', '.*', $replaced);
         if ($one_star != $replaced && isset($this->definitions[$one_star])) {
           return $one_star;
         }

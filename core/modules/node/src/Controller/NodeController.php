@@ -10,7 +10,7 @@ namespace Drupal\node\Controller;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Datetime\Date;
+use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\node\NodeTypeInterface;
 use Drupal\node\NodeInterface;
@@ -22,27 +22,27 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class NodeController extends ControllerBase implements ContainerInjectionInterface {
 
   /**
-   * The date service.
+   * The date formatter service.
    *
-   * @var \Drupal\Core\Datetime\Date
+   * @var \Drupal\Core\Datetime\DateFormatter
    */
-  protected $date;
+  protected $dateFormatter;
 
   /**
    * Constructs a NodeController object.
    *
-   * @param \Drupal\Core\Datetime\Date $date
-   *   The date service.
+   * @param \Drupal\Core\Datetime\DateFormatter $date_formatter
+   *   The date formatter service.
    */
-  public function __construct(Date $date) {
-    $this->date = $date;
+  public function __construct(DateFormatter $date_formatter) {
+    $this->dateFormatter = $date_formatter;
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static($container->get('date'));
+    return new static($container->get('date.formatter'));
   }
 
 
@@ -64,7 +64,7 @@ class NodeController extends ControllerBase implements ContainerInjectionInterfa
 
     // Only use node types the user has access to.
     foreach ($this->entityManager()->getStorage('node_type')->loadMultiple() as $type) {
-      if ($this->entityManager()->getAccessController('node')->createAccess($type->type)) {
+      if ($this->entityManager()->getAccessControlHandler('node')->createAccess($type->type)) {
         $content[$type->type] = $type;
       }
     }
@@ -173,7 +173,7 @@ class NodeController extends ControllerBase implements ContainerInjectionInterfa
             '#theme' => 'username',
             '#account' => $revision_author,
           );
-          $row[] = array('data' => $this->t('!date by !username', array('!date' => $this->l($this->date->format($revision->revision_timestamp->value, 'short'), 'node.view', array('node' => $node->id())), '!username' => drupal_render($username)))
+          $row[] = array('data' => $this->t('!date by !username', array('!date' => $this->l($this->dateFormatter->format($revision->revision_timestamp->value, 'short'), 'entity.node.canonical', array('node' => $node->id())), '!username' => drupal_render($username)))
             . (($revision->revision_log->value != '') ? '<p class="revision-log">' . Xss::filter($revision->revision_log->value) . '</p>' : ''),
             'class' => array('revision-current'));
           $row[] = array('data' => String::placeholder($this->t('current revision')), 'class' => array('revision-current'));
@@ -183,7 +183,7 @@ class NodeController extends ControllerBase implements ContainerInjectionInterfa
             '#theme' => 'username',
             '#account' => $revision_author,
           );
-          $row[] = $this->t('!date by !username', array('!date' => $this->l($this->date->format($revision->revision_timestamp->value, 'short'), 'node.revision_show', array('node' => $node->id(), 'node_revision' => $vid)), '!username' => drupal_render($username)))
+          $row[] = $this->t('!date by !username', array('!date' => $this->l($this->dateFormatter->format($revision->revision_timestamp->value, 'short'), 'node.revision_show', array('node' => $node->id(), 'node_revision' => $vid)), '!username' => drupal_render($username)))
             . (($revision->revision_log->value != '') ? '<p class="revision-log">' . Xss::filter($revision->revision_log->value) . '</p>' : '');
 
           if ($revert_permission) {

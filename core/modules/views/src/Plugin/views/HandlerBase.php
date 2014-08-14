@@ -12,6 +12,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
@@ -86,13 +87,6 @@ abstract class HandlerBase extends PluginBase {
   public $relationship = NULL;
 
   /**
-   * Whether or not this handler is optional.
-   *
-   * @var bool
-   */
-  protected $optional = FALSE;
-
-  /**
    * The module handler.
    *
    * @var \Drupal\Core\Extension\ModuleHandlerInterface
@@ -112,7 +106,6 @@ abstract class HandlerBase extends PluginBase {
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->is_handler = TRUE;
-    $this->optional = !empty($configuration['optional']);
   }
 
   /**
@@ -176,15 +169,6 @@ abstract class HandlerBase extends PluginBase {
     $options['dependencies'] = array('default' => array());
 
     return $options;
-  }
-
-  /**
-   * Returns whether this handler is optional.
-   *
-   * @return bool
-   */
-  public function isOptional() {
-    return $this->optional;
   }
 
   /**
@@ -295,9 +279,9 @@ abstract class HandlerBase extends PluginBase {
   /**
    * Build the options form.
    */
-  public function buildOptionsForm(&$form, &$form_state) {
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     // Some form elements belong in a fieldset for presentation, but can't
-    // be moved into one because of the form_state['values'] hierarchy. Those
+    // be moved into one because of the $form_state->getValues() hierarchy. Those
     // elements can add a #fieldset => 'fieldset_name' property, and they'll
     // be moved to their fieldset during pre_render.
     $form['#pre_render'][] = array(get_class($this), 'preRenderAddFieldsetMarkup');
@@ -366,7 +350,7 @@ abstract class HandlerBase extends PluginBase {
   /**
    * Provide a form for aggregation settings.
    */
-  public function buildGroupByForm(&$form, &$form_state) {
+  public function buildGroupByForm(&$form, FormStateInterface $form_state) {
     $display_id = $form_state['display_id'];
     $type = $form_state['type'];
     $id = $form_state['id'];
@@ -392,8 +376,8 @@ abstract class HandlerBase extends PluginBase {
    * Perform any necessary changes to the form values prior to storage.
    * There is no need for this function to actually store the data.
    */
-  public function submitGroupByForm(&$form, &$form_state) {
-    $form_state['handler']->options['group_type'] = $form_state['values']['options']['group_type'];
+  public function submitGroupByForm(&$form, FormStateInterface $form_state) {
+    $form_state['handler']->options['group_type'] = $form_state->getValue(array('options', 'group_type'));
   }
 
   /**
@@ -410,18 +394,18 @@ abstract class HandlerBase extends PluginBase {
   /**
    * Provide a form for setting options.
    */
-  public function buildExtraOptionsForm(&$form, &$form_state) { }
+  public function buildExtraOptionsForm(&$form, FormStateInterface $form_state) { }
 
   /**
    * Validate the options form.
    */
-  public function validateExtraOptionsForm($form, &$form_state) { }
+  public function validateExtraOptionsForm($form, FormStateInterface $form_state) { }
 
   /**
    * Perform any necessary changes to the form values prior to storage.
    * There is no need for this function to actually store the data.
    */
-  public function submitExtraOptionsForm($form, &$form_state) { }
+  public function submitExtraOptionsForm($form, FormStateInterface $form_state) { }
 
   /**
    * Determine if a handler can be exposed.
@@ -442,43 +426,43 @@ abstract class HandlerBase extends PluginBase {
   /**
    * Render our chunk of the exposed handler form when selecting
    */
-  public function buildExposedForm(&$form, &$form_state) { }
+  public function buildExposedForm(&$form, FormStateInterface $form_state) { }
 
   /**
    * Validate the exposed handler form
    */
-  public function validateExposed(&$form, &$form_state) { }
+  public function validateExposed(&$form, FormStateInterface $form_state) { }
 
   /**
    * Submit the exposed handler form
    */
-  public function submitExposed(&$form, &$form_state) { }
+  public function submitExposed(&$form, FormStateInterface $form_state) { }
 
   /**
    * Form for exposed handler options.
    */
-  public function buildExposeForm(&$form, &$form_state) { }
+  public function buildExposeForm(&$form, FormStateInterface $form_state) { }
 
   /**
    * Validate the options form.
    */
-  public function validateExposeForm($form, &$form_state) { }
+  public function validateExposeForm($form, FormStateInterface $form_state) { }
 
   /**
    * Perform any necessary changes to the form exposes prior to storage.
    * There is no need for this function to actually store the data.
    */
-  public function submitExposeForm($form, &$form_state) { }
+  public function submitExposeForm($form, FormStateInterface $form_state) { }
 
   /**
    * Shortcut to display the expose/hide button.
    */
-  public function showExposeButton(&$form, &$form_state) { }
+  public function showExposeButton(&$form, FormStateInterface $form_state) { }
 
   /**
    * Shortcut to display the exposed options form.
    */
-  public function showExposeForm(&$form, &$form_state) {
+  public function showExposeForm(&$form, FormStateInterface $form_state) {
     if (empty($this->options['exposed'])) {
       return;
     }
@@ -788,123 +772,48 @@ abstract class HandlerBase extends PluginBase {
   }
 
   /**
-   * Breaks x,y,z and x+y+z into an array. Numeric only.
+   * Breaks x,y,z and x+y+z into an array.
    *
    * @param string $str
-   *   The string to parse.
-   * @param \Drupal\views\Plugin\views\HandlerBase|null $handler
-   *   The handler object to use as a base. If not specified one will
-   *   be created.
+   *   The string to split.
+   * @param bool $force_int
+   *   Enforce a numeric check.
    *
-   * @return \Drupal\views\Plugin\views\HandlerBase|stdClass $handler
-   *   The new handler object.
+   * @return \stdClass
+   *   A stdClass object containing value and operator properties.
    */
-  public static function breakPhrase($str, &$handler = NULL) {
-    if (!$handler) {
-      $handler = new \stdClass();
-    }
+  public static function breakString($str, $force_int = FALSE) {
+    $operator = NULL;
+    $value = array();
 
-    // Set up defaults:
-
-    if (!isset($handler->value)) {
-      $handler->value = array();
-    }
-
-    if (!isset($handler->operator)) {
-      $handler->operator = 'or';
-    }
-
-    if (empty($str)) {
-      return $handler;
-    }
-
-    if (preg_match('/^([0-9]+[+ ])+[0-9]+$/', $str)) {
+    // Determine if the string has 'or' operators (plus signs) or 'and'
+    // operators (commas) and split the string accordingly.
+    if (preg_match('/^([\w0-9-_]+[+ ]+)+[\w0-9-_]+$/u', $str)) {
       // The '+' character in a query string may be parsed as ' '.
-      $handler->operator = 'or';
-      $handler->value = preg_split('/[+ ]/', $str);
+      $operator = 'or';
+      $value = preg_split('/[+ ]/', $str);
     }
-    elseif (preg_match('/^([0-9]+,)*[0-9]+$/', $str)) {
-      $handler->operator = 'and';
-      $handler->value = explode(',', $str);
-    }
-
-    // Keep an 'error' value if invalid strings were given.
-    if (!empty($str) && (empty($handler->value) || !is_array($handler->value))) {
-      $handler->value = array(-1);
-      return $handler;
+    elseif (preg_match('/^([\w0-9-_]+[, ]+)*[\w0-9-_]+$/u', $str)) {
+      $operator = 'and';
+      $value = explode(',', $str);
     }
 
-    // Doubly ensure that all values are numeric only.
-    foreach ($handler->value as $id => $value) {
-      $handler->value[$id] = intval($value);
+    // Filter any empty matches (Like from '++' in a string) and reset the
+    // array keys. 'strlen' is used as the filter callback so we do not lose
+    // 0 values (would otherwise evaluate == FALSE).
+    $value = array_values(array_filter($value, 'strlen'));
+
+    if ($force_int) {
+      $value = array_map('intval', $value);
     }
 
-    return $handler;
-  }
-
-  /**
-   * Breaks x,y,z and x+y+z into an array. Works for strings.
-   *
-   * @param string $str
-   *   The string to parse.
-   * @param \Drupal\views\Plugin\views\HandlerBase|null $handler
-   *   The object to use as a base. If not specified one will
-   *   be created.
-   *
-   * @return \Drupal\views\Plugin\views\HandlerBase|stdClass $handler
-   *   The new handler object.
-   */
-  public static function breakPhraseString($str, &$handler = NULL) {
-    if (!$handler) {
-      $handler = new \stdClass();
-    }
-
-    // Set up defaults:
-    if (!isset($handler->value)) {
-      $handler->value = array();
-    }
-
-    if (!isset($handler->operator)) {
-      $handler->operator = 'or';
-    }
-
-    if ($str == '') {
-      return $handler;
-    }
-
-    // Determine if the string has 'or' operators (plus signs) or 'and' operators
-    // (commas) and split the string accordingly. If we have an 'and' operator,
-    // spaces are treated as part of the word being split, but otherwise they are
-    // treated the same as a plus sign.
-    $or_wildcard = '[^\s+,]';
-    $and_wildcard = '[^+,]';
-    if (preg_match("/^({$or_wildcard}+[+ ])+{$or_wildcard}+$/", $str)) {
-      $handler->operator = 'or';
-      $handler->value = preg_split('/[+ ]/', $str);
-    }
-    elseif (preg_match("/^({$and_wildcard}+,)*{$and_wildcard}+$/", $str)) {
-      $handler->operator = 'and';
-      $handler->value = explode(',', $str);
-    }
-
-    // Keep an 'error' value if invalid strings were given.
-    if (!empty($str) && (empty($handler->value) || !is_array($handler->value))) {
-      $handler->value = array(-1);
-      return $handler;
-    }
-
-    // Doubly ensure that all values are strings only.
-    foreach ($handler->value as $id => $value) {
-      $handler->value[$id] = (string) $value;
-    }
-
-    return $handler;
+    return (object) array('value' => $value, 'operator' => $operator);
   }
 
   /**
    * Displays the Expose form.
    */
-  public function displayExposedForm($form, &$form_state) {
+  public function displayExposedForm($form, FormStateInterface $form_state) {
     $item = &$this->options;
     // flip
     $item['exposed'] = empty($item['exposed']);
@@ -928,7 +837,7 @@ abstract class HandlerBase extends PluginBase {
    * A submit handler that is used for storing temporary items when using
    * multi-step changes, such as ajax requests.
    */
-  public function submitTemporaryForm($form, &$form_state) {
+  public function submitTemporaryForm($form, FormStateInterface $form_state) {
     // Run it through the handler's submit function.
     $this->submitOptionsForm($form['options'], $form_state);
     $item = $this->options;
@@ -960,7 +869,7 @@ abstract class HandlerBase extends PluginBase {
 
     // Add the incoming options to existing options because items using
     // the extra form may not have everything in the form here.
-    $options = $form_state['values']['options'] + $this->options;
+    $options = $form_state->getValue('options') + $this->options;
 
     // This unpacks only options that are in the definition, ensuring random
     // extra stuff on the form is not sent through.
@@ -982,5 +891,4 @@ abstract class HandlerBase extends PluginBase {
     // Write to cache
     $form_state['view']->cacheSet();
   }
-
 }

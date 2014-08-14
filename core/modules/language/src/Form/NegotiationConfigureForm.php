@@ -14,6 +14,7 @@ use Drupal\Component\Utility\Xss;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\language\ConfigurableLanguageManagerInterface;
 use Drupal\language\LanguageNegotiatorInterface;
 use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationSelected;
@@ -93,7 +94,7 @@ class NegotiationConfigureForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $configurable = $this->languageTypes->get('configurable');
 
     $form = array(
@@ -127,7 +128,7 @@ class NegotiationConfigureForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $configurable_types = $form['#language_types'];
 
     $stored_values = $this->languageTypes->get('configurable');
@@ -137,11 +138,11 @@ class NegotiationConfigureForm extends FormBase {
     foreach ($configurable_types as $type) {
       $customized[$type] = in_array($type, $stored_values);
       $method_weights = array();
-      $enabled_methods = $form_state['values'][$type]['enabled'];
+      $enabled_methods = $form_state->getValue(array($type, 'enabled'));
       $enabled_methods[LanguageNegotiationSelected::METHOD_ID] = TRUE;
-      $method_weights_input = $form_state['values'][$type]['weight'];
-      if (isset($form_state['values'][$type]['configurable'])) {
-        $customized[$type] = !empty($form_state['values'][$type]['configurable']);
+      $method_weights_input = $form_state->getValue(array($type, 'weight'));
+      if ($form_state->hasValue(array($type, 'configurable'))) {
+        $customized[$type] = !$form_state->isValueEmpty(array($type, 'configurable'));
       }
 
       foreach ($method_weights_input as $method_id => $weight) {
@@ -173,7 +174,7 @@ class NegotiationConfigureForm extends FormBase {
       $this->blockManager->clearCachedDefinitions();
     }
 
-    $form_state['redirect_route']['route_name'] = 'language.negotiation';
+    $form_state->setRedirect('language.negotiation');
     drupal_set_message($this->t('Language negotiation configuration saved.'));
   }
 
@@ -206,7 +207,7 @@ class NegotiationConfigureForm extends FormBase {
         '#attributes' => array('class' => array('language-customization-checkbox')),
         '#attached' => array(
           'library' => array(
-            'language/language.admin'
+            'language/drupal.language.admin'
           ),
         ),
       );

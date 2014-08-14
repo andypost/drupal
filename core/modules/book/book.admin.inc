@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\SafeMarkup;
+use Drupal\book\BookManager;
 use Drupal\Core\Render\Element;
 
 /**
@@ -28,7 +29,7 @@ function theme_book_admin_table($variables) {
   $access = \Drupal::currentUser()->hasPermission('administer nodes');
   foreach (Element::children($form) as $key) {
     $nid = $form[$key]['nid']['#value'];
-    $href = \Drupal::url('node.view', array('node' => $nid));
+    $href = \Drupal::url('entity.node.canonical', array('node' => $nid));
 
     // Add special classes to be used with tabledrag.js.
     $form[$key]['pid']['#attributes']['class'] = array('book-pid');
@@ -49,13 +50,13 @@ function theme_book_admin_table($variables) {
     if ($access) {
       $links['edit'] = array(
         'title' => t('Edit'),
-        'route_name' => 'node.page_edit',
+        'route_name' => 'entity.node.edit_form',
         'route_parameters' => array('node' => $nid),
         'query' => $destination,
       );
       $links['delete'] = array(
         'title' => t('Delete'),
-        'route_name' => 'node.delete_confirm',
+        'route_name' => 'entity.node.delete_form',
         'route_parameters' => array('node' => $nid),
         'query' => $destination,
       );
@@ -87,7 +88,7 @@ function theme_book_admin_table($variables) {
         'subgroup' => 'book-pid',
         'source' => 'book-nid',
         'hidden' => TRUE,
-        'limit' => MENU_MAX_DEPTH - 2,
+        'limit' => BookManager::BOOK_MAX_DEPTH - 2,
       ),
       array(
         'action' => 'order',

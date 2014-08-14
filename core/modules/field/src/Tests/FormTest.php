@@ -9,6 +9,7 @@ namespace Drupal\field\Tests;
 
 use Drupal\Component\Utility\String;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Form\FormState;
 
 /**
  * Tests field form handling.
@@ -79,11 +80,11 @@ class FormTest extends FieldTestBase {
     $this->instance = array(
       'entity_type' => 'entity_test',
       'bundle' => 'entity_test',
-      'label' => $this->randomName() . '_label',
+      'label' => $this->randomMachineName() . '_label',
       'description' => '[site:name]_description',
       'weight' => mt_rand(0, 127),
       'settings' => array(
-        'test_instance_setting' => $this->randomName(),
+        'test_instance_setting' => $this->randomMachineName(),
       ),
     );
   }
@@ -114,7 +115,7 @@ class FormTest extends FieldTestBase {
     // Submit with invalid value (field-level validation).
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => -1
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -125,7 +126,7 @@ class FormTest extends FieldTestBase {
     $value = mt_rand(1, 127);
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -144,7 +145,7 @@ class FormTest extends FieldTestBase {
     $value = mt_rand(1, 127);
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -157,7 +158,7 @@ class FormTest extends FieldTestBase {
     $value = '';
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value
     );
     $this->drupalPostForm('entity_test/manage/' . $id, $edit, t('Save'));
@@ -190,7 +191,7 @@ class FormTest extends FieldTestBase {
     // Try to submit an empty value.
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => '',
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -221,7 +222,7 @@ class FormTest extends FieldTestBase {
     $value = mt_rand(1, 127);
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -235,7 +236,7 @@ class FormTest extends FieldTestBase {
     $value = '';
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value,
     );
     $this->drupalPostForm('entity_test/manage/' . $id, $edit, t('Save'));
@@ -281,7 +282,7 @@ class FormTest extends FieldTestBase {
     $values = $weights = $pattern = $expected_values = array();
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
     );
     for ($delta = 0; $delta <= $delta_range; $delta++) {
       // Assign unique random values and weights.
@@ -463,7 +464,7 @@ class FormTest extends FieldTestBase {
     // Create entity with three values.
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       $field_name => '1, 2, 3',
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -531,7 +532,7 @@ class FormTest extends FieldTestBase {
 
     $display = entity_get_form_display($entity_type, $entity_type, 'default');
     $form = array();
-    $form_state = \Drupal::formBuilder()->getFormStateDefaults();
+    $form_state = new FormState();
     $display->buildForm($entity, $form, $form_state);
 
     $this->assertFalse($form[$field_name_no_access]['#access'], 'Field #access is FALSE for the field without edit access.');
@@ -543,7 +544,7 @@ class FormTest extends FieldTestBase {
     // Create entity.
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => 1,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -558,7 +559,7 @@ class FormTest extends FieldTestBase {
     // Create a new revision.
     $edit = array(
       'user_id' => 1,
-      'name' => $this->randomName(),
+      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => 2,
       'revision' => TRUE,
     );
@@ -600,7 +601,7 @@ class FormTest extends FieldTestBase {
     // Create an entity and test that the default value is assigned correctly to
     // the field that uses the hidden widget.
     $this->assertNoField("{$field_name}[0][value]", 'The field does not appear in the form');
-    $this->drupalPostForm(NULL, array('user_id' => 1, 'name' => $this->randomName()), t('Save'));
+    $this->drupalPostForm(NULL, array('user_id' => 1, 'name' => $this->randomMachineName()), t('Save'));
     preg_match('|' . $entity_type . '/manage/(\d+)|', $this->url, $match);
     $id = $match[1];
     $this->assertText(t('entity_test_rev @id has been created.', array('@id' => $id)), 'Entity was created');

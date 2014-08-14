@@ -10,6 +10,7 @@ namespace Drupal\Core\Installer\Form;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Provides a form to configure and rewrite settings.php.
@@ -26,7 +27,7 @@ class SiteSettingsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $conf_path = './' . conf_path(FALSE);
     $settings_file = $conf_path . '/settings.php';
 
@@ -114,9 +115,9 @@ class SiteSettingsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
-    $driver = $form_state['values']['driver'];
-    $database = $form_state['values'][$driver];
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $driver = $form_state->getValue('driver');
+    $database = $form_state->getValue($driver);
     $drivers = drupal_get_database_types();
     $reflection = new \ReflectionClass($drivers[$driver]);
     $install_namespace = $reflection->getNamespaceName();
@@ -125,16 +126,16 @@ class SiteSettingsForm extends FormBase {
     $database['driver'] = $driver;
 
     $form_state['storage']['database'] = $database;
-    $errors = install_database_errors($database, $form_state['values']['settings_file']);
+    $errors = install_database_errors($database, $form_state->getValue('settings_file'));
     foreach ($errors as $name => $message) {
-      $this->setFormError($name, $form_state, $message);
+      $form_state->setErrorByName($name, $message);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     global $install_state;
 
     // Update global settings array and save.

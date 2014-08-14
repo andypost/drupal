@@ -8,6 +8,7 @@
 namespace Drupal\image_test\Plugin\ImageToolkit;
 
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\ImageToolkit\ImageToolkitBase;
 
 /**
@@ -60,9 +61,9 @@ class TestToolkit extends ImageToolkitBase {
   /**
    * {@inheritdoc}
    */
-  public function settingsFormSubmit($form, &$form_state) {
+  public function settingsFormSubmit($form, FormStateInterface $form_state) {
     \Drupal::config('system.image.test_toolkit')
-      ->set('test_parameter', $form_state['values']['test']['test_parameter'])
+      ->set('test_parameter', $form_state->getValue(array('test', 'test_parameter')))
       ->save();
   }
 

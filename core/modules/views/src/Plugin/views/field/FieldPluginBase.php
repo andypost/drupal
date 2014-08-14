@@ -12,6 +12,7 @@ use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Xss;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\HandlerBase;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\ResultRow;
@@ -25,15 +26,18 @@ use Drupal\views\ViewExecutable;
  * Field handlers handle both querying and display of fields in views.
  *
  * Field handler plugins extend
- * \Drupal\views\Plugin\views\field\FieldHandlerBase. They must be
+ * \Drupal\views\Plugin\views\field\FieldPluginBase. They must be
  * annotated with \Drupal\views\Annotation\ViewsField annotation, and they
  * must be in namespace directory Plugin\views\field.
  *
  * The following items can go into a hook_views_data() implementation in a
  * field section to affect how the field handler will behave:
  * - additional fields: An array of fields that should be added to the query.
- *   The array is in the form of:
+ *   The array is in one of these forms:
  *   @code
+ *   // Simple form, for fields within the same table.
+ *   array('identifier' => fieldname)
+ *   // Form for fields in a different table.
  *   array('identifier' => array('table' => tablename, 'field' => fieldname))
  *   @endcode
  *   As many fields as are necessary may be in this array.
@@ -157,7 +161,7 @@ abstract class FieldPluginBase extends HandlerBase {
           }
 
           if (empty($table_alias)) {
-            debug(t('Handler @handler tried to add additional_field @identifier but @table could not be added!', array('@handler' => $this->definition['handler'], '@identifier' => $identifier, '@table' => $info['table'])));
+            debug(t('Handler @handler tried to add additional_field @identifier but @table could not be added!', array('@handler' => $this->definition['id'], '@identifier' => $identifier, '@table' => $info['table'])));
             $this->aliases[$identifier] = 'broken';
             continue;
           }
@@ -479,8 +483,8 @@ abstract class FieldPluginBase extends HandlerBase {
   /**
    * Performs some cleanup tasks on the options array before saving it.
    */
-  public function submitOptionsForm(&$form, &$form_state) {
-    $options = &$form_state['values']['options'];
+  public function submitOptionsForm(&$form, FormStateInterface $form_state) {
+    $options = &$form_state->getValue('options');
     $types = array('element_type', 'element_label_type', 'element_wrapper_type');
     $classes = array_combine(array('element_class', 'element_label_class', 'element_wrapper_class'), $types);
 
@@ -506,7 +510,7 @@ abstract class FieldPluginBase extends HandlerBase {
    * Default options form that provides the label widget that all fields
    * should have.
    */
-  public function buildOptionsForm(&$form, &$form_state) {
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
 
     $label = $this->label();

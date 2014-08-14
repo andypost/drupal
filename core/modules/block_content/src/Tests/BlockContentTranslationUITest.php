@@ -7,8 +7,8 @@
 
 namespace Drupal\block_content\Tests;
 
+use Drupal\Component\Utility\Unicode;
 use Drupal\content_translation\Tests\ContentTranslationUITest;
-use Drupal\block_content\Entity\BlockContent;
 
 /**
  * Tests the node translation UI.
@@ -16,11 +16,6 @@ use Drupal\block_content\Entity\BlockContent;
  * @group block_content
  */
 class BlockContentTranslationUITest extends ContentTranslationUITest {
-
-  /**
-   * The name of the test block.
-   */
-  protected $name;
 
   /**
    * Modules to enable.
@@ -41,7 +36,6 @@ class BlockContentTranslationUITest extends ContentTranslationUITest {
   public function setUp() {
     $this->entityTypeId = 'block_content';
     $this->bundle = 'basic';
-    $this->name = drupal_strtolower($this->randomName());
     $this->testLanguageSelector = FALSE;
     parent::setUp();
   }
@@ -72,7 +66,7 @@ class BlockContentTranslationUITest extends ContentTranslationUITest {
    *   Created custom block.
    */
   protected function createBlockContent($title = FALSE, $bundle = FALSE) {
-    $title = ($title ? : $this->randomName());
+    $title = ($title ? : $this->randomMachineName());
     $bundle = ($bundle ? : $this->bundle);
     $block_content = entity_create('block_content', array(
       'info' => $title,
@@ -87,7 +81,7 @@ class BlockContentTranslationUITest extends ContentTranslationUITest {
    * Overrides \Drupal\content_translation\Tests\ContentTranslationUITest::getNewEntityValues().
    */
   protected function getNewEntityValues($langcode) {
-    return array('info' => $this->name) + parent::getNewEntityValues($langcode);
+    return array('info' => Unicode::strtolower($this->randomMachineName())) + parent::getNewEntityValues($langcode);
   }
 
   /**
@@ -105,11 +99,37 @@ class BlockContentTranslationUITest extends ContentTranslationUITest {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  protected function doTestBasicTranslation() {
+    parent::doTestBasicTranslation();
+
+    // Ensure that a block translation can be created using the same description
+    // as in the original language.
+    $default_langcode = $this->langcodes[0];
+    $values = $this->getNewEntityValues($default_langcode);
+    $storage = \Drupal::entityManager()->getStorage($this->entityTypeId);
+    /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
+    $entity = $storage->create(array('type' => 'basic') + $values);
+    $entity->save();
+    $entity->addTranslation('it', $values);
+
+    try {
+      $message = 'Blocks can have translations with the same "info" value.';
+      $entity->save();
+      $this->pass($message);
+    }
+    catch (\Exception $e) {
+      $this->fail($message);
+    }
+  }
+
+  /**
    * Test that no metadata is stored for a disabled bundle.
    */
   public function testDisabledBundle() {
     // Create a bundle that does not have translation enabled.
-    $disabled_bundle = $this->randomName();
+    $disabled_bundle = $this->randomMachineName();
     $bundle = entity_create('block_content_type', array(
       'id' => $disabled_bundle,
       'label' => $disabled_bundle,

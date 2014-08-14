@@ -13,6 +13,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -152,7 +153,7 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
     $old_state = $this->configFactory->getOverrideState();
     $search_settings = $this->configFactory->setOverrideState(FALSE)->get('search.settings');
@@ -304,7 +305,7 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
     else {
       $operations['default'] = array(
         'title' => $this->t('Set as default'),
-        'route_name' => 'search.set_default',
+        'route_name' => 'entity.search_page.set_default',
         'route_parameters' => array(
           'search_page' => $entity->id(),
         ),
@@ -318,27 +319,27 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
 
     $search_settings = $this->configFactory->get('search.settings');
     // If these settings change, the index needs to be rebuilt.
-    if (($search_settings->get('index.minimum_word_size') != $form_state['values']['minimum_word_size']) || ($search_settings->get('index.overlap_cjk') != $form_state['values']['overlap_cjk'])) {
-      $search_settings->set('index.minimum_word_size', $form_state['values']['minimum_word_size']);
-      $search_settings->set('index.overlap_cjk', $form_state['values']['overlap_cjk']);
+    if (($search_settings->get('index.minimum_word_size') != $form_state->getValue('minimum_word_size')) || ($search_settings->get('index.overlap_cjk') != $form_state->getValue('overlap_cjk'))) {
+      $search_settings->set('index.minimum_word_size', $form_state->getValue('minimum_word_size'));
+      $search_settings->set('index.overlap_cjk', $form_state->getValue('overlap_cjk'));
       drupal_set_message($this->t('The index will be rebuilt.'));
       search_reindex();
     }
 
     $search_settings
-      ->set('index.cron_limit', $form_state['values']['cron_limit'])
-      ->set('logging', $form_state['values']['logging'])
+      ->set('index.cron_limit', $form_state->getValue('cron_limit'))
+      ->set('logging', $form_state->getValue('logging'))
       ->save();
 
     drupal_set_message($this->t('The configuration options have been saved.'));
@@ -348,29 +349,27 @@ class SearchPageListBuilder extends DraggableListBuilder implements FormInterfac
    * Form submission handler for the reindex button on the search admin settings
    * form.
    */
-  public function searchAdminReindexSubmit(array &$form, array &$form_state) {
+  public function searchAdminReindexSubmit(array &$form, FormStateInterface $form_state) {
     // Send the user to the confirmation page.
-    $form_state['redirect_route']['route_name'] = 'search.reindex_confirm';
+    $form_state->setRedirect('search.reindex_confirm');
   }
 
   /**
    * Form validation handler for adding a new search page.
    */
-  public function validateAddSearchPage(array &$form, array &$form_state) {
-    if (empty($form_state['values']['search_type'])) {
-      $this->formBuilder()->setErrorByName('search_type', $form_state, $this->t('You must select the new search page type.'));
+  public function validateAddSearchPage(array &$form, FormStateInterface $form_state) {
+    if ($form_state->isValueEmpty('search_type')) {
+      $form_state->setErrorByName('search_type', $this->t('You must select the new search page type.'));
     }
   }
 
   /**
    * Form submission handler for adding a new search page.
    */
-  public function submitAddSearchPage(array &$form, array &$form_state) {
-    $form_state['redirect_route'] = array(
-      'route_name' => 'search.add_type',
-      'route_parameters' => array(
-        'search_plugin_id' => $form_state['values']['search_type'],
-      ),
+  public function submitAddSearchPage(array &$form, FormStateInterface $form_state) {
+    $form_state->setRedirect(
+      'search.add_type',
+      array('search_plugin_id' => $form_state->getValue('search_type'))
     );
   }
 

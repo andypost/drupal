@@ -8,6 +8,8 @@
 namespace Drupal\views_ui\Form\Ajax;
 
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ViewStorageInterface;
 use Drupal\views\Ajax;
 use Drupal\Core\Ajax\AjaxResponse;
@@ -63,7 +65,7 @@ abstract class ViewsFormBase extends FormBase implements ViewsFormInterface {
   public function getFormState(ViewStorageInterface $view, $display_id, $js) {
     // $js may already have been converted to a Boolean.
     $ajax = is_string($js) ? $js === 'ajax' : $js;
-    return array(
+    return new FormState(array(
       'form_id' => $this->getFormId(),
       'form_key' => $this->getFormKey(),
       'ajax' => $ajax,
@@ -76,7 +78,7 @@ abstract class ViewsFormBase extends FormBase implements ViewsFormInterface {
         'args' => array(),
         'callback_object' => $this,
       ),
-    );
+    ));
   }
 
   /**
@@ -145,6 +147,7 @@ abstract class ViewsFormBase extends FormBase implements ViewsFormInterface {
       // Build the new form state for the next form in the stack.
       $reflection = new \ReflectionClass($view::$forms[$top[1]]);
       $form_state = $reflection->newInstanceArgs(array_slice($top, 3, 2))->getFormState($view, $top[2], $form_state['ajax']);
+      $form_class = get_class($form_state['build_info']['callback_object']);
 
       $form_state['input'] = array();
       $form_path = views_ui_build_form_path($form_state);
@@ -161,7 +164,7 @@ abstract class ViewsFormBase extends FormBase implements ViewsFormInterface {
     else {
       $response = new AjaxResponse();
       $response->addCommand(new CloseModalDialogCommand());
-      $response->addCommand(new Ajax\ShowButtonsCommand());
+      $response->addCommand(new Ajax\ShowButtonsCommand(!empty($view->changed)));
       $response->addCommand(new Ajax\TriggerPreviewCommand());
       if (!empty($form_state['#page_title'])) {
         $response->addCommand(new Ajax\ReplaceTitleCommand($form_state['#page_title']));
@@ -179,13 +182,13 @@ abstract class ViewsFormBase extends FormBase implements ViewsFormInterface {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
   }
 
 }

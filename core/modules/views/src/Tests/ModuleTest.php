@@ -50,8 +50,8 @@ class ModuleTest extends ViewUnitTestBase {
     $types = array('field', 'area', 'filter');
     foreach ($types as $type) {
       $item = array(
-        'table' => $this->randomName(),
-        'field' => $this->randomName(),
+        'table' => $this->randomMachineName(),
+        'field' => $this->randomMachineName(),
       );
       $handler = $this->container->get('plugin.manager.views.' . $type)->getHandler($item);
       $this->assertEqual('Drupal\views\Plugin\views\\' . $type . '\Broken', get_class($handler), t('Make sure that a broken handler of type: @type are created', array('@type' => $type)));
@@ -108,19 +108,9 @@ class ModuleTest extends ViewUnitTestBase {
     $item = array(
       'table' => 'table_invalid',
       'field' => 'id',
-      'optional' => FALSE,
     );
     $this->container->get('plugin.manager.views.filter')->getHandler($item);
     $this->assertEqual(strpos($this->lastErrorMessage, format_string("Missing handler: @table @field @type", array('@table' => 'table_invalid', '@field' => 'id', '@type' => 'filter'))) !== FALSE, 'An invalid table name throws a debug message.');
-    unset($this->lastErrorMessage);
-
-    $item = array(
-      'table' => 'table_invalid',
-      'field' => 'id',
-      'optional' => TRUE,
-    );
-    $this->container->get('plugin.manager.views.filter')->getHandler($item);
-    $this->assertFalse($this->lastErrorMessage, "An optional handler does not throw a debug message.");
     unset($this->lastErrorMessage);
 
     restore_error_handler();

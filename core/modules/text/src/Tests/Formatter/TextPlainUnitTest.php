@@ -30,6 +30,71 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
    */
   public static $modules = array('entity', 'field', 'text', 'entity_test', 'system', 'filter', 'user');
 
+  /**
+   * @var string
+   */
+  protected $entity_type;
+
+  /**
+   * @var string
+   */
+  protected $bundle;
+
+  /**
+   * @var string
+   */
+  protected $field_name;
+
+  /**
+   * @var string
+   */
+  protected $field_type;
+
+  /**
+   * @var array
+   */
+  protected $field_settings;
+
+  /**
+   * @var array
+   */
+  protected $instance_settings;
+
+  /**
+   * @var string
+   */
+  protected $formatter_type;
+
+  /**
+   * @var array
+   */
+  protected $formatter_settings;
+
+  /**
+   * @var \Drupal\field\Entity\FieldStorageConfig
+   */
+  protected $fieldStorage;
+
+  /**
+   * @var \Drupal\field\Entity\FieldInstanceConfig
+   */
+  protected $instance;
+
+  /**
+   * @var string
+   */
+  protected $view_mode;
+
+  /**
+   * @var \Drupal\entity\Entity\EntityViewDisplay
+   */
+  protected $display;
+
+  /**
+   * @var string
+   */
+  protected $langcode;
+
   function setUp() {
     parent::setUp();
 
@@ -44,7 +109,7 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
       $this->bundle = $this->entity_type;
     }
 
-    $this->field_name = drupal_strtolower($this->randomName());
+    $this->field_name = drupal_strtolower($this->randomMachineName());
     $this->field_type = 'text_long';
     $this->field_settings = array();
     $this->instance_settings = array(
@@ -65,7 +130,7 @@ class TextPlainUnitTest extends DrupalUnitTestBase {
     $this->instance = entity_create('field_instance_config', array(
       'field_storage' => $this->fieldStorage,
       'bundle' => $this->bundle,
-      'label' => $this->randomName(),
+      'label' => $this->randomMachineName(),
       'settings' => $this->instance_settings,
     ));
     $this->instance->save();

@@ -11,9 +11,11 @@ use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Utility\String;
 use Drupal\Core\DependencyInjection\ClassResolverInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Entity\Exception\AmbiguousEntityClassException;
+use Drupal\Core\Entity\Exception\NoCorrespondingEntityClassException;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Language\LanguageInterface;
@@ -76,7 +78,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
    * Static cache of field storage definitions per entity type.
    *
    * Elements of the array:
-   *  - $entity_type_id: \Drupal\Core\Field\FieldDefinition[]
+   *  - $entity_type_id: \Drupal\Core\Field\BaseFieldDefinition[]
    *
    * @var array
    */
@@ -135,6 +137,23 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
   protected $fieldMap = array();
 
   /**
+   * An array keyed by field type. Each value is an array whose key are entity
+   * types including arrays in the same form that $fieldMap.
+   *
+   * It helps access the mapping between types and fields by the field type.
+   *
+   * @var array
+   */
+  protected $fieldMapByFieldType = array();
+
+  /**
+   * Contains cached mappings of class names to entity types.
+   *
+   * @var array
+   */
+  protected $classNameEntityTypeMap = array();
+
+  /**
    * Constructs a new Entity plugin manager.
    *
    * @param \Traversable $namespaces
@@ -170,6 +189,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     parent::clearCachedDefinitions();
     $this->clearCachedBundles();
     $this->clearCachedFieldDefinitions();
+    $this->classNameEntityTypeMap = array();
   }
 
   /**
@@ -261,8 +281,8 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
   /**
    * {@inheritdoc}
    */
-  public function getAccessController($entity_type) {
-    return $this->getController($entity_type, 'access', 'getAccessClass');
+  public function getAccessControlHandler($entity_type) {
+    return $this->getController($entity_type, 'access', 'getAccessControlClass');
   }
 
   /**
@@ -372,7 +392,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     foreach ($base_field_definitions as $definition) {
       // @todo Remove this check once FieldDefinitionInterface exposes a proper
       //  provider setter. See https://drupal.org/node/2225961.
-      if ($definition instanceof FieldDefinition) {
+      if ($definition instanceof BaseFieldDefinition) {
         $definition->setProvider($provider);
       }
     }
@@ -386,7 +406,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
         foreach ($module_definitions as $field_name => $definition) {
           // @todo Remove this check once FieldDefinitionInterface exposes a
           //  proper provider setter. See https://drupal.org/node/2225961.
-          if ($definition instanceof FieldDefinition && $definition->getProvider() == NULL) {
+          if ($definition instanceof BaseFieldDefinition && $definition->getProvider() == NULL) {
             $definition->setProvider($module);
           }
           $base_field_definitions[$field_name] = $definition;
@@ -397,7 +417,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     // Automatically set the field name, target entity type and bundle
     // for non-configurable fields.
     foreach ($base_field_definitions as $field_name => $base_field_definition) {
-      if ($base_field_definition instanceof FieldDefinition) {
+      if ($base_field_definition instanceof BaseFieldDefinition) {
         $base_field_definition->setName($field_name);
         $base_field_definition->setTargetEntityTypeId($entity_type_id);
         $base_field_definition->setBundle(NULL);
@@ -471,7 +491,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     foreach ($bundle_field_definitions as $definition) {
       // @todo Remove this check once FieldDefinitionInterface exposes a proper
       //  provider setter. See https://drupal.org/node/2225961.
-      if ($definition instanceof FieldDefinition) {
+      if ($definition instanceof BaseFieldDefinition) {
         $definition->setProvider($provider);
       }
     }
@@ -485,7 +505,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
         foreach ($module_definitions as $field_name => $definition) {
           // @todo Remove this check once FieldDefinitionInterface exposes a
           //  proper provider setter. See https://drupal.org/node/2225961.
-          if ($definition instanceof FieldDefinition) {
+          if ($definition instanceof BaseFieldDefinition) {
             $definition->setProvider($module);
           }
           $bundle_field_definitions[$field_name] = $definition;
@@ -496,7 +516,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     // Automatically set the field name, target entity type and bundle
     // for non-configurable fields.
     foreach ($bundle_field_definitions as $field_name => $field_definition) {
-      if ($field_definition instanceof FieldDefinition) {
+      if ($field_definition instanceof BaseFieldDefinition) {
         $field_definition->setName($field_name);
         $field_definition->setTargetEntityTypeId($entity_type_id);
         $field_definition->setBundle($bundle);
@@ -566,6 +586,25 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function getFieldMapByFieldType($field_type) {
+    if (!isset($this->fieldMapByFieldType[$field_type])) {
+      $filtered_map = array();
+      $map = $this->getFieldMap();
+      foreach ($map as $entity_type => $fields) {
+        foreach ($fields as $field_name => $field_info) {
+          if ($field_info['type'] == $field_type) {
+            $filtered_map[$entity_type][$field_name] = $field_info;
+          }
+        }
+      }
+      $this->fieldMapByFieldType[$field_type] = $filtered_map;
+    }
+    return $this->fieldMapByFieldType[$field_type];
+  }
+
+  /**
    * Builds field storage definitions for an entity type.
    *
    * @param string $entity_type_id
@@ -588,7 +627,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
         foreach ($module_definitions as $field_name => $definition) {
           // @todo Remove this check once FieldDefinitionInterface exposes a
           //  proper provider setter. See https://drupal.org/node/2225961.
-          if ($definition instanceof FieldDefinition) {
+          if ($definition instanceof BaseFieldDefinition) {
             $definition->setProvider($module);
           }
           $field_definitions[$field_name] = $definition;
@@ -610,6 +649,7 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     $this->fieldDefinitions = array();
     $this->fieldStorageDefinitions = array();
     $this->fieldMap = array();
+    $this->fieldMapByFieldType = array();
     $this->displayModeInfo = array();
     $this->extraFields = array();
     Cache::deleteTags(array('entity_field_info' => TRUE));
@@ -901,6 +941,36 @@ class EntityManager extends DefaultPluginManager implements EntityManagerInterfa
     $entities = $this->getStorage($entity_type_id)->loadByProperties(array($uuid_key => $uuid));
 
     return reset($entities);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityTypeFromClass($class_name) {
+
+    // Check the already calculated classes first.
+    if (isset($this->classNameEntityTypeMap[$class_name])) {
+      return $this->classNameEntityTypeMap[$class_name];
+    }
+
+    $same_class = 0;
+    $entity_type_id = NULL;
+    foreach ($this->getDefinitions() as $entity_type) {
+      if ($entity_type->getOriginalClass() == $class_name  || $entity_type->getClass() == $class_name) {
+        $entity_type_id = $entity_type->id();
+        if ($same_class++) {
+          throw new AmbiguousEntityClassException($class_name);
+        }
+      }
+    }
+
+    // Return the matching entity type ID if there is one.
+    if ($entity_type_id) {
+      $this->classNameEntityTypeMap[$class_name] = $entity_type_id;
+      return $entity_type_id;
+    }
+
+    throw new NoCorrespondingEntityClassException($class_name);
   }
 
 }

@@ -9,7 +9,7 @@ namespace Drupal\dblog\Form;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
-use Drupal\Core\Url;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -53,7 +53,7 @@ class DblogClearLogForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form['dblog_clear'] = array(
       '#type' => 'details',
       '#title' => $this->t('Clear log messages'),
@@ -69,8 +69,8 @@ class DblogClearLogForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    $form_state['redirect_route'] = new Url('dblog.confirm');
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $form_state->setRedirect('dblog.confirm');
   }
 
 }

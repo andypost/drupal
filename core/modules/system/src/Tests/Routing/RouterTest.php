@@ -52,7 +52,7 @@ class RouterTest extends WebTestBase {
    */
   public function testControllerPlaceholders() {
     // Test with 0 and a random value.
-    $values = array("0", $this->randomName());
+    $values = array("0", $this->randomMachineName());
     foreach ($values as $value) {
       $this->drupalGet('router_test/test3/' . $value);
       $this->assertResponse(200);
@@ -147,7 +147,7 @@ class RouterTest extends WebTestBase {
   public function testRouterMatching() {
     $this->drupalGet('router_test/test14/1');
     $this->assertResponse(200);
-    $this->assertText('User route "user.view" was matched.');
+    $this->assertText('User route "entity.user.canonical" was matched.');
 
     // Try to match a route for a non-existent user.
     $this->drupalGet('router_test/test14/2');

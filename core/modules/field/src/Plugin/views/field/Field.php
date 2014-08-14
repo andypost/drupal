@@ -13,9 +13,10 @@ use Drupal\Core\Entity\ContentEntityDatabaseStorage;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\FormatterPluginManager;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Render\Element;
@@ -47,7 +48,7 @@ class Field extends FieldPluginBase {
    *
    * A field storage definition turned into a field definition, so it can be
    * used with widgets and formatters. See
-   * FieldDefinition::createFromFieldStorageDefinition().
+   * BaseFieldDefinition::createFromFieldStorageDefinition().
    *
    * @var \Drupal\Core\Field\FieldDefinitionInterface
    */
@@ -156,7 +157,7 @@ class Field extends FieldPluginBase {
   protected function getFieldDefinition() {
     if (!$this->fieldDefinition) {
       $field_storage_config = $this->getFieldStorageConfig();
-      $this->fieldDefinition = FieldDefinition::createFromFieldStorageDefinition($field_storage_config);
+      $this->fieldDefinition = BaseFieldDefinition::createFromFieldStorageDefinition($field_storage_config);
     }
     return $this->fieldDefinition;
   }
@@ -212,8 +213,8 @@ class Field extends FieldPluginBase {
    */
   public function access(AccountInterface $account) {
     $base_table = $this->get_base_table();
-    $access_controller = $this->entityManager->getAccessController($this->definition['entity_tables'][$base_table]);
-    return $access_controller->fieldAccess('view', $this->getFieldDefinition(), $account);
+    $access_control_handler = $this->entityManager->getAccessControlHandler($this->definition['entity_tables'][$base_table]);
+    return $access_control_handler->fieldAccess('view', $this->getFieldDefinition(), $account);
   }
 
   /**
@@ -435,7 +436,7 @@ class Field extends FieldPluginBase {
   /**
    * {@inheritdoc}
    */
-  public function buildOptionsForm(&$form, &$form_state) {
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
 
     $field = $this->getFieldDefinition();
@@ -516,7 +517,7 @@ class Field extends FieldPluginBase {
   /**
    * Provide options for multiple value fields.
    */
-  function multiple_options_form(&$form, &$form_state) {
+  function multiple_options_form(&$form, FormStateInterface $form_state) {
     $field = $this->getFieldDefinition();
 
     $form['multiple_field_settings'] = array(
@@ -639,7 +640,7 @@ class Field extends FieldPluginBase {
   /**
    * Extend the groupby form with group columns.
    */
-  public function buildGroupByForm(&$form, &$form_state) {
+  public function buildGroupByForm(&$form, FormStateInterface $form_state) {
     parent::buildGroupByForm($form, $form_state);
     // With "field API" fields, the column target of the grouping function
     // and any additional grouping columns must be specified.
@@ -672,13 +673,13 @@ class Field extends FieldPluginBase {
     );
   }
 
-  public function submitGroupByForm(&$form, &$form_state) {
+  public function submitGroupByForm(&$form, FormStateInterface $form_state) {
     parent::submitGroupByForm($form, $form_state);
     $item = &$form_state['handler']->options;
 
     // Add settings for "field API" fields.
-    $item['group_column'] = $form_state['values']['options']['group_column'];
-    $item['group_columns'] = array_filter($form_state['values']['options']['group_columns']);
+    $item['group_column'] = $form_state->getValue(array('options', 'group_column'));
+    $item['group_columns'] = array_filter($form_state->getValue(array('options', 'group_columns')));
   }
 
   /**

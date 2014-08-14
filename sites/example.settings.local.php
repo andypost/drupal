@@ -5,10 +5,14 @@
  * Local development override configuration feature.
  *
  * To activate this feature, copy and rename it such that its path plus
- * filename is 'sites/yoursite.com/settings.local.php'. Then, go to the bottom
- * of 'sites/yoursite.com/settings.php' and uncomment the commented lines that
+ * filename is 'sites/example.com/settings.local.php', where example.com
+ * is the name of your site. Then, go to the bottom of
+ * 'sites/example.com/settings.php' and uncomment the commented lines that
  * mention 'settings.local.php'.
  */
+
+// Enable local development services.
+$settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml';
 
 // Show all error messages, with backtrace information.
 $config['system.logging']['error_level'] = 'verbose';
@@ -17,7 +21,8 @@ $config['system.logging']['error_level'] = 'verbose';
 $config['system.performance']['css']['preprocess'] = FALSE;
 $config['system.performance']['js']['preprocess'] = FALSE;
 
-// Disable the render cache, by using the Null cache back-end.
+// Disable the render cache, by using the Null cache back-end defined by the
+// development.services.yml file above.
 $settings['cache']['bins']['render'] = 'cache.backend.null';
 
 /**

@@ -8,7 +8,7 @@
 namespace Drupal\system\Tests\Entity;
 
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FieldItemInterface;
@@ -34,6 +34,21 @@ class EntityFieldTest extends EntityUnitTestBase  {
    */
   public static $modules = array('filter', 'text', 'node', 'user');
 
+  /**
+   * @var string
+   */
+  protected $entity_name;
+
+  /**
+   * @var \Drupal\user\Entity\User
+   */
+  protected $entity_user;
+
+  /**
+   * @var string
+   */
+  protected $entity_field_text;
+
   public function setUp() {
     parent::setUp();
 
@@ -56,9 +71,9 @@ class EntityFieldTest extends EntityUnitTestBase  {
    * @return \Drupal\Core\Entity\EntityInterface
    */
   protected function createTestEntity($entity_type) {
-    $this->entity_name = $this->randomName();
+    $this->entity_name = $this->randomMachineName();
     $this->entity_user = $this->createUser();
-    $this->entity_field_text = $this->randomName();
+    $this->entity_field_text = $this->randomMachineName();
 
     // Pass in the value of the name field when creating. With the user
     // field we test setting a field after creation.
@@ -100,12 +115,12 @@ class EntityFieldTest extends EntityUnitTestBase  {
     $this->assertEqual($entity->name->getValue(), array(0 => array('value' => $this->entity_name)), format_string('%entity_type: Plain field value returned.', array('%entity_type' => $entity_type)));
 
     // Change the name.
-    $new_name = $this->randomName();
+    $new_name = $this->randomMachineName();
     $entity->name->value = $new_name;
     $this->assertEqual($new_name, $entity->name->value, format_string('%entity_type: Name can be updated and read.', array('%entity_type' => $entity_type)));
     $this->assertEqual($entity->name->getValue(), array(0 => array('value' => $new_name)), format_string('%entity_type: Plain field value reflects the update.', array('%entity_type' => $entity_type)));
 
-    $new_name = $this->randomName();
+    $new_name = $this->randomMachineName();
     $entity->name[0]->value = $new_name;
     $this->assertEqual($new_name, $entity->name->value, format_string('%entity_type: Name can be updated and read through list access.', array('%entity_type' => $entity_type)));
 
@@ -195,16 +210,16 @@ class EntityFieldTest extends EntityUnitTestBase  {
 
     // Access the text field and test updating.
     $this->assertEqual($entity->field_test_text->value, $this->entity_field_text, format_string('%entity_type: Text field can be read.', array('%entity_type' => $entity_type)));
-    $new_text = $this->randomName();
+    $new_text = $this->randomMachineName();
     $entity->field_test_text->value = $new_text;
     $this->assertEqual($entity->field_test_text->value, $new_text, format_string('%entity_type: Updated text field can be read.', array('%entity_type' => $entity_type)));
 
     // Test creating the entity by passing in plain values.
-    $this->entity_name = $this->randomName();
+    $this->entity_name = $this->randomMachineName();
     $name_item[0]['value'] = $this->entity_name;
     $this->entity_user = $this->createUser();
     $user_item[0]['target_id'] = $this->entity_user->id();
-    $this->entity_field_text = $this->randomName();
+    $this->entity_field_text = $this->randomMachineName();
     $text_item[0]['value'] = $this->entity_field_text;
 
     $entity = entity_create($entity_type, array(
@@ -230,9 +245,9 @@ class EntityFieldTest extends EntityUnitTestBase  {
 
     // Tests adding a value to a field item list.
     $entity->name[] = 'Another name';
-    $this->assertEqual($entity->name[1]->value == 'Another name', format_string('%entity_type: List item added via [].', array('%entity_type' => $entity_type)));
+    $this->assertEqual($entity->name[1]->value, 'Another name', format_string('%entity_type: List item added via [].', array('%entity_type' => $entity_type)));
     $entity->name[2]->value = 'Third name';
-    $this->assertEqual($entity->name[2]->value == 'Third name', format_string('%entity_type: List item added by a accessing not yet created item.', array('%entity_type' => $entity_type)));
+    $this->assertEqual($entity->name[2]->value, 'Third name', format_string('%entity_type: List item added by a accessing not yet created item.', array('%entity_type' => $entity_type)));
 
     // Test removing and empty-ing list items.
     $this->assertEqual(count($entity->name), 3, format_string('%entity_type: List has 3 items.', array('%entity_type' => $entity_type)));
@@ -550,7 +565,7 @@ class EntityFieldTest extends EntityUnitTestBase  {
     $entity = $this->createTestEntity('entity_test');
     $entity->save();
     // Create a reference field item and let it reference the entity.
-    $definition = FieldDefinition::create('entity_reference')
+    $definition = BaseFieldDefinition::create('entity_reference')
       ->setLabel('Test entity')
       ->setSetting('target_type', 'entity_test');
     $reference_field = \Drupal::typedDataManager()->create($definition);
@@ -575,7 +590,7 @@ class EntityFieldTest extends EntityUnitTestBase  {
     // Test bundle validation.
     NodeType::create(array('type' => 'article'))
       ->save();
-    $definition = FieldDefinition::create('entity_reference')
+    $definition = BaseFieldDefinition::create('entity_reference')
       ->setLabel('Test entity')
       ->setSettings(array(
         'target_type' => 'node',

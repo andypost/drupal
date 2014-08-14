@@ -7,8 +7,8 @@
 
 namespace Drupal\field_ui;
 
+use Drupal\Component\Plugin\Factory\DefaultFactory;
 use Drupal\Component\Plugin\PluginManagerBase;
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\Display\EntityDisplayInterface;
@@ -16,6 +16,7 @@ use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldTypePluginManagerInterface;
 use Drupal\Core\Field\PluginSettingsInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -116,7 +117,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state, $entity_type_id = NULL, $bundle = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $entity_type_id = NULL, $bundle = NULL) {
     parent::buildForm($form, $form_state, $entity_type_id, $bundle);
 
     if (empty($this->mode)) {
@@ -126,10 +127,6 @@ abstract class DisplayOverviewBase extends OverviewBase {
     $field_definitions = $this->getFieldDefinitions();
     $extra_fields = $this->getExtraFields();
     $entity_display = $this->getEntityDisplay($this->mode);
-
-    $form_state += array(
-      'plugin_settings_edit' => NULL,
-    );
 
     $form += array(
       '#entity_type' => $this->entity_type,
@@ -257,13 +254,13 @@ abstract class DisplayOverviewBase extends OverviewBase {
    *   The entity display.
    * @param array $form
    *   An associative array containing the structure of the form.
-   * @param array $form_state
-   *   A reference to a keyed array containing the current state of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    *
    * @return array
    *   A table row array.
    */
-  protected function buildFieldRow(FieldDefinitionInterface $field_definition, EntityDisplayInterface $entity_display, array $form, array &$form_state) {
+  protected function buildFieldRow(FieldDefinitionInterface $field_definition, EntityDisplayInterface $entity_display, array $form, FormStateInterface $form_state) {
     $field_name = $field_definition->getName();
     $display_options = $entity_display->getComponent($field_name);
     $label = $field_definition->getLabel();
@@ -312,7 +309,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
         '#type' => 'select',
         '#title' => $this->t('Plugin for @title', array('@title' => $label)),
         '#title_display' => 'invisible',
-        '#options' => $this->getPluginOptions($field_definition->getType()),
+        '#options' => $this->getPluginOptions($field_definition),
         '#default_value' => $display_options ? $display_options['type'] : 'hidden',
         '#parents' => array('fields', $field_name, 'type'),
         '#attributes' => array('class' => array('field-plugin-type')),
@@ -322,8 +319,8 @@ abstract class DisplayOverviewBase extends OverviewBase {
 
     // Check the currently selected plugin, and merge persisted values for its
     // settings.
-    if (isset($form_state['values']['fields'][$field_name]['type'])) {
-      $display_options['type'] = $form_state['values']['fields'][$field_name]['type'];
+    if ($display_type = $form_state->getValue(array('fields', $field_name, 'type'))) {
+      $display_options['type'] = $display_type;
     }
     if (isset($form_state['plugin_settings'][$field_name]['settings'])) {
       $display_options['settings'] = $form_state['plugin_settings'][$field_name]['settings'];
@@ -404,14 +401,10 @@ abstract class DisplayOverviewBase extends OverviewBase {
         $this->alterSettingsSummary($summary, $plugin, $field_definition);
 
         if (!empty($summary)) {
-          $summary_escaped = '';
-          $separator = '';
-          foreach ($summary as $summary_item) {
-            $summary_escaped .= $separator . SafeMarkup::escape($summary_item);
-            $separator = '<br />';
-          }
           $field_row['settings_summary'] = array(
-            '#markup' => SafeMarkup::set('<div class="field-plugin-summary">' . $summary_escaped . '</div>'),
+            '#type' => 'inline_template',
+            '#template' => '<div class="field-plugin-summary">{{ summary|safe_join("<br />") }}</div>',
+            '#context' => array('summary' => $summary),
             '#cell_attributes' => array('class' => array('field-plugin-summary-cell')),
           );
         }
@@ -509,8 +502,8 @@ abstract class DisplayOverviewBase extends OverviewBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    $form_values = $form_state['values'];
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $form_values = $form_state->getValues();
     $display = $this->getEntityDisplay($this->mode);
 
     // Collect data for 'regular' fields.
@@ -615,7 +608,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
   /**
    * Form submission handler for multistep buttons.
    */
-  public function multistepSubmit($form, &$form_state) {
+  public function multistepSubmit($form, FormStateInterface $form_state) {
     $trigger = $form_state['triggering_element'];
     $op = $trigger['#op'];
 
@@ -629,11 +622,11 @@ abstract class DisplayOverviewBase extends OverviewBase {
       case 'update':
         // Store the saved settings, and set the field back to 'non edit' mode.
         $field_name = $trigger['#field_name'];
-        if (isset($form_state['values']['fields'][$field_name]['settings_edit_form']['settings'])) {
-          $form_state['plugin_settings'][$field_name]['settings'] = $form_state['values']['fields'][$field_name]['settings_edit_form']['settings'];
+        if ($plugin_settings = $form_state->getValue(array('fields', $field_name, 'settings_edit_form', 'settings'))) {
+          $form_state['plugin_settings'][$field_name]['settings'] = $plugin_settings;
         }
-        if (isset($form_state['values']['fields'][$field_name]['settings_edit_form']['third_party_settings'])) {
-          $form_state['plugin_settings'][$field_name]['third_party_settings'] = $form_state['values']['fields'][$field_name]['settings_edit_form']['third_party_settings'];
+        if ($plugin_third_party_settings = $form_state->getValue(array('fields', $field_name, 'settings_edit_form', 'third_party_settings'))) {
+          $form_state['plugin_settings'][$field_name]['third_party_settings'] = $plugin_third_party_settings;
         }
         unset($form_state['plugin_settings_edit']);
         break;
@@ -646,7 +639,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
       case 'refresh_table':
         // If the currently edited field is one of the rows to be refreshed, set
         // it back to 'non edit' mode.
-        $updated_rows = explode(' ', $form_state['values']['refresh_rows']);
+        $updated_rows = explode(' ', $form_state->getValue('refresh_rows'));
         if (isset($form_state['plugin_settings_edit']) && in_array($form_state['plugin_settings_edit'], $updated_rows)) {
           unset($form_state['plugin_settings_edit']);
         }
@@ -659,7 +652,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
   /**
    * Ajax handler for multistep buttons.
    */
-  public function multistepAjax($form, &$form_state) {
+  public function multistepAjax($form, FormStateInterface $form_state) {
     $trigger = $form_state['triggering_element'];
     $op = $trigger['#op'];
 
@@ -677,7 +670,7 @@ abstract class DisplayOverviewBase extends OverviewBase {
         break;
 
       case 'refresh_table':
-        $updated_rows = array_values(explode(' ', $form_state['values']['refresh_rows']));
+        $updated_rows = array_values(explode(' ', $form_state->getValue('refresh_rows')));
         $updated_columns = array('settings_summary', 'settings_edit');
         break;
     }
@@ -733,16 +726,24 @@ abstract class DisplayOverviewBase extends OverviewBase {
   abstract protected function getPlugin(FieldDefinitionInterface $field_definition, $configuration);
 
   /**
-   * Returns an array of widget or formatter options for a field type.
+   * Returns an array of widget or formatter options for a field.
    *
-   * @param string $field_type
-   *   The name of the field type.
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+   *   The field definition.
    *
    * @return array
    *   An array of widget or formatter options.
    */
-  protected function getPluginOptions($field_type) {
-    return $this->pluginManager->getOptions($field_type);
+  protected function getPluginOptions(FieldDefinitionInterface $field_definition) {
+    $options = $this->pluginManager->getOptions($field_definition->getType());
+    $applicable_options = array();
+    foreach ($options as $option => $label) {
+      $plugin_class = DefaultFactory::getPluginClass($option, $this->pluginManager->getDefinition($option));
+      if ($plugin_class::isApplicable($field_definition)) {
+        $applicable_options[$option] = $label;
+      }
+    }
+    return $applicable_options;
   }
 
   /**
@@ -887,13 +888,13 @@ abstract class DisplayOverviewBase extends OverviewBase {
    *   The field definition.
    * @param array $form
    *   The (entire) configuration form array.
-   * @param array $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
    *
    * @return array
    *   The widget or formatter third party settings form.
    */
-  abstract protected function thirdPartySettingsForm(PluginSettingsInterface $plugin, FieldDefinitionInterface $field_definition, array $form, array &$form_state);
+  abstract protected function thirdPartySettingsForm(PluginSettingsInterface $plugin, FieldDefinitionInterface $field_definition, array $form, FormStateInterface $form_state);
 
   /**
    * Alters the widget or formatter settings summary.

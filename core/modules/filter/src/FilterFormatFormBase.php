@@ -10,6 +10,7 @@ namespace Drupal\filter;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\Query\QueryFactory;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\filter\Plugin\Filter\FilterNull;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -47,7 +48,7 @@ abstract class FilterFormatFormBase extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $format = $this->entity;
     $is_fallback = ($format->id() == $this->config('filter.settings')->get('fallback_format'));
 
@@ -209,12 +210,12 @@ abstract class FilterFormatFormBase extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function validate(array $form, array &$form_state) {
+  public function validate(array $form, FormStateInterface $form_state) {
     parent::validate($form, $form_state);
 
     // @todo Move trimming upstream.
-    $format_format = trim($form_state['values']['format']);
-    $format_name = trim($form_state['values']['name']);
+    $format_format = trim($form_state->getValue('format'));
+    $format_name = trim($form_state->getValue('name'));
 
     // Ensure that the values to be saved later are exactly the ones validated.
     form_set_value($form['format'], $format_format, $form_state);
@@ -226,19 +227,19 @@ abstract class FilterFormatFormBase extends EntityForm {
       ->condition('name', $format_name)
       ->execute();
     if ($format_exists) {
-      $this->setFormError('name', $form_state, $this->t('Text format names must be unique. A format named %name already exists.', array('%name' => $format_name)));
+      $form_state->setErrorByName('name', $this->t('Text format names must be unique. A format named %name already exists.', array('%name' => $format_name)));
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submit(array $form, array &$form_state) {
+  public function submit(array $form, FormStateInterface $form_state) {
     parent::submit($form, $form_state);
 
     // Add the submitted form values to the text format, and save it.
     $format = $this->entity;
-    foreach ($form_state['values'] as $key => $value) {
+    foreach ($form_state->getValues() as $key => $value) {
       if ($key != 'filters') {
         $format->set($key, $value);
       }
@@ -252,12 +253,12 @@ abstract class FilterFormatFormBase extends EntityForm {
 
     // Save user permissions.
     if ($permission = $format->getPermissionName()) {
-      foreach ($form_state['values']['roles'] as $rid => $enabled) {
+      foreach ($form_state->getValue('roles') as $rid => $enabled) {
         user_role_change_permissions($rid, array($permission => $enabled));
       }
     }
 
-    $form_state['redirect_route']['route_name'] = 'filter.admin_overview';
+    $form_state->setRedirect('filter.admin_overview');
 
     return $this->entity;
   }
@@ -265,7 +266,7 @@ abstract class FilterFormatFormBase extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  protected function actions(array $form, array &$form_state) {
+  protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Save configuration');
     return $actions;

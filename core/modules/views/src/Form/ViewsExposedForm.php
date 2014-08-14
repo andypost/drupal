@@ -9,6 +9,7 @@ namespace Drupal\views\Form;
 
 use Drupal\Component\Utility\String;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ExposedFormCache;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -51,7 +52,7 @@ class ViewsExposedForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     // Don't show the form when batch operations are in progress.
     if ($batch = batch_get() && isset($batch['current_set'])) {
       return array(
@@ -131,7 +132,7 @@ class ViewsExposedForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     foreach (array('field', 'filter') as $type) {
       /** @var \Drupal\views\Plugin\views\HandlerBase[] $handlers */
       $handlers = &$form_state['view']->$type;
@@ -147,7 +148,7 @@ class ViewsExposedForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     foreach (array('field', 'filter') as $type) {
       /** @var \Drupal\views\Plugin\views\HandlerBase[] $handlers */
       $handlers = &$form_state['view']->$type;
@@ -155,7 +156,7 @@ class ViewsExposedForm extends FormBase {
         $handlers[$key]->submitExposed($form, $form_state);
       }
     }
-    $form_state['view']->exposed_data = $form_state['values'];
+    $form_state['view']->exposed_data = $form_state->getValues();
     $form_state['view']->exposed_raw_input = array();
 
     $exclude = array('submit', 'form_build_id', 'form_id', 'form_token', 'exposed_form_plugin', '', 'reset');
@@ -163,7 +164,7 @@ class ViewsExposedForm extends FormBase {
     $exposed_form_plugin = $form_state['exposed_form_plugin'];
     $exposed_form_plugin->exposedFormSubmit($form, $form_state, $exclude);
 
-    foreach ($form_state['values'] as $key => $value) {
+    foreach ($form_state->getValues() as $key => $value) {
       if (!in_array($key, $exclude)) {
         $form_state['view']->exposed_raw_input[$key] = $value;
       }

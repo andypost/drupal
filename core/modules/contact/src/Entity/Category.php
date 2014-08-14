@@ -19,7 +19,7 @@ use Drupal\contact\CategoryInterface;
  *   id = "contact_category",
  *   label = @Translation("Contact category"),
  *   controllers = {
- *     "access" = "Drupal\contact\CategoryAccessController",
+ *     "access" = "Drupal\contact\CategoryAccessControlHandler",
  *     "list_builder" = "Drupal\contact\CategoryListBuilder",
  *     "form" = {
  *       "add" = "Drupal\contact\CategoryForm",
@@ -35,8 +35,8 @@ use Drupal\contact\CategoryInterface;
  *     "label" = "label"
  *   },
  *   links = {
- *     "delete-form" = "contact.category_delete",
- *     "edit-form" = "contact.category_edit"
+ *     "delete-form" = "entity.contact_category.delete_form",
+ *     "edit-form" = "entity.contact_category.edit_form"
  *   }
  * )
  */

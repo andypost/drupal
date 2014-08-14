@@ -10,6 +10,7 @@ namespace Drupal\field_ui\Form;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\TypedDataManager;
 use Drupal\field\FieldInstanceConfigInterface;
 use Drupal\field_ui\FieldUI;
@@ -74,7 +75,7 @@ class FieldStorageEditForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state, FieldInstanceConfigInterface $field_instance_config = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, FieldInstanceConfigInterface $field_instance_config = NULL) {
     $this->instance = $form_state['instance'] = $field_instance_config;
     $form['#title'] = $this->instance->label();
 
@@ -159,20 +160,21 @@ class FieldStorageEditForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     // Validate field cardinality.
-    $cardinality = $form_state['values']['field']['cardinality'];
-    $cardinality_number = $form_state['values']['field']['cardinality_number'];
+    $field_values = $form_state->getValue('field');
+    $cardinality = $field_values['cardinality'];
+    $cardinality_number = $field_values['cardinality_number'];
     if ($cardinality === 'number' && empty($cardinality_number)) {
-      $this->setFormError('field][cardinality_number', $form_state, $this->t('Number of values is required.'));
+      $form_state->setErrorByName('field][cardinality_number', $this->t('Number of values is required.'));
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    $form_values = $form_state['values'];
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $form_values = $form_state->getValues();
     $field_values = $form_values['field'];
 
     // Save field cardinality.
@@ -197,15 +199,10 @@ class FieldStorageEditForm extends FormBase {
       $request = $this->getRequest();
       if (($destinations = $request->query->get('destinations')) && $next_destination = FieldUI::getNextDestination($destinations)) {
         $request->query->remove('destinations');
-        if (isset($next_destination['route_name'])) {
-          $form_state['redirect_route'] = $next_destination;
-        }
-        else {
-          $form_state['redirect'] = $next_destination;
-        }
+        $form_state->setRedirectUrl($next_destination);
       }
       else {
-        $form_state['redirect_route'] = FieldUI::getOverviewRouteInfo($this->instance->entity_type, $this->instance->bundle);
+        $form_state->setRedirectUrl(FieldUI::getOverviewRouteInfo($this->instance->entity_type, $this->instance->bundle));
       }
     }
     catch (\Exception $e) {

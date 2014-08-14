@@ -22,7 +22,7 @@ class FieldImportDeleteUninstallTest extends FieldUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('telephone', 'menu_link');
+  public static $modules = array('telephone');
 
   public function setUp() {
     parent::setUp();
@@ -67,7 +67,7 @@ class FieldImportDeleteUninstallTest extends FieldUnitTestBase {
     $value = '+0123456789';
     $entity->field_test = $value;
     $entity->field_int = '99';
-    $entity->name->value = $this->randomName();
+    $entity->name->value = $this->randomMachineName();
     $entity->save();
 
     // Verify entity has been created properly.
@@ -130,7 +130,7 @@ class FieldImportDeleteUninstallTest extends FieldUnitTestBase {
       $entity = entity_create('entity_test');
       $value = '+0123456789';
       $entity->field_test = $value;
-      $entity->name->value = $this->randomName();
+      $entity->name->value = $this->randomMachineName();
       $entity->save();
 
       // Verify entity has been created properly.

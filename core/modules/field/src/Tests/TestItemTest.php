@@ -7,7 +7,7 @@
 
 namespace Drupal\field\Tests;
 
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 
@@ -56,7 +56,7 @@ class TestItemTest extends FieldUnitTestBase {
     $entity = entity_create('entity_test');
     $value = rand(1, 10);
     $entity->field_test = $value;
-    $entity->name->value = $this->randomName();
+    $entity->name->value = $this->randomMachineName();
     $entity->save();
 
     // Verify entity has been created properly.
@@ -92,7 +92,7 @@ class TestItemTest extends FieldUnitTestBase {
       ),
       'foreign keys' => array(),
     );
-    $field_schema = FieldDefinition::create('test_field')->getSchema();
+    $field_schema = BaseFieldDefinition::create('test_field')->getSchema();
     $this->assertEqual($field_schema, $expected_schema);
   }
 

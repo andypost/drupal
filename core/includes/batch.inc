@@ -16,8 +16,11 @@
 
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Timer;
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Batch\Percentage;
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Page\DefaultHtmlPageRenderer;
+use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -319,9 +322,9 @@ function _batch_process() {
       '@total'      => $total,
       '@current'    => floor($current),
       '@percentage' => $percentage,
-      '@elapsed'    => format_interval($elapsed / 1000),
+      '@elapsed'    => \Drupal::service('date.formatter')->formatInterval($elapsed / 1000),
       // If possible, estimate remaining processing time.
-      '@estimate'   => ($current > 0) ? format_interval(($elapsed * ($total - $current) / $current) / 1000) : '-',
+      '@estimate'   => ($current > 0) ? \Drupal::service('date.formatter')->formatInterval(($elapsed * ($total - $current) / $current) / 1000) : '-',
     );
     $message = strtr($progress_message, $values);
     if (!empty($task_message)) {
@@ -385,7 +388,8 @@ function _batch_next_set() {
     if (isset($current_set['form_submit']) && ($callback = $current_set['form_submit']) && is_callable($callback)) {
       // We use our stored copies of $form and $form_state to account for
       // possible alterations by previous form submit handlers.
-      call_user_func_array($callback, array(&$batch['form_state']['complete_form'], &$batch['form_state']));
+      $complete_form = &$batch['form_state']->getCompleteForm();
+      call_user_func_array($callback, array(&$complete_form, &$batch['form_state']));
     }
     return TRUE;
   }
@@ -410,7 +414,7 @@ function _batch_finished() {
       if (is_callable($batch_set['finished'])) {
         $queue = _batch_queue($batch_set);
         $operations = $queue->getAllItems();
-        call_user_func_array($batch_set['finished'], array($batch_set['success'], $batch_set['results'], $operations, format_interval($batch_set['elapsed'] / 1000)));
+        call_user_func_array($batch_set['finished'], array($batch_set['success'], $batch_set['results'], $operations, \Drupal::service('date.formatter')->formatInterval($batch_set['elapsed'] / 1000)));
       }
     }
   }
@@ -442,13 +446,18 @@ function _batch_finished() {
     }
 
     // Determine the target path to redirect to.
-    if (!isset($_batch['form_state']['redirect'])) {
-      if (isset($_batch['redirect'])) {
-        $_batch['form_state']['redirect'] = $_batch['redirect'];
+    if (!isset($_batch['form_state'])) {
+      $_batch['form_state'] = new FormState();
+    }
+    if ($_batch['form_state']->getRedirect() === NULL) {
+      $redirect = $_batch['batch_redirect'] ?: $_batch['source_url'];
+      $options = UrlHelper::parse($redirect);
+      if (!UrlHelper::isExternal($options['path'])) {
+        $options['path'] = $GLOBALS['base_url'] . '/' . $options['path'];
       }
-      else {
-        $_batch['form_state']['redirect'] = $_batch['source_url'];
-      }
+      $redirect = Url::createFromPath($options['path']);
+      $redirect->setOptions($options);
+      $_batch['form_state']->setRedirectUrl($redirect);
     }
 
     // Use \Drupal\Core\Form\FormSubmitterInterface::redirectForm() to handle

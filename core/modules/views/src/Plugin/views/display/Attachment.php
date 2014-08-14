@@ -8,6 +8,7 @@
 namespace Drupal\views\Plugin\views\display;
 
 use Drupal\Component\Utility\String;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -140,7 +141,7 @@ class Attachment extends DisplayPluginBase {
   /**
    * Provide the default form for setting options.
    */
-  public function buildOptionsForm(&$form, &$form_state) {
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     // It is very important to call the parent function here:
     parent::buildOptionsForm($form, $form_state);
 
@@ -214,18 +215,18 @@ class Attachment extends DisplayPluginBase {
    * Perform any necessary changes to the form values prior to storage.
    * There is no need for this function to actually store the data.
    */
-  public function submitOptionsForm(&$form, &$form_state) {
+  public function submitOptionsForm(&$form, FormStateInterface $form_state) {
     // It is very important to call the parent function here:
     parent::submitOptionsForm($form, $form_state);
     switch ($form_state['section']) {
       case 'displays':
-        $form_state['values'][$form_state['section']] = array_filter($form_state['values'][$form_state['section']]);
+        $form_state->setValue($form_state['section'], array_filter($form_state->getValue($form_state['section'])));
       case 'inherit_arguments':
       case 'inherit_pager':
       case 'render_pager':
       case 'inherit_exposed_filters':
       case 'attachment_position':
-        $this->setOption($form_state['section'], $form_state['values'][$form_state['section']]);
+        $this->setOption($form_state['section'], $form_state->getValue($form_state['section']));
         break;
     }
   }

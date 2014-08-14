@@ -8,7 +8,9 @@
 namespace Drupal\editor\Form;
 
 use Drupal\Component\Utility\Bytes;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\filter\Entity\FilterFormat;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\HtmlCommand;
@@ -33,7 +35,7 @@ class EditorImageDialog extends FormBase {
    * @param \Drupal\filter\Entity\FilterFormat $filter_format
    *   The filter format for which this dialog corresponds.
    */
-  public function buildForm(array $form, array &$form_state, FilterFormat $filter_format = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, FilterFormat $filter_format = NULL) {
     // The default values are set directly from \Drupal::request()->request,
     // provided by the editor plugin opening the dialog.
     if (!isset($form_state['image_element'])) {
@@ -93,18 +95,30 @@ class EditorImageDialog extends FormBase {
       $form['fid']['#required'] = FALSE;
     }
 
+    // The alt attribute is *required*, but we allow users to opt-in to empty
+    // alt attributes for the very rare edge cases where that is valid by
+    // specifying two double quotes as the alternative text in the dialog.
+    // However, that *is* stored as an empty alt attribute, so if we're editing
+    // an existing image (which means the src attribute is set) and its alt
+    // attribute is empty, then we show that as two double quotes in the dialog.
+    // @see https://www.drupal.org/node/2307647
+    $alt = isset($image_element['alt']) ? $image_element['alt'] : '';
+    if ($alt === '' && !empty($image_element['src'])) {
+      $alt = '""';
+    }
     $form['attributes']['alt'] = array(
       '#title' => $this->t('Alternative text'),
       '#type' => 'textfield',
       '#required' => TRUE,
-      '#default_value' => isset($image_element['alt']) ? $image_element['alt'] : '',
+      '#required_error' => $this->t('Alternative text is required.<br><em>(Only in rare cases should this be left empty. To create empty alternative text, enter <code>""</code> — two double quotes without any content).'),
+      '#default_value' => $alt,
       '#maxlength' => 2048,
     );
     $form['dimensions'] = array(
       '#type' => 'item',
       '#title' => $this->t('Image size'),
-      '#field_prefix' => '<div class="container-inline">',
-      '#field_suffix' => '</div>',
+      '#field_prefix' => SafeMarkup::set('<div class="container-inline">'),
+      '#field_suffix' => SafeMarkup::set('</div>'),
     );
     $form['dimensions']['width'] = array(
       '#title' => $this->t('Width'),
@@ -133,9 +147,9 @@ class EditorImageDialog extends FormBase {
       '#parents' => array('attributes', 'height'),
     );
 
-    // When Drupal core's filter_caption is being used, the text editor may
+    // When Drupal core's filter_align is being used, the text editor may
     // offer the ability to change the alignment.
-    if (isset($image_element['data-align'])) {
+    if (isset($image_element['data-align']) && $filter_format->filters('filter_align')->status) {
       $form['align'] = array(
         '#title' => $this->t('Align'),
         '#type' => 'radios',
@@ -154,7 +168,7 @@ class EditorImageDialog extends FormBase {
 
     // When Drupal core's filter_caption is being used, the text editor may
     // offer the ability to in-place edit the image's caption: show a toggle.
-    if (isset($image_element['hasCaption'])) {
+    if (isset($image_element['hasCaption']) && $filter_format->filters('filter_caption')->status) {
       $form['caption'] = array(
         '#title' => $this->t('Caption'),
         '#type' => 'checkbox',
@@ -183,19 +197,26 @@ class EditorImageDialog extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
 
     // Convert any uploaded files from the FID values to data-editor-file-uuid
     // attributes.
-    if (!empty($form_state['values']['fid'][0])) {
-      $file = file_load($form_state['values']['fid'][0]);
+    $fid = $form_state->getValue(array('fid', 0));
+    if (!empty($fid)) {
+      $file = file_load($fid);
       $file_url = file_create_url($file->getFileUri());
       // Transform absolute image URLs to relative image URLs: prevent problems
       // on multisite set-ups and prevent mixed content errors.
       $file_url = file_url_transform_relative($file_url);
-      $form_state['values']['attributes']['src'] = $file_url;
-      $form_state['values']['attributes']['data-editor-file-uuid'] = $file->uuid();
+      $form_state->setValue(array('attributes', 'src'), $file_url);
+      $form_state->setValue(array('attributes', 'data-editor-file-uuid'), $file->uuid());
+    }
+
+    // When the alt attribute is set to two double quotes, transform it to the
+    // empty string: two double quotes signify "empty alt attribute". See above.
+    if (trim($form_state->getValue(array('attributes', 'alt'))) === '""') {
+      $form_state->setValue(array('attributes', 'alt'), '');
     }
 
     if (form_get_errors($form_state)) {
@@ -206,7 +227,7 @@ class EditorImageDialog extends FormBase {
       $response->addCommand(new HtmlCommand('#editor-image-dialog-form', $output));
     }
     else {
-      $response->addCommand(new EditorDialogSave($form_state['values']));
+      $response->addCommand(new EditorDialogSave($form_state->getValues()));
       $response->addCommand(new CloseModalDialogCommand());
     }
 

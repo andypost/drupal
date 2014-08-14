@@ -9,6 +9,7 @@ namespace Drupal\form_test\Form;
 
 use Drupal\Component\Utility\String;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * A multistep form for testing the form storage.
@@ -30,7 +31,7 @@ class FormTestStorageForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     if ($form_state['rebuild']) {
       $form_state['input'] = array();
     }
@@ -92,12 +93,12 @@ class FormTestStorageForm extends FormBase {
    *
    * Tests updating of cached form storage during validation.
    */
-  public function elementValidateValueCached($element, &$form_state) {
+  public function elementValidateValueCached($element, FormStateInterface $form_state) {
     // If caching is enabled and we receive a certain value, change the storage.
     // This presumes that another submitted form value triggers a validation error
     // elsewhere in the form. Form API should still update the cached form storage
     // though.
-    if (\Drupal::request()->get('cache') && $form_state['values']['value'] == 'change_title') {
+    if (\Drupal::request()->get('cache') && $form_state->getValue('value') == 'change_title') {
       $form_state['storage']['thing']['changed'] = TRUE;
     }
   }
@@ -105,22 +106,22 @@ class FormTestStorageForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function continueSubmitForm(array &$form, array &$form_state) {
-    $form_state['storage']['thing']['title'] = $form_state['values']['title'];
-    $form_state['storage']['thing']['value'] = $form_state['values']['value'];
+  public function continueSubmitForm(array &$form, FormStateInterface $form_state) {
+    $form_state['storage']['thing']['title'] = $form_state->getValue('title');
+    $form_state['storage']['thing']['value'] = $form_state->getValue('value');
     $form_state['rebuild'] = TRUE;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    drupal_set_message("Title: " . String::checkPlain($form_state['values']['title']));
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    drupal_set_message("Title: " . String::checkPlain($form_state->getValue('title')));
     drupal_set_message("Form constructions: " . $_SESSION['constructions']);
     if (isset($form_state['storage']['thing']['changed'])) {
       drupal_set_message("The thing has been changed.");
     }
-    $form_state['redirect_route']['route_name'] = '<front>';
+    $form_state->setRedirect('<front>');
   }
 
 }

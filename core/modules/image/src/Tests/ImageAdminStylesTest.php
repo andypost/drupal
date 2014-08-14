@@ -64,7 +64,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $admin_path = 'admin/config/media/image-styles';
 
     // Setup a style to be created and effects to add to it.
-    $style_name = strtolower($this->randomName(10));
+    $style_name = strtolower($this->randomMachineName(10));
     $style_label = $this->randomString();
     $style_path = $admin_path . '/manage/' . $style_name;
     $effect_edits = array(
@@ -167,8 +167,8 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
 
     // Test the style overview form.
     // Change the name of the style and adjust the weights of effects.
-    $style_name = strtolower($this->randomName(10));
-    $style_label = $this->randomName();
+    $style_name = strtolower($this->randomMachineName(10));
+    $style_label = $this->randomMachineName();
     $weight = count($effect_edits);
     $edit = array(
       'name' => $style_name,
@@ -237,6 +237,17 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
         '%style' => $style->label,
       )));
 
+    // Additional test on Rotate effect, for transparent background.
+    $edit = array(
+      'data[degrees]' => 5,
+      'data[random]' => 0,
+      'data[bgcolor]' => '',
+    );
+    $this->drupalPostForm($style_path, array('new' => 'image_rotate'), t('Add'));
+    $this->drupalPostForm(NULL, $edit, t('Add effect'));
+    $style = entity_load_unchanged('image_style', $style_name);
+    $this->assertEqual(count($style->getEffects()), 6, 'Rotate effect with transparent background was added.');
+
     // Style deletion form.
 
     // Delete the style.
@@ -255,14 +266,14 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
    */
   function testStyleReplacement() {
     // Create a new style.
-    $style_name = strtolower($this->randomName(10));
+    $style_name = strtolower($this->randomMachineName(10));
     $style_label = $this->randomString();
     $style = entity_create('image_style', array('name' => $style_name, 'label' => $style_label));
     $style->save();
     $style_path = 'admin/config/media/image-styles/manage/';
 
     // Create an image field that uses the new style.
-    $field_name = strtolower($this->randomName(10));
+    $field_name = strtolower($this->randomMachineName(10));
     $this->createImageField($field_name, 'article');
     entity_get_display('node', 'article', 'default')
       ->setComponent($field_name, array(
@@ -285,7 +296,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $this->assertRaw($style->buildUrl($original_uri), format_string('Image displayed using style @style.', array('@style' => $style_name)));
 
     // Rename the style and make sure the image field is updated.
-    $new_style_name = strtolower($this->randomName(10));
+    $new_style_name = strtolower($this->randomMachineName(10));
     $new_style_label = $this->randomString();
     $edit = array(
       'name' => $new_style_name,
@@ -361,7 +372,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $admin_path = 'admin/config/media/image-styles';
 
     // Create a new style.
-    $style_name = strtolower($this->randomName(10));
+    $style_name = strtolower($this->randomMachineName(10));
     $style = entity_create('image_style', array('name' => $style_name, 'label' => $this->randomString()));
     $style->save();
 
@@ -390,13 +401,13 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
    */
   function testConfigImport() {
     // Create a new style.
-    $style_name = strtolower($this->randomName(10));
+    $style_name = strtolower($this->randomMachineName(10));
     $style_label = $this->randomString();
     $style = entity_create('image_style', array('name' => $style_name, 'label' => $style_label));
     $style->save();
 
     // Create an image field that uses the new style.
-    $field_name = strtolower($this->randomName(10));
+    $field_name = strtolower($this->randomMachineName(10));
     $this->createImageField($field_name, 'article');
     entity_get_display('node', 'article', 'default')
       ->setComponent($field_name, array(

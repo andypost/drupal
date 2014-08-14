@@ -45,8 +45,8 @@ class NodeCreationTest extends NodeTestBase {
     $this->assertUrl('node/add/page');
     // Create a node.
     $edit = array();
-    $edit['title[0][value]'] = $this->randomName(8);
-    $edit['body[0][value]'] = $this->randomName(16);
+    $edit['title[0][value]'] = $this->randomMachineName(8);
+    $edit['body[0][value]'] = $this->randomMachineName(16);
     $this->drupalPostForm('node/add/page', $edit, t('Save'));
 
     // Check that the Basic page has been created.
@@ -125,8 +125,8 @@ class NodeCreationTest extends NodeTestBase {
 
     // Create a node.
     $edit = array();
-    $edit['title[0][value]'] = $this->randomName(8);
-    $edit['body[0][value]'] = $this->randomName(16);
+    $edit['title[0][value]'] = $this->randomMachineName(8);
+    $edit['body[0][value]'] = $this->randomMachineName(16);
     $this->drupalPostForm('node/add/page', $edit, t('Save'));
 
     // Check that the user was redirected to the home page.
@@ -158,4 +158,27 @@ class NodeCreationTest extends NodeTestBase {
     $this->assertEqual(count($result), 1, 'Ensure that the user does have access to the autocompletion');
   }
 
+  /**
+   * Check node/add when no node types exist.
+   */
+  function testNodeAddWithoutContentTypes () {
+    $this->drupalGet('node/add');
+    $this->assertResponse(200);
+    $this->assertNoLinkByHref('/admin/structure/types/add');
+
+    // Test /node/add page without content types.
+    foreach (entity_load_multiple('node_type') as $entity ) {
+      $entity->delete();
+    }
+
+    $this->drupalGet('node/add');
+    $this->assertResponse(403);
+
+    $admin_content_types = $this->drupalCreateUser(array('administer content types'));
+    $this->drupalLogin($admin_content_types);
+
+    $this->drupalGet('node/add');
+
+    $this->assertLinkByHref('/admin/structure/types/add');
+  }
 }

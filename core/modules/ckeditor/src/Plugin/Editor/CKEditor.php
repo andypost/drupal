@@ -10,6 +10,7 @@ namespace Drupal\ckeditor\Plugin\Editor;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\ckeditor\CKEditorPluginManager;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Render\Element;
 use Drupal\editor\Plugin\EditorBase;
@@ -127,7 +128,7 @@ class CKEditor extends EditorBase implements ContainerFactoryPluginInterface {
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array $form, array &$form_state, EditorEntity $editor) {
+  public function settingsForm(array $form, FormStateInterface $form_state, EditorEntity $editor) {
     $settings = $editor->getSettings();
 
     $ckeditor_settings_toolbar = array(
@@ -234,11 +235,11 @@ class CKEditor extends EditorBase implements ContainerFactoryPluginInterface {
   /**
    * {@inheritdoc}
    */
-  public function settingsFormSubmit(array $form, array &$form_state) {
+  public function settingsFormSubmit(array $form, FormStateInterface $form_state) {
     // Modify the toolbar settings by reference. The values in
-    // $form_state['values']['editor']['settings'] will be saved directly by
-    // editor_form_filter_admin_format_submit().
-    $toolbar_settings = &$form_state['values']['editor']['settings']['toolbar'];
+    // $form_state->getValue(array('editor', 'settings')) will be saved directly
+    // by editor_form_filter_admin_format_submit().
+    $toolbar_settings = &$form_state->getValue(array('editor', 'settings', 'toolbar'));
 
     // The rows key is not built into the form structure, so decode the button
     // groups data into this new key and remove the button_groups key.
@@ -246,8 +247,8 @@ class CKEditor extends EditorBase implements ContainerFactoryPluginInterface {
     unset($toolbar_settings['button_groups']);
 
     // Remove the plugin settings' vertical tabs state; no need to save that.
-    if (isset($form_state['values']['editor']['settings']['plugins'])) {
-      unset($form_state['values']['editor']['settings']['plugin_settings']);
+    if ($form_state->hasValue(array('editor', 'settings', 'plugins'))) {
+      $form_state->unsetValue(array('editor', 'settings', 'plugin_settings'));
     }
   }
 

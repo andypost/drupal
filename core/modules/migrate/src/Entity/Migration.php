@@ -145,11 +145,11 @@ class Migration extends ConfigEntityBase implements MigrationInterface, Requirem
   public $destinationIds = FALSE;
 
   /**
-   * Information on the highwater mark.
+   * Information on the high water mark.
    *
    * @var array
    */
-  public $highwaterProperty;
+  public $highWaterProperty;
 
   /**
    * Indicate whether the primary system of record for this migration is the
@@ -174,7 +174,7 @@ class Migration extends ConfigEntityBase implements MigrationInterface, Requirem
   /**
    * @var \Drupal\Core\KeyValueStore\KeyValueStoreInterface
    */
-  protected $highwaterStorage;
+  protected $highWaterStorage;
 
   /**
    * @var bool
@@ -282,30 +282,30 @@ class Migration extends ConfigEntityBase implements MigrationInterface, Requirem
   }
 
   /**
-   * Get the highwater storage object.
+   * Get the high water storage object.
    *
    * @return \Drupal\Core\KeyValueStore\KeyValueStoreInterface
    *   The storage object.
    */
   protected function getHighWaterStorage() {
-    if (!isset($this->highwaterStorage)) {
-      $this->highwaterStorage = \Drupal::keyValue('migrate:highwater');
+    if (!isset($this->highWaterStorage)) {
+      $this->highWaterStorage = \Drupal::keyValue('migrate:high_water');
     }
-    return $this->highwaterStorage;
+    return $this->highWaterStorage;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getHighwater() {
+  public function getHighWater() {
     return $this->getHighWaterStorage()->get($this->id());
   }
 
   /**
    * {@inheritdoc}
    */
-  public function saveHighwater($highwater) {
-    $this->getHighWaterStorage()->set($this->id(), $highwater);
+  public function saveHighWater($high_water) {
+    $this->getHighWaterStorage()->set($this->id(), $high_water);
   }
 
   /**
@@ -326,15 +326,7 @@ class Migration extends ConfigEntityBase implements MigrationInterface, Requirem
       $required_migrations = \Drupal::entityManager()->getStorage('migration')->loadMultiple($this->requirements);
       // Check if the dependencies are in good shape.
       foreach ($required_migrations as $required_migration) {
-        // If the dependent source migration has no IDs then no mappings can
-        // be recorded thus it is impossible to see whether the migration ran.
-        if (!$required_migration->getSourcePlugin()->getIds()) {
-          return FALSE;
-        }
-
-        // If the dependent migration has not processed any record, it means the
-        // dependency requirements are not met.
-        if (!$required_migration->getIdMap()->processedCount()) {
+        if (!$required_migration->isComplete()) {
           return FALSE;
         }
       }
@@ -344,6 +336,29 @@ class Migration extends ConfigEntityBase implements MigrationInterface, Requirem
     }
 
     return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setMigrationResult($result) {
+    $migrate_result_store = \Drupal::keyValue('migrate_result');
+    $migrate_result_store->set($this->id(), $result);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getMigrationResult() {
+    $migrate_result_store = \Drupal::keyValue('migrate_result');
+    return $migrate_result_store->get($this->id(), static::RESULT_INCOMPLETE);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isComplete() {
+    return $this->getMigrationResult() === static::RESULT_COMPLETED;
   }
 
 }

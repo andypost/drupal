@@ -8,6 +8,7 @@
 namespace Drupal\views\Plugin\views;
 
 use Drupal\Component\Utility\String;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase as ComponentPluginBase;
 use Drupal\Core\Render\Element;
@@ -216,9 +217,9 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
   /**
    * Provide a form to edit options for this plugin.
    */
-  public function buildOptionsForm(&$form, &$form_state) {
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     // Some form elements belong in a fieldset for presentation, but can't
-    // be moved into one because of the form_state['values'] hierarchy. Those
+    // be moved into one because of the $form_state->getValues() hierarchy. Those
     // elements can add a #fieldset => 'fieldset_name' property, and they'll
     // be moved to their fieldset during pre_render.
     $form['#pre_render'][] = array(get_class($this), 'preRenderAddFieldsetMarkup');
@@ -227,12 +228,12 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
   /**
    * Validate the options form.
    */
-  public function validateOptionsForm(&$form, &$form_state) { }
+  public function validateOptionsForm(&$form, FormStateInterface $form_state) { }
 
   /**
    * Handle any special handling on the validate form.
    */
-  public function submitOptionsForm(&$form, &$form_state) { }
+  public function submitOptionsForm(&$form, FormStateInterface $form_state) { }
 
   /**
    * Add anything to the query that we might need to.
@@ -336,10 +337,10 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
    *
    * @param array $form
    *   The form array to alter, passed by reference.
-   * @param array $form_state
-   *   The form state array to alter, passed by reference.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
    */
-  public function globalTokenForm(&$form, &$form_state) {
+  public function globalTokenForm(&$form, FormStateInterface $form_state) {
     $token_items = array();
 
     foreach ($this->getAvailableGlobalTokens() as $type => $tokens) {
@@ -374,7 +375,7 @@ abstract class PluginBase extends ComponentPluginBase implements ContainerFactor
    * easier storage. Moving the form elements into fieldsets during form
    * building would break up that hierarchy. Therefore, we wait until the
    * pre_render stage, where any changes we make affect presentation only and
-   * aren't reflected in $form_state['values'].
+   * aren't reflected in $form_state->getValues().
    *
    * @param array $form
    *   The form build array to alter.

@@ -8,6 +8,7 @@
  * customized by user themes.
  */
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\UrlHelper;
@@ -29,8 +30,10 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @defgroup content_flags Content markers
  * @{
- * Markers used by theme_mark() and node_mark() to designate content.
- * @see theme_mark(), node_mark()
+ * Markers used by mark.html.twig and node_mark() to designate content.
+ *
+ * @see mark.html.twig
+ * @see node_mark()
  */
 
 /**
@@ -1031,6 +1034,25 @@ function theme_disable($theme_list) {
 }
 
 /**
+ * Renders a twig string directly.
+ *
+ * @param string $template_string
+ *   The template string to render with placeholders.
+ * @param array $context
+ *   An array of parameters to pass to the template.
+ *
+ * @return string
+ *   The rendered inline template.
+ */
+function drupal_render_inline_template(&$element) {
+  /** @var \Drupal\Core\Template\TwigEnvironment $environment */
+  $environment = \Drupal::service('twig');
+  $markup = $environment->renderInline($element['#template'], $element['#context']);
+  $element['#markup'] = $markup;
+  return $element;
+}
+
+/**
  * @addtogroup themeable
  * @{
  */
@@ -1697,6 +1719,25 @@ function template_preprocess_table(&$variables) {
 }
 
 /**
+ * Prepares variables for tablesort indicator templates.
+ *
+ * Default template: tablesort-indicator.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - style: Set to either 'asc' or 'desc'. This determines which icon to show.
+ */
+function template_preprocess_tablesort_indicator(&$variables) {
+  // Provide the image attributes for an ascending or descending image.
+  if ($variables['style'] == 'asc') {
+    $variables['arrow_asc'] = file_create_url('core/misc/arrow-asc.png');
+  }
+  else {
+    $variables['arrow_desc'] = file_create_url('core/misc/arrow-desc.png');
+  }
+}
+
+/**
  * Prepares variables for item list templates.
  *
  * Default template: item-list.html.twig.
@@ -1715,8 +1756,6 @@ function template_preprocess_table(&$variables) {
  * @see http://drupal.org/node/1842756
  */
 function template_preprocess_item_list(&$variables) {
-  $variables['title'] = (string) $variables['title'];
-
   foreach ($variables['items'] as &$item) {
     $attributes = array();
     // If the item value is an array, then it is a render array.
@@ -2126,27 +2165,17 @@ function template_preprocess_page(&$variables) {
 
   // Pass the main menu and secondary menu to the template as render arrays.
   if (!empty($variables['main_menu'])) {
-    $variables['main_menu'] = array(
-      '#theme' =>'links__system_main_menu',
-      '#links' => $variables['main_menu'],
-      '#heading' => array(
-        'text' => t('Main menu'),
-        'class' => array('visually-hidden'),
-        'attributes' => array('id' => 'links__system_main_menu'),
-      ),
-      '#set_active_class' => TRUE,
+    $variables['main_menu']['#heading'] = array(
+      'text' => t('Main menu'),
+      'class' => array('visually-hidden'),
+      'attributes' => array('id' => 'links__system_main_menu'),
     );
   }
   if (!empty($variables['secondary_menu'])) {
-    $variables['secondary_menu'] = array(
-      '#theme' =>'links__system_secondary_menu',
-      '#links' => $variables['secondary_menu'],
-      '#heading' => array(
-        'text' => t('Secondary menu'),
-        'class' => array('visually-hidden'),
-        'attributes' => array('id' => 'links__system_secondary_menu'),
-      ),
-      '#set_active_class' => TRUE,
+    $variables['secondary_menu']['#heading'] = array(
+      'text' => t('Secondary menu'),
+      'class' => array('visually-hidden'),
+      'attributes' => array('id' => 'links__system_secondary_menu'),
     );
   }
 
@@ -2632,6 +2661,7 @@ function drupal_common_theme() {
     ),
     'menu_tree' => array(
       'render element' => 'tree',
+      'template' => 'menu-tree',
     ),
     'menu_local_task' => array(
       'render element' => 'element',

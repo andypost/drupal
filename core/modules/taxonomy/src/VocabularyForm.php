@@ -9,6 +9,7 @@ namespace Drupal\taxonomy;
 
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 
 /**
@@ -19,7 +20,7 @@ class VocabularyForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  public function form(array $form, array &$form_state) {
+  public function form(array $form, FormStateInterface $form_state) {
     $vocabulary = $this->entity;
     if ($vocabulary->isNew()) {
       $form['#title'] = $this->t('Add vocabulary');
@@ -88,7 +89,7 @@ class VocabularyForm extends EntityForm {
   /**
    * {@inheritdoc}
    */
-  protected function actions(array $form, array &$form_state) {
+  protected function actions(array $form, FormStateInterface $form_state) {
     // If we are displaying the delete confirmation skip the regular actions.
     if (empty($form_state['confirm_delete'])) {
       $actions = parent::actions($form, $form_state);
@@ -114,23 +115,23 @@ class VocabularyForm extends EntityForm {
   /**
    * Submit handler to update the bundle for the default language configuration.
    */
-  public function languageConfigurationSubmit(array &$form, array &$form_state) {
+  public function languageConfigurationSubmit(array &$form, FormStateInterface $form_state) {
     $vocabulary = $this->entity;
     // Delete the old language settings for the vocabulary, if the machine name
     // is changed.
-    if ($vocabulary && $vocabulary->id() && $vocabulary->id() != $form_state['values']['vid']) {
+    if ($vocabulary && $vocabulary->id() && $vocabulary->id() != $form_state->getValue('vid')) {
       language_clear_default_configuration('taxonomy_term', $vocabulary->id());
     }
     // Since the machine name is not known yet, and it can be changed anytime,
     // we have to also update the bundle property for the default language
     // configuration in order to have the correct bundle value.
-    $form_state['language']['default_language']['bundle'] = $form_state['values']['vid'];
+    $form_state['language']['default_language']['bundle'] = $form_state->getValue('vid');
   }
 
   /**
    * {@inheritdoc}
    */
-  public function save(array $form, array &$form_state) {
+  public function save(array $form, FormStateInterface $form_state) {
     $vocabulary = $this->entity;
 
     // Prevent leading and trailing spaces in vocabulary names.
@@ -141,18 +142,18 @@ class VocabularyForm extends EntityForm {
     switch ($status) {
       case SAVED_NEW:
         drupal_set_message($this->t('Created new vocabulary %name.', array('%name' => $vocabulary->name)));
-        watchdog('taxonomy', 'Created new vocabulary %name.', array('%name' => $vocabulary->name), WATCHDOG_NOTICE, $edit_link);
-        $form_state['redirect_route'] = $vocabulary->urlInfo('overview-form');
+        $this->logger('taxonomy')->notice('Created new vocabulary %name.', array('%name' => $vocabulary->name, 'link' => $edit_link));
+        $form_state->setRedirectUrl($vocabulary->urlInfo('overview-form'));
         break;
 
       case SAVED_UPDATED:
         drupal_set_message($this->t('Updated vocabulary %name.', array('%name' => $vocabulary->name)));
-        watchdog('taxonomy', 'Updated vocabulary %name.', array('%name' => $vocabulary->name), WATCHDOG_NOTICE, $edit_link);
-        $form_state['redirect_route']['route_name'] = 'taxonomy.vocabulary_list';
+        $this->logger('taxonomy')->notice('Updated vocabulary %name.', array('%name' => $vocabulary->name, 'link' => $edit_link));
+        $form_state->setRedirect('taxonomy.vocabulary_list');
         break;
     }
 
-    $form_state['values']['vid'] = $vocabulary->id();
+    $form_state->setValue('vid', $vocabulary->id());
     $form_state['vid'] = $vocabulary->id();
   }
 

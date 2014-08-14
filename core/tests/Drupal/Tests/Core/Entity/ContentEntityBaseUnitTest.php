@@ -8,7 +8,7 @@
 namespace Drupal\Tests\Core\Entity;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Language\Language;
@@ -92,7 +92,7 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
   /**
    * Field definitions.
    *
-   * @var \Drupal\Core\Field\FieldDefinition[]
+   * @var \Drupal\Core\Field\BaseFieldDefinition[]
    */
   protected $fieldDefinitions;
 
@@ -106,8 +106,8 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
       'langcode' => 'en',
       'uuid' => '3bb9ee60-bea5-4622-b89b-a63319d10b3a',
     );
-    $this->entityTypeId = $this->randomName();
-    $this->bundle = $this->randomName();
+    $this->entityTypeId = $this->randomMachineName();
+    $this->bundle = $this->randomMachineName();
 
     $this->entityType = $this->getMock('\Drupal\Core\Entity\EntityTypeInterface');
     $this->entityType->expects($this->any())
@@ -158,8 +158,8 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
     \Drupal::setContainer($container);
 
     $this->fieldDefinitions = array(
-      'id' => FieldDefinition::create('integer'),
-      'revision_id' => FieldDefinition::create('integer'),
+      'id' => BaseFieldDefinition::create('integer'),
+      'revision_id' => BaseFieldDefinition::create('integer'),
     );
 
     $this->entityManager->expects($this->any())
@@ -272,7 +272,7 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
    * @covers ::getString
    */
   public function testGetString() {
-    $label = $this->randomName();
+    $label = $this->randomMachineName();
     /** @var \Drupal\Core\Entity\ContentEntityBase|\PHPUnit_Framework_MockObject_MockObject $entity */
     $entity = $this->getMockBuilder('\Drupal\Core\Entity\ContentEntityBase')
       ->setMethods(array('label'))
@@ -351,7 +351,7 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
    * @covers ::setContext
    */
   public function testSetContext() {
-    $name = $this->randomName();
+    $name = $this->randomMachineName();
     $parent = $this->getMock('\Drupal\Core\TypedData\TypedDataInterface');
     // Our mocked entity->setContext() returns NULL, so assert that.
     $this->assertNull($this->entity->setContext($name, $parent));
@@ -368,8 +368,8 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
    * @covers ::access
    */
   public function testAccess() {
-    $access = $this->getMock('\Drupal\Core\Entity\EntityAccessControllerInterface');
-    $operation = $this->randomName();
+    $access = $this->getMock('\Drupal\Core\Entity\EntityAccessControlHandlerInterface');
+    $operation = $this->randomMachineName();
     $access->expects($this->at(0))
       ->method('access')
       ->with($this->entity, $operation)
@@ -378,7 +378,7 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
       ->method('createAccess')
       ->will($this->returnValue(TRUE));
     $this->entityManager->expects($this->exactly(2))
-      ->method('getAccessController')
+      ->method('getAccessControlHandler')
       ->will($this->returnValue($access));
     $this->assertTrue($this->entity->access($operation));
     $this->assertTrue($this->entity->access('create'));
@@ -391,7 +391,7 @@ class ContentEntityBaseUnitTest extends UnitTestCase {
     // Make a mock with one method that we use as the entity's label callback.
     // We check that it is called, and that the entity's label is the callback's
     // return value.
-    $callback_label = $this->randomName();
+    $callback_label = $this->randomMachineName();
     $callback_container = $this->getMock(get_class());
     $callback_container->expects($this->once())
       ->method(__FUNCTION__)

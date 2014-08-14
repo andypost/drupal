@@ -7,6 +7,7 @@
 
 namespace Drupal\views_ui\Form\Ajax;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ViewStorageInterface;
 use Drupal\views\ViewExecutable;
 
@@ -47,7 +48,7 @@ class Rearrange extends ViewsFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $view = $form_state['view'];
     $display_id = $form_state['display_id'];
     $type = $form_state['type'];
@@ -134,7 +135,7 @@ class Rearrange extends ViewsFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $types = ViewExecutable::getHandlerTypes();
     $display = &$form_state['view']->getExecutable()->displayHandlers->get($form_state['display_id']);
 
@@ -142,7 +143,7 @@ class Rearrange extends ViewsFormBase {
     $new_fields = $order = array();
 
     // Make an array with the weights
-    foreach ($form_state['values']['fields'] as $field => $info) {
+    foreach ($form_state->getValue('fields') as $field => $info) {
       // add each value that is a field with a weight to our list, but only if
       // it has had its 'removed' checkbox checked.
       if (is_array($info) && isset($info['weight']) && empty($info['removed'])) {

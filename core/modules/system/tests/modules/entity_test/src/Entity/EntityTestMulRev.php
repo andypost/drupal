@@ -8,7 +8,7 @@
 namespace Drupal\entity_test\Entity;
 
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\entity_test\Entity\EntityTestRev;
 
 /**
@@ -18,7 +18,7 @@ use Drupal\entity_test\Entity\EntityTestRev;
  *   id = "entity_test_mulrev",
  *   label = @Translation("Test entity - revisions and data table"),
  *   controllers = {
- *     "access" = "Drupal\entity_test\EntityTestAccessController",
+ *     "access" = "Drupal\entity_test\EntityTestAccessControlHandler",
  *     "form" = {
  *       "default" = "Drupal\entity_test\EntityTestForm",
  *       "delete" = "Drupal\entity_test\EntityTestDeleteForm"

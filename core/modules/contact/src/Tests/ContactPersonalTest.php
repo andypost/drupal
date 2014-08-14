@@ -209,7 +209,7 @@ class ContactPersonalTest extends WebTestBase {
 
     // Submit contact form one over limit.
     $this->drupalGet('user/' . $this->contact_user->id(). '/contact');
-    $this->assertRaw(t('You cannot send more than %number messages in @interval. Try again later.', array('%number' => $flood_limit, '@interval' => format_interval(\Drupal::config('contact.settings')->get('flood.interval')))), 'Normal user denied access to flooded contact form.');
+    $this->assertRaw(t('You cannot send more than %number messages in @interval. Try again later.', array('%number' => $flood_limit, '@interval' => \Drupal::service('date.formatter')->formatInterval(\Drupal::config('contact.settings')->get('flood.interval')))), 'Normal user denied access to flooded contact form.');
 
     // Test that the admin user can still access the contact form even though
     // the flood limit was reached.
@@ -247,10 +247,10 @@ class ContactPersonalTest extends WebTestBase {
     else {
       $this->assertNoFieldChecked('edit-contact--2');
     }
-    $name = $this->randomName();
+    $name = $this->randomMachineName();
     $edit = array(
       'name' => $name,
-      'mail' => $this->randomName() . '@example.com',
+      'mail' => $this->randomMachineName() . '@example.com',
       'pass[pass1]' => $pass = $this->randomString(),
       'pass[pass2]' => $pass,
       'notify' => FALSE,
@@ -280,8 +280,8 @@ class ContactPersonalTest extends WebTestBase {
    */
   protected function submitPersonalContact(AccountInterface $account, array $message = array()) {
     $message += array(
-      'subject[0][value]' => $this->randomName(16),
-      'message[0][value]' => $this->randomName(64),
+      'subject[0][value]' => $this->randomMachineName(16),
+      'message[0][value]' => $this->randomMachineName(64),
     );
     $this->drupalPostForm('user/' . $account->id() . '/contact', $message, t('Send message'));
     return $message;

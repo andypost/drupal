@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @defgroup themeable Default theme implementations
+ * @defgroup themeable Theme system overview
  * @{
  * Functions and templates for the user interface that themes can override.
  *
@@ -18,16 +18,16 @@
  * @link theme_render Theme system and Render API topic @endlink for more
  * information about render arrays and rendering.
  *
- * @section sec_theme_hooks Theme Hooks The theme system is invoked in
- * drupal_render() by calling the internal _theme() function, which operates on
- * the concept of "theme hooks". Theme hooks define how a particular type of
- * data should be rendered. They are registered by modules by implenting
- * hook_theme(), which specifies the name of the hook, the input "variables"
- * used to provide data and options, and other information. Modules implementing
- * hook_theme() also need to provide a default implementation for each of their
- * theme hooks, normally in a Twig file, and they may also provide preprocessing
- * functions. For example, the core Search module defines a theme hook for a
- * search result item in search_theme():
+ * @section sec_theme_hooks Theme Hooks
+ * The theme system is invoked in drupal_render() by calling the internal
+ * _theme() function, which operates on the concept of "theme hooks". Theme
+ * hooks define how a particular type of data should be rendered. They are
+ * registered by modules by implenting hook_theme(), which specifies the name of
+ * the hook, the input "variables" used to provide data and options, and other
+ * information. Modules implementing hook_theme() also need to provide a default
+ * implementation for each of their theme hooks, normally in a Twig file, and
+ * they may also provide preprocessing functions. For example, the core Search
+ * module defines a theme hook for a search result item in search_theme():
  * @code
  * return array(
  *   'search_result' => array(
@@ -148,8 +148,105 @@
  *
  * @see hooks
  * @see callbacks
+ * @see theme_render
  *
  * @} End of "defgroup themeable".
+ */
+
+/**
+ * @defgroup theme_render Render API overview
+ * @{
+ * Overview of the Theme system and Render API.
+ *
+ * The main purpose of Drupal's Theme system is to give themes complete control
+ * over the appearance of the site, which includes the markup returned from HTTP
+ * requests and the CSS files used to style that markup. In order to ensure that
+ * a theme can completely customize the markup, module developers should avoid
+ * directly writing HTML markup for pages, blocks, and other user-visible output
+ * in their modules, and instead return structured "render arrays" (see @ref
+ * arrays below). Doing this also increases usability, by ensuring that the
+ * markup used for similar functionality on different areas of the site is the
+ * same, which gives users fewer user interface patterns to learn.
+ *
+ * For further information on the Theme and Render APIs, see:
+ * - https://drupal.org/documentation/theme
+ * - https://drupal.org/node/722174
+ * - https://drupal.org/node/933976
+ * - https://drupal.org/node/930760
+ *
+ * @todo Check these links. Some are for Drupal 7, and might need updates for
+ *   Drupal 8.
+ *
+ * @section arrays Render arrays
+ * The core structure of the Render API is the render array, which is a
+ * hierarchical associative array containing data to be rendered and properties
+ * describing how the data should be rendered. A render array that is returned
+ * by a function to specify markup to be sent to the web browser or other
+ * services will eventually be rendered by a call to drupal_render(), which will
+ * recurse through the render array hierarchy if appropriate, making calls into
+ * the theme system to do the actual rendering. If a function or method actually
+ * needs to return rendered output rather than a render array, the best practice
+ * would be to create a render array, render it by calling drupal_render(), and
+ * return that result, rather than writing the markup directly. See the
+ * documentation of drupal_render() for more details of the rendering process.
+ *
+ * Each level in the hierarchy of a render array (including the outermost array)
+ * has one or more array elements. Array elements whose names start with '#' are
+ * known as "properties", and the array elements with other names are "children"
+ * (constituting the next level of the hierarchy); the names of children are
+ * flexible, while property names are specific to the Render API and the
+ * particular type of data being rendered. A special case of render arrays is a
+ * form array, which specifies the form elements for an HTML form; see the
+ * @link form_api Form generation topic @endlink for more information on forms.
+ *
+ * Render arrays (at each level in the hierarchy) will usually have one of the
+ * following three properties defined:
+ * - #type: Specifies that the array contains data and options for a particular
+ *   type of "render element" (examples: 'form', for an HTML form; 'textfield',
+ *   'submit', and other HTML form element types; 'table', for a table with
+ *   rows, columns, and headers). See @ref elements below for more on render
+ *   element types.
+ * - #theme: Specifies that the array contains data to be themed by a particular
+ *   theme hook. Modules define theme hooks by implementing hook_theme(), which
+ *   specifies the input "variables" used to provide data and options; if a
+ *   hook_theme() implementation specifies variable 'foo', then in a render
+ *   array, you would provide this data using property '#foo'. Modules
+ *   implementing hook_theme() also need to provide a default implementation for
+ *   each of their theme hooks, normally in a Twig file. For more information
+ *   and to discover available theme hooks, see the documentation of
+ *   hook_theme() and the
+ *   @link themeable Default theme implementations topic. @endlink
+ * - #markup: Specifies that the array provides HTML markup directly. Unless the
+ *   markup is very simple, such as an explanation in a paragraph tag, it is
+ *   normally preferable to use #theme or #type instead, so that the theme can
+ *   customize the markup.
+ *
+ * @section elements Render elements
+ * Render elements are defined by Drupal core and modules. The primary way to
+ * define a render element is to create a render element plugin. There are
+ * two types of render element plugins:
+ * - Generic elements: Generic render element plugins implement
+ *   \Drupal\Core\Render\Element\ElementInterface, are annotated with
+ *   \Drupal\Core\Render\Annotation\RenderElement annotation, go in plugin
+ *   namespace Element, and generally extend the
+ *   \Drupal\Core\Render\Element\RenderElement base class.
+ * - Form input elements: Render elements representing form input elements
+ *   implement \Drupal\Core\Render\Element\FormElementInterface, are annotated
+ *   with \Drupal\Core\Render\Annotation\FormElement annotation, go in plugin
+ *   namespace Element, and generally extend the
+ *   \Drupal\Core\Render\Element\FormElement base class.
+ * See the @link plugin_api Plugin API topic @endlink for general information
+ * on plugins, and look for classes with the RenderElement or FormElement
+ * annotation to discover what render elements are available.
+ *
+ * Modules can also currently define render elements by implementing
+ * hook_element_info(), although defining a plugin is preferred.
+ * properties. Look through implementations of hook_element_info() to discover
+ * elements defined this way.
+ *
+ * @see themeable
+ *
+ * @}
  */
 
 /**
@@ -166,9 +263,9 @@
  * @param $form
  *   Nested array of form elements that comprise the form.
  * @param $form_state
- *   A keyed array containing the current state of the form.
+ *   The current state of the form.
  */
-function hook_form_system_theme_settings_alter(&$form, &$form_state) {
+function hook_form_system_theme_settings_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
   // Add a checkbox to toggle the breadcrumb trail.
   $form['toggle_breadcrumb'] = array(
     '#type' => 'checkbox',

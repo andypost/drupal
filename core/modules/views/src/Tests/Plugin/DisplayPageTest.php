@@ -7,8 +7,11 @@
 
 namespace Drupal\views\Tests\Plugin;
 
+use Drupal\Core\Menu\MenuTreeParameters;
+use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\views\Views;
 use Drupal\views\Tests\ViewUnitTestBase;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
@@ -25,14 +28,14 @@ class DisplayPageTest extends ViewUnitTestBase {
    *
    * @var array
    */
-  public static $testViews = array('test_page_display', 'test_page_display_route');
+  public static $testViews = array('test_page_display', 'test_page_display_route', 'test_page_display_menu');
 
   /**
    * Modules to enable.
    *
    * @var array
    */
-  public static $modules = array('system', 'user', 'menu_link', 'field', 'entity');
+  public static $modules = array('system', 'user', 'field', 'entity');
 
   /**
    * The router dumper to get all routes.
@@ -49,13 +52,13 @@ class DisplayPageTest extends ViewUnitTestBase {
 
     // Setup the needed tables in order to make the drupal router working.
     $this->installSchema('system', array('url_alias'));
-    $this->installSchema('menu_link', 'menu_links');
   }
 
   /**
    * Checks the behavior of the page for access denied/not found behaviors.
    */
   public function testPageResponses() {
+    \Drupal::currentUser()->setAccount(new AnonymousUserSession());
     $subrequest = Request::create('/test_page_display_403', 'GET');
     $response = $this->container->get('http_kernel')->handle($subrequest, HttpKernelInterface::SUB_REQUEST);
     $this->assertEqual($response->getStatusCode(), 403);
@@ -124,6 +127,17 @@ class DisplayPageTest extends ViewUnitTestBase {
     $this->assertEqual($route->getPath(), '/test_route_with_argument/{arg_0}/{arg_1}');
     $this->assertFalse($route->hasDefault('arg_0'), 'No default value is set for the required argument id.');
     $this->assertFalse($route->hasDefault('arg_1'), 'No default value is set for the required argument id_2.');
+  }
+
+  /**
+   * Tests the generated menu links of views.
+   */
+  public function testMenuLinks() {
+    \Drupal::service('plugin.manager.menu.link')->rebuild();
+    $tree = \Drupal::menuTree()->load('admin', new MenuTreeParameters());
+    $this->assertTrue(isset($tree['system.admin']->subtree['views_view:views.test_page_display_menu.page_4']));
+    $menu_link = $tree['system.admin']->subtree['views_view:views.test_page_display_menu.page_4']->link;
+    $this->assertEqual($menu_link->getTitle(), 'Test child');
   }
 
 }

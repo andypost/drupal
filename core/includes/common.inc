@@ -310,6 +310,7 @@ function drupal_get_feeds() {
  *     not available, the current path.
  *
  * @see current_path()
+ * @ingroup form_api
  */
 function drupal_get_destination() {
   $destination = &drupal_static(__FUNCTION__);
@@ -581,29 +582,6 @@ function format_size($size, $langcode = NULL) {
 }
 
 /**
- * Formats a time interval with the requested granularity.
- *
- * @param $interval
- *   The length of the interval in seconds.
- * @param $granularity
- *   How many different units to display in the string.
- * @param $langcode
- *   Optional language code to translate to a language other than
- *   what is used to display the page.
- *
- * @return
- *   A translated string representation of the interval.
- *
- * @see \Drupal\Core\Datetime\Date::formatInterval()
- *
- * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.
- *   Use \Drupal::service('date')->formatInterval().
- */
-function format_interval($interval, $granularity = 2, $langcode = NULL) {
-  return \Drupal::service('date')->formatInterval($interval, $granularity, $langcode);
-}
-
-/**
  * Formats a date, using a date type or a custom date format string.
  *
  * @param $timestamp
@@ -633,10 +611,10 @@ function format_interval($interval, $granularity = 2, $langcode = NULL) {
  * @return
  *   A translated date string in the requested format.
  *
- * @see \Drupal\Component\Datetime\Date::format()
+ * @see \Drupal\Component\Datetime\DateFormatter::format()
  */
 function format_date($timestamp, $type = 'medium', $format = '', $timezone = NULL, $langcode = NULL) {
-  return \Drupal::service('date')->format($timestamp, $type, $format, $timezone, $langcode);
+  return \Drupal::service('date.formatter')->format($timestamp, $type, $format, $timezone, $langcode);
 }
 
 /**
@@ -1350,24 +1328,12 @@ function drupal_pre_render_styles($elements) {
 
 /**
  * Deletes old cached CSS files.
+ *
+ * @deprecated in Drupal 8.x, will be removed before Drupal 9.0.
+ *   Use \Drupal\Core\Asset\AssetCollectionOptimizerInterface::deleteAll().
  */
 function drupal_clear_css_cache() {
-  \Drupal::state()->delete('drupal_css_cache_files');
-  file_scan_directory('public://css', '/.*/', array('callback' => 'drupal_delete_file_if_stale'));
-}
-
-/**
- * Deletes files modified more than a set time ago.
- *
- * Callback for file_scan_directory() within:
- * - drupal_clear_css_cache()
- * - drupal_clear_js_cache()
- */
-function drupal_delete_file_if_stale($uri) {
-  // Default stale file threshold is 30 days.
-  if (REQUEST_TIME - filemtime($uri) > \Drupal::config('system.performance')->get('stale_file_threshold')) {
-    file_unmanaged_delete($uri);
-  }
+  \Drupal::service('asset.css.collection_optimizer')->deleteAll();
 }
 
 /**
@@ -2485,11 +2451,12 @@ function drupal_attach_tabledrag(&$element, array $options) {
 
 /**
  * Deletes old cached JavaScript files and variables.
+ *
+ * @deprecated in Drupal 8.x, will be removed before Drupal 9.0.
+ *   Use \Drupal\Core\Asset\AssetCollectionOptimizerInterface::deleteAll().
  */
 function drupal_clear_js_cache() {
-  \Drupal::state()->delete('system.javascript_parsed');
-  \Drupal::state()->delete('system.js_cache_files');
-  file_scan_directory('public://js', '/.*/', array('callback' => 'drupal_delete_file_if_stale'));
+  \Drupal::service('asset.js.collection_optimizer')->deleteAll();
 }
 
 /**
@@ -2703,65 +2670,10 @@ function drupal_pre_render_html_tag($element) {
 /**
  * Pre-render callback: Renders a link into #markup.
  *
- * Doing so during pre_render gives modules a chance to alter the link parts.
- *
- * @param $elements
- *   A structured array whose keys form the arguments to l():
- *   - #title: The link text to pass as argument to l().
- *   - One of the following
- *     - #route_name and (optionally) and a #route_parameters array; The route
- *       name and route parameters which will be passed into the link generator.
- *     - #href: The system path or URL to pass as argument to l().
- *   - #options: (optional) An array of options to pass to l() or the link
- *     generator.
- *
- * @return
- *   The passed-in elements containing a rendered link in '#markup'.
+ * @deprecated Use \Drupal\Core\Render\Element\Link::preRenderLink().
  */
 function drupal_pre_render_link($element) {
-  // By default, link options to pass to l() are normally set in #options.
-  $element += array('#options' => array());
-  // However, within the scope of renderable elements, #attributes is a valid
-  // way to specify attributes, too. Take them into account, but do not override
-  // attributes from #options.
-  if (isset($element['#attributes'])) {
-    $element['#options'] += array('attributes' => array());
-    $element['#options']['attributes'] += $element['#attributes'];
-  }
-
-  // This #pre_render callback can be invoked from inside or outside of a Form
-  // API context, and depending on that, a HTML ID may be already set in
-  // different locations. #options should have precedence over Form API's #id.
-  // #attributes have been taken over into #options above already.
-  if (isset($element['#options']['attributes']['id'])) {
-    $element['#id'] = $element['#options']['attributes']['id'];
-  }
-  elseif (isset($element['#id'])) {
-    $element['#options']['attributes']['id'] = $element['#id'];
-  }
-
-  // Conditionally invoke ajax_pre_render_element(), if #ajax is set.
-  if (isset($element['#ajax']) && !isset($element['#ajax_processed'])) {
-    // If no HTML ID was found above, automatically create one.
-    if (!isset($element['#id'])) {
-      $element['#id'] = $element['#options']['attributes']['id'] = drupal_html_id('ajax-link');
-    }
-    // If #ajax['path] was not specified, use the href as Ajax request URL.
-    if (!isset($element['#ajax']['path'])) {
-      $element['#ajax']['path'] = $element['#href'];
-      $element['#ajax']['options'] = $element['#options'];
-    }
-    $element = ajax_pre_render_element($element);
-  }
-
-  if (isset($element['#route_name'])) {
-    $element['#route_parameters'] = empty($element['#route_parameters']) ? array() : $element['#route_parameters'];
-    $element['#markup'] = \Drupal::linkGenerator()->generate($element['#title'], $element['#route_name'], $element['#route_parameters'], $element['#options']);
-  }
-  else {
-    $element['#markup'] = l($element['#title'], $element['#href'], $element['#options']);
-  }
-  return $element;
+  return Element\Link::preRenderLink($element);
 }
 
 /**
@@ -3051,7 +2963,7 @@ function drupal_render_page($page) {
  *     @code
  *     array(
  *       '#theme' => 'image',
- *       '#attributes' => array('class' => 'foo'),
+ *       '#attributes' => array('class' => array('foo')),
  *       '#theme_wrappers' => array('container'),
  *     );
  *     @endcode
@@ -3060,10 +2972,10 @@ function drupal_render_page($page) {
  *     @code
  *     array(
  *       '#theme' => 'image',
- *       '#attributes' => array('class' => 'foo'),
+ *       '#attributes' => array('class' => array('foo')),
  *       '#theme_wrappers' => array(
  *         'container' => array(
- *           '#attributes' => array('class' => 'bar'),
+ *           '#attributes' => array('class' => array('bar')),
  *         ),
  *       ),
  *     );
@@ -3978,8 +3890,8 @@ function drupal_flush_all_caches() {
   }
 
   // Flush asset file caches.
-  drupal_clear_css_cache();
-  drupal_clear_js_cache();
+  \Drupal::service('asset.css.collection_optimizer')->deleteAll();
+  \Drupal::service('asset.js.collection_optimizer')->deleteAll();
   _drupal_flush_css_js();
 
   // Reset all static caches.
@@ -4183,58 +4095,3 @@ function drupal_get_filetransfer_info() {
   }
   return $info;
 }
-
-/**
- * @defgroup queue Queue operations
- * @{
- * Queue items to allow later processing.
- *
- * The queue system allows placing items in a queue and processing them later.
- * The system tries to ensure that only one consumer can process an item.
- *
- * Before a queue can be used it needs to be created by
- * Drupal\Core\Queue\QueueInterface::createQueue().
- *
- * Items can be added to the queue by passing an arbitrary data object to
- * Drupal\Core\Queue\QueueInterface::createItem().
- *
- * To process an item, call Drupal\Core\Queue\QueueInterface::claimItem() and
- * specify how long you want to have a lease for working on that item.
- * When finished processing, the item needs to be deleted by calling
- * Drupal\Core\Queue\QueueInterface::deleteItem(). If the consumer dies, the
- * item will be made available again by the Drupal\Core\Queue\QueueInterface
- * implementation once the lease expires. Another consumer will then be able to
- * receive it when calling Drupal\Core\Queue\QueueInterface::claimItem().
- * Due to this, the processing code should be aware that an item might be handed
- * over for processing more than once.
- *
- * The $item object used by the Drupal\Core\Queue\QueueInterface can contain
- * arbitrary metadata depending on the implementation. Systems using the
- * interface should only rely on the data property which will contain the
- * information passed to Drupal\Core\Queue\QueueInterface::createItem().
- * The full queue item returned by Drupal\Core\Queue\QueueInterface::claimItem()
- * needs to be passed to Drupal\Core\Queue\QueueInterface::deleteItem() once
- * processing is completed.
- *
- * There are two kinds of queue backends available: reliable, which preserves
- * the order of messages and guarantees that every item will be executed at
- * least once. The non-reliable kind only does a best effort to preserve order
- * in messages and to execute them at least once but there is a small chance
- * that some items get lost. For example, some distributed back-ends like
- * Amazon SQS will be managing jobs for a large set of producers and consumers
- * where a strict FIFO ordering will likely not be preserved. Another example
- * would be an in-memory queue backend which might lose items if it crashes.
- * However, such a backend would be able to deal with significantly more writes
- * than a reliable queue and for many tasks this is more important. See
- * aggregator_cron() for an example of how to effectively utilize a
- * non-reliable queue. Another example is doing Twitter statistics -- the small
- * possibility of losing a few items is insignificant next to power of the
- * queue being able to keep up with writes. As described in the processing
- * section, regardless of the queue being reliable or not, the processing code
- * should be aware that an item might be handed over for processing more than
- * once (because the processing code might time out before it finishes).
- */
-
-/**
- * @} End of "defgroup queue".
- */

@@ -11,6 +11,7 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemList;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Represents a configurable entity datetime field.
@@ -25,7 +26,7 @@ class DateTimeFieldItemList extends FieldItemList {
   /**
    * {@inheritdoc}
    */
-  public function defaultValuesForm(array &$form, array &$form_state) {
+  public function defaultValuesForm(array &$form, FormStateInterface $form_state) {
     if (empty($this->getFieldDefinition()->default_value_function)) {
       $default_value = $this->getFieldDefinition()->default_value;
 
@@ -48,14 +49,14 @@ class DateTimeFieldItemList extends FieldItemList {
   /**
    * {@inheritdoc}
    */
-  public function defaultValuesFormValidate(array $element, array &$form, array &$form_state) { }
+  public function defaultValuesFormValidate(array $element, array &$form, FormStateInterface $form_state) { }
 
   /**
    * {@inheritdoc}
    */
-  public function defaultValuesFormSubmit(array $element, array &$form, array &$form_state) {
-    if ($form_state['values']['default_value_input']['default_date']) {
-      return array($form_state['values']['default_value_input']);
+  public function defaultValuesFormSubmit(array $element, array &$form, FormStateInterface $form_state) {
+    if ($form_state->getValue(array('default_value_input', 'default_date'))) {
+      return array($form_state->getValue('default_value_input'));
     }
     return array();
   }

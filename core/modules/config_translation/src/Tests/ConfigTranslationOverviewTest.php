@@ -77,7 +77,7 @@ class ConfigTranslationOverviewTest extends WebTestBase {
 
     foreach ($labels as $label) {
       $test_entity = entity_create('config_test', array(
-        'id' => $this->randomName(),
+        'id' => $this->randomMachineName(),
         'label' => $label,
       ));
       $test_entity->save();
@@ -106,7 +106,7 @@ class ConfigTranslationOverviewTest extends WebTestBase {
   public function testHiddenEntities() {
     // Hidden languages are only available to translate through the
     // configuration translation listings.
-    $this->drupalGet('admin/config/regional/config-translation/language_entity');
+    $this->drupalGet('admin/config/regional/config-translation/configurable_language');
     $this->assertText('Not applicable');
     $this->assertLinkByHref('admin/config/regional/language/edit/zxx/translate');
     $this->assertText('Not specified');

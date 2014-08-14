@@ -7,6 +7,7 @@
 
 namespace Drupal\user\Tests;
 
+use Drupal\Core\Form\FormState;
 use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
@@ -29,8 +30,9 @@ class UserAccountFormFieldsTest extends DrupalUnitTestBase {
    */
   function testInstallConfigureForm() {
     require_once DRUPAL_ROOT . '/core/includes/install.core.inc';
+    require_once DRUPAL_ROOT . '/core/includes/install.inc';
     $install_state = install_state_defaults();
-    $form_state = array();
+    $form_state = new FormState();
     $form_state['build_info']['args'][] = &$install_state;
     $form = $this->container->get('form_builder')
       ->buildForm('Drupal\Core\Installer\Form\SiteConfigureForm', $form_state);

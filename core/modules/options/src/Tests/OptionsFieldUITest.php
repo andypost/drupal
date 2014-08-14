@@ -39,7 +39,7 @@ class OptionsFieldUITest extends FieldTestBase {
     $this->drupalLogin($admin_user);
 
     // Create content type, with underscores.
-    $type_name = 'test_' . strtolower($this->randomName());
+    $type_name = 'test_' . strtolower($this->randomMachineName());
     $this->type_name = $type_name;
     $type = $this->drupalCreateContentType(array('name' => $type_name, 'type' => $type_name));
     $this->type = $type->type;
@@ -94,6 +94,11 @@ class OptionsFieldUITest extends FieldTestBase {
     $string = "0|Zero";
     $array = array('0' => 'Zero');
     $this->assertAllowedValuesInput($string, $array, 'Values not in use can be removed.');
+
+    // Check that the same key can only be used once.
+    $string = "0|Zero\n0|One";
+    $array = array('0' => 'One');
+    $this->assertAllowedValuesInput($string, $array, 'Same value cannot be used multiple times.');
   }
 
   /**
@@ -144,6 +149,16 @@ class OptionsFieldUITest extends FieldTestBase {
     $string = "0|Zero";
     $array = array('0' => 'Zero');
     $this->assertAllowedValuesInput($string, $array, 'Values not in use can be removed.');
+
+    // Check that the same key can only be used once.
+    $string = "0.5|Point five\n0.5|Half";
+    $array = array('0.5' => 'Half');
+    $this->assertAllowedValuesInput($string, $array, 'Same value cannot be used multiple times.');
+
+    // Check that different forms of the same float value cannot be used.
+    $string = "0|Zero\n.5|Point five\n0.5|Half";
+    $array = array('0' => 'Zero', '0.5' => 'Half');
+    $this->assertAllowedValuesInput($string, $array, 'Different forms of the same value cannot be used.');
   }
 
   /**
@@ -170,7 +185,7 @@ class OptionsFieldUITest extends FieldTestBase {
     $array = array('zero' => 'Zero', 'One' => 'One');
     $this->assertAllowedValuesInput($string, $array, 'Mixed lists are accepted.');
     // Overly long keys.
-    $this->assertAllowedValuesInput("zero|Zero\n" . $this->randomName(256) . "|One", 'each key must be a string at most 255 characters long', 'Overly long keys are rejected.');
+    $this->assertAllowedValuesInput("zero|Zero\n" . $this->randomMachineName(256) . "|One", 'each key must be a string at most 255 characters long', 'Overly long keys are rejected.');
 
     // Create a node with actual data for the field.
     $settings = array(
@@ -199,6 +214,16 @@ class OptionsFieldUITest extends FieldTestBase {
     $string = "Zero";
     $array = array('Zero' => 'Zero');
     $this->assertAllowedValuesInput($string, $array, 'Values not in use can be removed.');
+
+    // Check that string values with dots can be used.
+    $string = "Zero\nexample.com|Example";
+    $array = array('Zero' => 'Zero', 'example.com' => 'Example');
+    $this->assertAllowedValuesInput($string, $array, 'String value with dot is supported.');
+
+    // Check that the same key can only be used once.
+    $string = "zero|Zero\nzero|One";
+    $array = array('zero' => 'One');
+    $this->assertAllowedValuesInput($string, $array, 'Same value cannot be used multiple times.');
   }
 
   /**
@@ -267,12 +292,12 @@ class OptionsFieldUITest extends FieldTestBase {
    * Tests normal and key formatter display on node display.
    */
   function testNodeDisplay() {
-    $this->field_name = strtolower($this->randomName());
+    $this->field_name = strtolower($this->randomMachineName());
     $this->createOptionsField('list_integer');
     $node = $this->drupalCreateNode(array('type' => $this->type));
 
-    $on = $this->randomName();
-    $off = $this->randomName();
+    $on = $this->randomMachineName();
+    $off = $this->randomMachineName();
     $edit = array(
       'field[settings][allowed_values]' =>
         "1|$on

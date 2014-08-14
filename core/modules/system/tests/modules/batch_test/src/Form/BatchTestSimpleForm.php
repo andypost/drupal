@@ -8,7 +8,7 @@
 namespace Drupal\batch_test\Form;
 
 use Drupal\Core\Form\FormBase;
-use Drupal\Core\Url;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Generate form of id batch_test_simple_form.
@@ -25,7 +25,7 @@ class BatchTestSimpleForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form['batch'] = array(
       '#type' => 'select',
       '#title' => 'Choose batch',
@@ -48,13 +48,13 @@ class BatchTestSimpleForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     batch_test_stack(NULL, TRUE);
 
-    $function = '_batch_test_' . $form_state['values']['batch'];
+    $function = '_batch_test_' . $form_state->getValue('batch');
     batch_set($function());
 
-    $form_state['redirect_route'] = new Url('batch_test.redirect');
+    $form_state->setRedirect('batch_test.redirect');
   }
 
 }
