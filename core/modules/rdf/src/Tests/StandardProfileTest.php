@@ -101,10 +101,10 @@ class StandardProfileTest extends WebTestBase {
    */
   protected $commenterUri;
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
-    $this->base_uri = url('<front>', array('absolute' => TRUE));
+    $this->base_uri = \Drupal::url('<front>', [], ['absolute' => TRUE]);
 
     // Create two test users.
     $this->adminUser = $this->drupalCreateUser(array(
@@ -273,7 +273,7 @@ class StandardProfileTest extends WebTestBase {
     // true for testing.
     // @todo Clean-up standard profile defaults.
     $node_type = entity_load('node_type', 'page');
-    $node_type->settings['node']['submitted'] = TRUE;
+    $node_type->setDisplaySubmitted(TRUE);
     $node_type->save();
 
     // Feed the HTML into the parser.

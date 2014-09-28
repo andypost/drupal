@@ -7,7 +7,7 @@
 
 namespace Drupal\field\Tests;
 
-use Drupal\Core\Field\FieldDefinition;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 
@@ -32,16 +32,16 @@ class TestItemTest extends FieldUnitTestBase {
    */
   protected $field_name = 'field_test';
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
-    // Create an field field and instance for validation.
+    // Create a 'test_field' field and storage for validation.
     entity_create('field_storage_config', array(
       'name' => $this->field_name,
       'entity_type' => 'entity_test',
       'type' => 'test_field',
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'entity_test',
       'field_name' => $this->field_name,
       'bundle' => 'entity_test',
@@ -92,7 +92,7 @@ class TestItemTest extends FieldUnitTestBase {
       ),
       'foreign keys' => array(),
     );
-    $field_schema = FieldDefinition::create('test_field')->getSchema();
+    $field_schema = BaseFieldDefinition::create('test_field')->getSchema();
     $this->assertEqual($field_schema, $expected_schema);
   }
 

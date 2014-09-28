@@ -7,8 +7,9 @@
 
 namespace Drupal\Core\Page;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableInterface;
-use Drupal\Core\Language\LanguageManager;
+use Drupal\Core\Language\LanguageManagerInterface;
 
 /**
  * Default page rendering engine.
@@ -18,17 +19,17 @@ class DefaultHtmlFragmentRenderer implements HtmlFragmentRendererInterface {
   /**
    * The language manager.
    *
-   * @var \Drupal\Core\Language\LanguageManager
+   * @var \Drupal\Core\Language\LanguageManagerInterface
    */
   protected $languageManager;
 
   /**
    * Constructs a new DefaultHtmlPageRenderer.
    *
-   * @param \Drupal\Core\Language\LanguageManager $language_manager
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager service.
    */
-  public function __construct(LanguageManager $language_manager) {
+  public function __construct(LanguageManagerInterface $language_manager) {
     $this->languageManager = $language_manager;
   }
 
@@ -59,13 +60,24 @@ class DefaultHtmlFragmentRenderer implements HtmlFragmentRendererInterface {
     $page->setContent(drupal_render($page_array));
     $page->setStatusCode($status_code);
 
+    drupal_process_attached($page_array);
+    if (isset($page_array['page_top'])) {
+      drupal_process_attached($page_array['page_top']);
+    }
+    if (isset($page_array['page_bottom'])) {
+      drupal_process_attached($page_array['page_bottom']);
+    }
+
     if ($fragment instanceof CacheableInterface) {
-      // Collect cache tags for all the content in all the regions on the page.
-      $tags = $page_array['#cache']['tags'];
-      // Tag every render cache item with the "rendered" cache tag. This allows us
-      // to invalidate the entire render cache, regardless of the cache bin.
-      $tags['rendered'] = TRUE;
-      $page->setCacheTags($tags);
+      // Persist cache tags associated with this page. Also associate the
+      // "rendered" cache tag. This allows us to invalidate the entire render
+      // cache, regardless of the cache bin.
+      $cache_tags = $page_array['#cache']['tags'];
+      $cache_tags[] = 'rendered';
+      // Only keep unique cache tags. We need to prevent duplicates here already
+      // rather than only in the cache layer, because they are also used by
+      // reverse proxies (like Varnish), not only by Drupal's page cache.
+      $page->setCacheTags(array_unique($cache_tags));
     }
 
     return $page;
@@ -100,6 +112,21 @@ class DefaultHtmlFragmentRenderer implements HtmlFragmentRendererInterface {
       // output by Drupal.
       $link = new FeedLinkElement($feed['title'], url($feed['url'], array('absolute' => TRUE)));
       $page->addLinkElement($link);
+    }
+
+    // Add libraries and CSS used by this theme.
+    $active_theme = \Drupal::theme()->getActiveTheme();
+    foreach ($active_theme->getLibraries() as $library) {
+      $page_array['#attached']['library'][] = $library;
+    }
+    foreach ($active_theme->getStyleSheets() as $media => $stylesheets) {
+      foreach ($stylesheets as $stylesheet) {
+        $page_array['#attached']['css'][$stylesheet] = array(
+          'group' => CSS_AGGREGATE_THEME,
+          'every_page' => TRUE,
+          'media' => $media
+        );
+      }
     }
 
     return $page;

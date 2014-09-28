@@ -26,16 +26,16 @@ class LinkItemTest extends FieldUnitTestBase {
    */
   public static $modules = array('link');
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
-    // Create an link field and instance for validation.
+    // Create a link field for validation.
     entity_create('field_storage_config', array(
       'name' => 'field_test',
       'entity_type' => 'entity_test',
       'type' => 'link',
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'entity_test',
       'field_name' => 'field_test',
       'bundle' => 'entity_test',
@@ -100,6 +100,11 @@ class LinkItemTest extends FieldUnitTestBase {
     $this->assertEqual($entity->field_test->url, $new_url);
     $this->assertEqual($entity->field_test->title, $new_title);
     $this->assertEqual($entity->field_test->options['attributes']['class'], $new_class);
+
+    // Test the generateSampleValue() method.
+    $entity = entity_create('entity_test');
+    $entity->field_test->generateSampleItems();
+    $this->entityValidateAndSave($entity);
   }
 
 }

@@ -58,7 +58,7 @@ class MigrateProfileValuesTest extends MigrateDrupalTestBase {
     entity_create('field_storage_config', array(
       'entity_type' => 'user',
       'name' => 'profile_sold_to',
-      'type' => 'list_text',
+      'type' => 'list_string',
       'settings' => array(
         'allowed_values' => array(
           'Pill spammers' => 'Pill spammers',
@@ -90,7 +90,7 @@ class MigrateProfileValuesTest extends MigrateDrupalTestBase {
 
     // Create the field instances.
     foreach (Drupal6UserProfileFields::getData('profile_fields') as $field) {
-      entity_create('field_instance_config', array(
+      entity_create('field_config', array(
         'label' => $field['title'],
         'description' => '',
         'field_name' => $field['name'],
@@ -123,7 +123,7 @@ class MigrateProfileValuesTest extends MigrateDrupalTestBase {
         array(array(15), array(15)),
       ),
     );
-    $this->prepareIdMappings($id_mappings);
+    $this->prepareMigrations($id_mappings);
 
     // Load database dumps to provide source data.
     $dumps = array(

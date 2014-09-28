@@ -47,7 +47,7 @@ use Drupal\views\Views;
  * - empty field name: For arguments that can have no value, such as taxonomy
  *                     which can have "no term", this is the string which
  *                     will be displayed for this lack of value. Be sure to use
- *                     t().
+ *                     $this->t().
  * - validate type: A little used string to allow an argument to restrict
  *                  which validator is available to just one. Use the
  *                  validator ID. This probably should not be used at all,
@@ -176,7 +176,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
       '#markup' => '<div class="clearfix"></div>',
     );
     $form['default_action'] = array(
-      '#title' => t('Default actions'),
+      '#title' => $this->t('Default actions'),
       '#title_display' => 'invisible',
       '#type' => 'radios',
       '#process' => array(array($this, 'processContainerRadios')),
@@ -186,28 +186,28 @@ abstract class ArgumentPluginBase extends HandlerBase {
 
     $form['exception'] = array(
       '#type' => 'details',
-      '#title' => t('Exceptions'),
+      '#title' => $this->t('Exceptions'),
       '#fieldset' => 'no_argument',
     );
     $form['exception']['value'] = array(
       '#type' => 'textfield',
-      '#title' => t('Exception value'),
+      '#title' => $this->t('Exception value'),
       '#size' => 20,
       '#default_value' => $this->options['exception']['value'],
-      '#description' => t('If this value is received, the filter will be ignored; i.e, "all values"'),
+      '#description' => $this->t('If this value is received, the filter will be ignored; i.e, "all values"'),
     );
     $form['exception']['title_enable'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Override title'),
+      '#title' => $this->t('Override title'),
       '#default_value' => $this->options['exception']['title_enable'],
     );
     $form['exception']['title'] = array(
       '#type' => 'textfield',
-      '#title' => t('Override title'),
+      '#title' => $this->t('Override title'),
       '#title_display' => 'invisible',
       '#size' => 20,
       '#default_value' => $this->options['exception']['title'],
-      '#description' => t('Override the view and other argument titles. Use "%1" for the first argument, "%2" for the second, etc.'),
+      '#description' => $this->t('Override the view and other argument titles. Use "%1" for the first argument, "%2" for the second, etc.'),
       '#states' => array(
         'visible' => array(
           ':input[name="options[exception][title_enable]"]' => array('checked' => TRUE),
@@ -236,16 +236,16 @@ abstract class ArgumentPluginBase extends HandlerBase {
     );
     $form['title_enable'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Override title'),
+      '#title' => $this->t('Override title'),
       '#default_value' => $this->options['title_enable'],
       '#fieldset' => 'argument_present',
     );
     $form['title'] = array(
       '#type' => 'textfield',
-      '#title' => t('Provide title'),
+      '#title' => $this->t('Provide title'),
       '#title_display' => 'invisible',
       '#default_value' => $this->options['title'],
-      '#description' => t('Override the view and other argument titles. Use "%1" for the first argument, "%2" for the second, etc.'),
+      '#description' => $this->t('Override the view and other argument titles. Use "%1" for the first argument, "%2" for the second, etc.'),
       '#states' => array(
         'visible' => array(
           ':input[name="options[title_enable]"]' => array('checked' => TRUE),
@@ -256,7 +256,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
 
     $form['specify_validation'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Specify validation criteria'),
+      '#title' => $this->t('Specify validation criteria'),
       '#default_value' => $this->options['specify_validation'],
       '#fieldset' => 'argument_present',
     );
@@ -269,7 +269,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
     // and reverted on submission.
     $form['validate']['type'] = array(
       '#type' => 'select',
-      '#title' => t('Validator'),
+      '#title' => $this->t('Validator'),
       '#default_value' => static::encodeValidatorId($this->options['validate']['type']),
       '#states' => array(
         'visible' => array(
@@ -332,7 +332,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
 
     $form['validate']['fail'] = array(
       '#type' => 'select',
-      '#title' => t('Action to take if filter value does not validate'),
+      '#title' => $this->t('Action to take if filter value does not validate'),
       '#default_value' => $this->options['validate']['fail'],
       '#options' => $validate_options,
       '#states' => array(
@@ -345,74 +345,75 @@ abstract class ArgumentPluginBase extends HandlerBase {
   }
 
   public function validateOptionsForm(&$form, FormStateInterface $form_state) {
-    if (empty($form_state['values']['options'])) {
+    $option_values = &$form_state->getValue('options');
+    if (empty($option_values)) {
       return;
     }
 
     // Let the plugins do validation.
-    $default_id = $form_state['values']['options']['default_argument_type'];
+    $default_id = $option_values['default_argument_type'];
     $plugin = $this->getPlugin('argument_default', $default_id);
     if ($plugin) {
-      $plugin->validateOptionsForm($form['argument_default'][$default_id], $form_state, $form_state['values']['options']['argument_default'][$default_id]);
+      $plugin->validateOptionsForm($form['argument_default'][$default_id], $form_state, $option_values['argument_default'][$default_id]);
     }
 
     // summary plugin
-    $summary_id = $form_state['values']['options']['summary']['format'];
+    $summary_id = $option_values['summary']['format'];
     $plugin = $this->getPlugin('style', $summary_id);
     if ($plugin) {
-      $plugin->validateOptionsForm($form['summary']['options'][$summary_id], $form_state, $form_state['values']['options']['summary']['options'][$summary_id]);
+      $plugin->validateOptionsForm($form['summary']['options'][$summary_id], $form_state, $option_values['summary']['options'][$summary_id]);
     }
 
-    $sanitized_id = $form_state['values']['options']['validate']['type'];
+    $sanitized_id = $option_values['validate']['type'];
     // Correct ID for js sanitized version.
     $validate_id = static::decodeValidatorId($sanitized_id);
     $plugin = $this->getPlugin('argument_validator', $validate_id);
     if ($plugin) {
-      $plugin->validateOptionsForm($form['validate']['options'][$default_id], $form_state, $form_state['values']['options']['validate']['options'][$sanitized_id]);
+      $plugin->validateOptionsForm($form['validate']['options'][$default_id], $form_state, $option_values['validate']['options'][$sanitized_id]);
     }
 
   }
 
   public function submitOptionsForm(&$form, FormStateInterface $form_state) {
-    if (empty($form_state['values']['options'])) {
+    $option_values = &$form_state->getValue('options');
+    if (empty($option_values)) {
       return;
     }
 
     // Let the plugins make submit modifications if necessary.
-    $default_id = $form_state['values']['options']['default_argument_type'];
+    $default_id = $option_values['default_argument_type'];
     $plugin = $this->getPlugin('argument_default', $default_id);
     if ($plugin) {
-      $options = &$form_state['values']['options']['argument_default'][$default_id];
+      $options = &$option_values['argument_default'][$default_id];
       $plugin->submitOptionsForm($form['argument_default'][$default_id], $form_state, $options);
       // Copy the now submitted options to their final resting place so they get saved.
-      $form_state['values']['options']['default_argument_options'] = $options;
+      $option_values['default_argument_options'] = $options;
     }
 
     // summary plugin
-    $summary_id = $form_state['values']['options']['summary']['format'];
+    $summary_id = $option_values['summary']['format'];
     $plugin = $this->getPlugin('style', $summary_id);
     if ($plugin) {
-      $options = &$form_state['values']['options']['summary']['options'][$summary_id];
+      $options = &$option_values['summary']['options'][$summary_id];
       $plugin->submitOptionsForm($form['summary']['options'][$summary_id], $form_state, $options);
       // Copy the now submitted options to their final resting place so they get saved.
-      $form_state['values']['options']['summary_options'] = $options;
+      $option_values['summary_options'] = $options;
     }
 
-    $sanitized_id = $form_state['values']['options']['validate']['type'];
+    $sanitized_id = $option_values['validate']['type'];
     // Correct ID for js sanitized version.
-    $form_state['values']['options']['validate']['type'] = $validate_id = static::decodeValidatorId($sanitized_id);
+    $option_values['validate']['type'] = $validate_id = static::decodeValidatorId($sanitized_id);
     $plugin = $this->getPlugin('argument_validator', $validate_id);
     if ($plugin) {
-      $options = &$form_state['values']['options']['validate']['options'][$sanitized_id];
+      $options = &$option_values['validate']['options'][$sanitized_id];
       $plugin->submitOptionsForm($form['validate']['options'][$sanitized_id], $form_state, $options);
       // Copy the now submitted options to their final resting place so they get saved.
-      $form_state['values']['options']['validate_options'] = $options;
+      $option_values['validate_options'] = $options;
     }
 
     // Clear out the content of title if it's not enabled.
-    $options = &$form_state['values']['options'];
-    if (empty($options['title_enable'])) {
-      $options['title'] = '';
+    if (empty($option_values['title_enable'])) {
+      $option_values['title'] = '';
     }
   }
 
@@ -425,39 +426,39 @@ abstract class ArgumentPluginBase extends HandlerBase {
   protected function defaultActions($which = NULL) {
     $defaults = array(
       'ignore' => array(
-        'title' => t('Display all results for the specified field'),
+        'title' => $this->t('Display all results for the specified field'),
         'method' => 'defaultIgnore',
       ),
       'default' => array(
-        'title' => t('Provide default value'),
+        'title' => $this->t('Provide default value'),
         'method' => 'defaultDefault',
         'form method' => 'defaultArgumentForm',
         'has default argument' => TRUE,
         'default only' => TRUE, // this can only be used for missing argument, not validation failure
       ),
       'not found' => array(
-        'title' => t('Hide view'),
+        'title' => $this->t('Hide view'),
         'method' => 'defaultNotFound',
         'hard fail' => TRUE, // This is a hard fail condition
       ),
       'summary' => array(
-        'title' => t('Display a summary'),
+        'title' => $this->t('Display a summary'),
         'method' => 'defaultSummary',
         'form method' => 'defaultSummaryForm',
         'style plugin' => TRUE,
       ),
       'empty' => array(
-        'title' => t('Display contents of "No results found"'),
+        'title' => $this->t('Display contents of "No results found"'),
         'method' => 'defaultEmpty',
       ),
       'access denied' => array(
-        'title' => t('Display "Access Denied"'),
+        'title' => $this->t('Display "Access Denied"'),
         'method' => 'defaultAccessDenied',
       ),
     );
 
     if ($this->view->display_handler->hasPath()) {
-      $defaults['not found']['title'] = t('Show "Page not found"');
+      $defaults['not found']['title'] = $this->t('Show "Page not found"');
     }
 
     if ($which) {
@@ -480,9 +481,9 @@ abstract class ArgumentPluginBase extends HandlerBase {
 
     $form['default_argument_skip_url'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Skip default argument for view URL'),
+      '#title' => $this->t('Skip default argument for view URL'),
       '#default_value' => $this->options['default_argument_skip_url'],
-      '#description' => t('Select whether to include this default argument when constructing the URL for this view. Skipping default arguments is useful e.g. in the case of feeds.')
+      '#description' => $this->t('Select whether to include this default argument when constructing the URL for this view. Skipping default arguments is useful e.g. in the case of feeds.')
     );
 
     $form['default_argument_type'] = array(
@@ -490,7 +491,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
       '#suffix' => '</div>',
       '#type' => 'select',
       '#id' => 'edit-options-default-argument-type',
-      '#title' => t('Type'),
+      '#title' => $this->t('Type'),
       '#default_value' => $this->options['default_argument_type'],
       '#states' => array(
         'visible' => array(
@@ -557,8 +558,8 @@ abstract class ArgumentPluginBase extends HandlerBase {
     );
     $form['summary']['sort_order'] = array(
       '#type' => 'radios',
-      '#title' => t('Sort order'),
-      '#options' => array('asc' => t('Ascending'), 'desc' => t('Descending')),
+      '#title' => $this->t('Sort order'),
+      '#options' => array('asc' => $this->t('Ascending'), 'desc' => $this->t('Descending')),
       '#default_value' => $this->options['summary']['sort_order'],
       '#states' => array(
         'visible' => array(
@@ -568,11 +569,11 @@ abstract class ArgumentPluginBase extends HandlerBase {
     );
     $form['summary']['number_of_records'] = array(
       '#type' => 'radios',
-      '#title' => t('Sort by'),
+      '#title' => $this->t('Sort by'),
       '#default_value' => $this->options['summary']['number_of_records'],
       '#options' => array(
         0 => $this->getSortName(),
-        1 => t('Number of records')
+        1 => $this->t('Number of records')
       ),
       '#states' => array(
         'visible' => array(
@@ -583,7 +584,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
 
     $form['summary']['format'] = array(
       '#type' => 'radios',
-      '#title' => t('Format'),
+      '#title' => $this->t('Format'),
       '#options' => $format_options,
       '#default_value' => $this->options['summary']['format'],
       '#states' => array(
@@ -1053,7 +1054,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
    * their argument is (e.g. alphabetical, numeric, date).
    */
   public function getSortName() {
-    return t('Default sort', array(), array('context' => 'Sort order'));
+    return $this->t('Default sort', array(), array('context' => 'Sort order'));
   }
 
   /**
@@ -1063,7 +1064,7 @@ abstract class ArgumentPluginBase extends HandlerBase {
    * array as index. While doing that, create a container element underneath
    * each option, which contains the settings related to that option.
    *
-   * @see form_process_radios()
+   * @see \Drupal\Core\Render\Element\Radios::processRadios()
    */
   public static function processContainerRadios($element) {
     if (count($element['#options']) > 0) {
@@ -1149,6 +1150,18 @@ abstract class ArgumentPluginBase extends HandlerBase {
    */
   public static function decodeValidatorId($id) {
     return str_replace('---', ':', $id);
+  }
+
+  /**
+   * Splits an argument into value and operator properties on this instance.
+   *
+   * @param bool $force_int
+   *   Enforce that values should be numeric.
+   */
+  protected function unpackArgumentValue($force_int = FALSE) {
+    $break = static::breakString($this->argument, $force_int);
+    $this->value = $break->value;
+    $this->operator = $break->operator;
   }
 }
 

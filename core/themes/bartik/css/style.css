@@ -129,7 +129,7 @@ body,
 ul.contextual-links,
 ul.links,
 ul.primary,
-.item-list .pager,
+.pager__items,
 div.field-type-taxonomy-term-reference,
 div.messages,
 .node__meta,
@@ -277,24 +277,29 @@ table ul.links li {
   font-size: 0.923em;
   text-shadow: 0 0 0 !important;
 }
-.item-list .pager {
-  font-size: 0.929em;
+.pager .pager__items {
+  padding: 0;
 }
-.item-list .pager li {
+.pager__item {
+  font-size: 0.929em;
   padding: 10px 15px;
 }
-.item-list .pager a {
+.pager__item a {
   display: inline-block;
 }
-.item-list .pager li.pager-first,
-.item-list .pager li.pager-previous {
+.pager__item.is-active a {
+  color: #3B3B3B;
+  border-bottom: 0;
+}
+.pager__item--first,
+.pager__item--previous {
   padding: 10px 10px 10px 0;
 }
-.item-list .pager li.pager-ellipsis {
+.pager__item--ellipsis {
   padding: 10px 0;
 }
-.item-list .pager li.pager-last,
-.item-list .pager li.pager-next {
+.pager__item--last,
+.pager__item--next {
   padding: 10px 0 10px 10px;
 }
 ul.menu li {
@@ -439,8 +444,7 @@ h1.site-name {
   background: rgba(255, 255, 255, 0.8);
 }
 .region-header .form-required:after {
-  color: #eee;
-  color: rgba(255, 255, 255, 0.7);
+  background-image: url(../images/required.svg);
 }
 /* Region header block menus. */
 .region-header .block-menu {
@@ -846,6 +850,67 @@ ul.links {
 .unpublished .comment-text .comment-arrow {
   border-left: 1px solid #fff4f4;
   border-right: 1px solid #fff4f4;
+}
+.node-preview-container {
+  background: #d1e8f5;
+  background-image: -webkit-linear-gradient(top, #d1e8f5, #d3e8f4);
+  background-image: linear-gradient(to bottom, #d1e8f5, #d3e8f4);
+  font-family: Arial, sans-serif;
+  box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.3333);
+  position: fixed;
+  z-index: 499;
+  width: 100%;
+  padding: 10px;
+}
+.node-preview-backlink {
+  background-color: #419ff1;
+  background: url(../../../misc/icons/000000/chevron-left.svg) left no-repeat, -webkit-linear-gradient(top, #419ff1, #1076d5);
+  background: url(../../../misc/icons/000000/chevron-left.svg) left no-repeat, linear-gradient(to bottom, #419ff1, #1076d5); /* LTR */
+  border: 1px solid #0048c8;
+  border-radius: .4em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4);
+  color: #fff;
+  font-size: 0.9em;
+  line-height: normal;
+  margin: 0;
+  padding: 4px 1em 4px 0.6em; /* LTR */
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+[dir="rtl"] .node-preview-backlink {
+  background: url(../../../misc/icons/000000/chevron-right.svg) right no-repeat, -webkit-linear-gradient(top, #419ff1, #1076d5);
+  background: url(../../../misc/icons/000000/chevron-right.svg) right no-repeat, linear-gradient(to bottom, #419ff1, #1076d5);
+  padding: 4px 0.6em 4px 1em;
+  float: right;
+}
+.node-preview-backlink:focus,
+.node-preview-backlink:hover {
+  background-color: #419cf1;
+  background: url(../../../misc/icons/000000/chevron-left.svg) left no-repeat, -webkit-linear-gradient(top, #59abf3, #2a90ef);
+  background: url(../../../misc/icons/000000/chevron-left.svg) left no-repeat, linear-gradient(to bottom, #59abf3, #2a90ef); /* LTR */
+  border: 1px solid #0048c8;
+  text-decoration: none;
+  color: #fff;
+}
+[dir="rtl"] .node-preview-backlink:focus,
+[dir="rtl"] .node-preview-backlink:hover {
+  background: url(../../../misc/icons/000000/chevron-right.svg) right no-repeat, -webkit-linear-gradient(top, #59abf3, #2a90ef);
+  background: url(../../../misc/icons/000000/chevron-right.svg) right no-repeat, linear-gradient(to bottom, #59abf3, #2a90ef);
+}
+.node-preview-backlink:active {
+  background-color: #0e69be;
+  background: url(../../../misc/icons/000000/chevron-left.svg) left no-repeat, -webkit-linear-gradient(top, #0e69be, #2a93ef);
+  background: url(../../../misc/icons/000000/chevron-left.svg) left no-repeat, linear-gradient(to bottom, #0e69be, #2a93ef); /* LTR */
+  border: 1px solid #0048c8;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25);
+}
+.node-preview-backlink:active {
+  background: url(../../../misc/icons/000000/chevron-right.svg) right no-repeat, -webkit-linear-gradient(top, #0e69be, #2a93ef);
+  background: url(../../../misc/icons/000000/chevron-right.svg) right no-repeat, linear-gradient(to bottom, #0e69be, #2a93ef);
+}
+.node-preview-backlink::before {
+  content: '';
+  width: 10px;
+  display: inline-block;
 }
 
 /* ----------------- Comments ----------------- */
@@ -1386,8 +1451,6 @@ input {
   padding: 4px;
   /* Keep form elements from overflowing their containers. */
   max-width: 100%;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
 input,

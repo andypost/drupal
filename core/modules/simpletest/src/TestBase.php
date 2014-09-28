@@ -30,7 +30,7 @@ use Symfony\Component\DependencyInjection\Reference;
  * Base class for Drupal tests.
  *
  * Do not extend this class directly; use either
- * \Drupal\simpletest\WebTestBase or \Drupal\simpletest\UnitTestBase.
+ * \Drupal\simpletest\WebTestBase or \Drupal\simpletest\KernelTestBase.
  */
 abstract class TestBase {
   /**
@@ -1058,7 +1058,6 @@ abstract class TestBase {
 
     // Unregister all custom stream wrappers of the parent site.
     // Availability of Drupal stream wrappers varies by test base class:
-    // - UnitTestBase operates in a completely empty environment.
     // - KernelTestBase supports and maintains stream wrappers in a custom
     //   way.
     // - WebTestBase re-initializes Drupal stream wrappers after installation.
@@ -1080,12 +1079,6 @@ abstract class TestBase {
     unset($GLOBALS['config_directories']);
     unset($GLOBALS['config']);
     unset($GLOBALS['conf']);
-    unset($GLOBALS['theme_key']);
-    unset($GLOBALS['theme']);
-    unset($GLOBALS['theme_info']);
-    unset($GLOBALS['base_theme_info']);
-    unset($GLOBALS['theme_engine']);
-    unset($GLOBALS['theme_path']);
 
     // Log fatal errors.
     ini_set('log_errors', 1);
@@ -1185,14 +1178,6 @@ abstract class TestBase {
     // All destructors of statically cached objects have been invoked above;
     // this second reset is guaranteed to reset everything to nothing.
     drupal_static_reset();
-
-    // Reset global theme variables.
-    unset($GLOBALS['theme_key']);
-    unset($GLOBALS['theme']);
-    unset($GLOBALS['theme_info']);
-    unset($GLOBALS['base_theme_info']);
-    unset($GLOBALS['theme_engine']);
-    unset($GLOBALS['theme_path']);
 
     // Restore original in-memory configuration.
     $GLOBALS['config'] = $this->originalConfig;
@@ -1298,22 +1283,35 @@ abstract class TestBase {
   }
 
   /**
-   * Generates a unique random string of ASCII characters of codes 32 to 126.
+   * Generates a pseudo-random string of ASCII characters of codes 32 to 126.
    *
    * Do not use this method when special characters are not possible (e.g., in
    * machine or file names that have already been validated); instead, use
-   * \Drupal\simpletest\TestBase::randomMachineName().
+   * \Drupal\simpletest\TestBase::randomMachineName(). If $length is greater
+   * than 2 the random string will include at least one ampersand ('&')
+   * character to ensure coverage for special characters and avoid the
+   * introduction of random test failures.
    *
    * @param int $length
    *   Length of random string to generate.
    *
    * @return string
-   *   Randomly generated unique string.
+   *   Pseudo-randomly generated unique string including special characters.
    *
    * @see \Drupal\Component\Utility\Random::string()
    */
   public function randomString($length = 8) {
-    return $this->getRandomGenerator()->string($length, TRUE, array($this, 'randomStringValidate'));
+    if ($length < 3) {
+      return $this->getRandomGenerator()->string($length, TRUE, array($this, 'randomStringValidate'));
+    }
+
+    // To prevent the introduction of random test failures, ensure that the
+    // returned string contains a character that needs to be escaped in HTML by
+    // injecting an ampersand into it.
+    $replacement_pos = floor($length / 2);
+    // Remove 1 from the length to account for the ampersand character.
+    $string = $this->getRandomGenerator()->string($length - 1, TRUE, array($this, 'randomStringValidate'));
+    return substr_replace($string, '&', $replacement_pos, 0);
   }
 
   /**

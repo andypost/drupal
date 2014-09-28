@@ -40,7 +40,6 @@ class Rss extends RowPluginBase {
     $options = parent::defineOptions();
 
     $options['view_mode'] = array('default' => 'default');
-    $options['links'] = array('default' => FALSE, 'bool' => TRUE);
 
     return $options;
   }
@@ -50,14 +49,9 @@ class Rss extends RowPluginBase {
 
     $form['view_mode'] = array(
       '#type' => 'select',
-      '#title' => t('Display type'),
+      '#title' => $this->t('Display type'),
       '#options' => $this->buildOptionsForm_summary_options(),
       '#default_value' => $this->options['view_mode'],
-    );
-    $form['links'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Display links'),
-      '#default_value' => $this->options['links'],
     );
   }
 
@@ -70,8 +64,8 @@ class Rss extends RowPluginBase {
     foreach ($view_modes as $mode => $settings) {
       $options[$mode] = $settings['label'];
     }
-    $options['title'] = t('Title only');
-    $options['default'] = t('Use site default RSS settings');
+    $options['title'] = $this->t('Title only');
+    $options['default'] = $this->t('Use site default RSS settings');
     return $options;
   }
 
@@ -91,7 +85,6 @@ class Rss extends RowPluginBase {
   }
 
   public function render($row) {
-    // For the most part, this code is taken from node_feed() in node.module
     global $base_url;
 
     $nid = $row->{$this->field_alias};
@@ -152,14 +145,8 @@ class Rss extends RowPluginBase {
       $this->view->style_plugin->namespaces += $xml_rdf_namespaces;
     }
 
-    // Hide the links if desired.
-    if (!$this->options['links']) {
-      hide($build['links']);
-    }
-
     if ($display_mode != 'title') {
-      // We render node contents and force links to be last.
-      $build['links']['#weight'] = 1000;
+      // We render node contents.
       $item_text .= drupal_render($build);
     }
 

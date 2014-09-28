@@ -6,6 +6,7 @@
 
 namespace Drupal\entity_test;
 
+use Drupal\Component\Utility\Random;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
@@ -18,29 +19,21 @@ class EntityTestForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
+  protected function prepareEntity() {
+    if (empty($this->entity->name->value)) {
+      // Assign a random name to new EntityTest entities, to avoid repetition in
+      // tests.
+      $random = new Random();
+      $this->entity->name->value = $random->name();
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
     $entity = $this->entity;
-
-    $form['name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Name'),
-      '#default_value' => $entity->name->value,
-      '#size' => 60,
-      '#maxlength' => 128,
-      '#required' => TRUE,
-      '#weight' => -10,
-    );
-
-    $form['user_id'] = array(
-      '#type' => 'textfield',
-      '#title' => 'UID',
-      '#default_value' => $entity->user_id->target_id,
-      '#size' => 60,
-      '#maxlength' => 128,
-      '#required' => TRUE,
-      '#weight' => -10,
-    );
 
     $form['langcode'] = array(
       '#title' => t('Language'),
@@ -64,23 +57,14 @@ class EntityTestForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function submit(array $form, FormStateInterface $form_state) {
-    // Build the entity object from the submitted values.
-    $entity = parent::submit($form, $form_state);
+  public function save(array $form, FormStateInterface $form_state) {
+    $entity = $this->entity;
 
     // Save as a new revision if requested to do so.
-    if (!empty($form_state['values']['revision'])) {
+    if (!$form_state->isValueEmpty('revision')) {
       $entity->setNewRevision();
     }
 
-    return $entity;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function save(array $form, FormStateInterface $form_state) {
-    $entity = $this->entity;
     $is_new = $entity->isNew();
     $entity->save();
 
@@ -95,14 +79,14 @@ class EntityTestForm extends ContentEntityForm {
     if ($entity->id()) {
       $entity_type = $entity->getEntityTypeId();
       $form_state->setRedirect(
-        "entity_test.edit_$entity_type",
+        "entity.$entity_type.edit_form",
         array($entity_type => $entity->id())
       );
     }
     else {
       // Error on save.
       drupal_set_message(t('The entity could not be saved.'), 'error');
-      $form_state['rebuild'] = TRUE;
+      $form_state->setRebuild();
     }
   }
 

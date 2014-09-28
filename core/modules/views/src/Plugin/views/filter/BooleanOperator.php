@@ -60,15 +60,15 @@ class BooleanOperator extends FilterPluginBase {
   protected function operators() {
     return array(
       '=' => array(
-        'title' => t('Is equal to'),
+        'title' => $this->t('Is equal to'),
         'method' => 'queryOpBoolean',
-        'short' => t('='),
+        'short' => $this->t('='),
         'values' => 1,
       ),
       '!=' => array(
-        'title' => t('Is not equal to'),
+        'title' => $this->t('Is not equal to'),
         'method' => 'queryOpBoolean',
-        'short' => t('!='),
+        'short' => $this->t('!='),
         'values' => 1,
       ),
     );
@@ -80,7 +80,7 @@ class BooleanOperator extends FilterPluginBase {
   public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
     parent::init($view, $display, $options);
 
-    $this->value_value = t('True');
+    $this->value_value = $this->t('True');
     if (isset($this->definition['label'])) {
       $this->value_value = $this->definition['label'];
     }
@@ -108,19 +108,19 @@ class BooleanOperator extends FilterPluginBase {
   public function getValueOptions() {
     if (isset($this->definition['type'])) {
       if ($this->definition['type'] == 'yes-no') {
-        $this->value_options = array(1 => t('Yes'), 0 => t('No'));
+        $this->value_options = array(1 => $this->t('Yes'), 0 => $this->t('No'));
       }
       if ($this->definition['type'] == 'on-off') {
-        $this->value_options = array(1 => t('On'), 0 => t('Off'));
+        $this->value_options = array(1 => $this->t('On'), 0 => $this->t('Off'));
       }
       if ($this->definition['type'] == 'enabled-disabled') {
-        $this->value_options = array(1 => t('Enabled'), 0 => t('Disabled'));
+        $this->value_options = array(1 => $this->t('Enabled'), 0 => $this->t('Disabled'));
       }
     }
 
     // Provide a fallback if the above didn't set anything.
     if (!isset($this->value_options)) {
-      $this->value_options = array(1 => t('True'), 0 => t('False'));
+      $this->value_options = array(1 => $this->t('True'), 0 => $this->t('False'));
     }
   }
 
@@ -137,7 +137,7 @@ class BooleanOperator extends FilterPluginBase {
       // Initialize the array of possible values for this filter.
       $this->getValueOptions();
     }
-    if (!empty($form_state['exposed'])) {
+    if ($exposed = $form_state->get('exposed')) {
       // Exposed filter: use a select box to save space.
       $filter_form_type = 'select';
     }
@@ -153,28 +153,30 @@ class BooleanOperator extends FilterPluginBase {
     );
     if (!empty($this->options['exposed'])) {
       $identifier = $this->options['expose']['identifier'];
-      if (!empty($form_state['exposed']) && !isset($form_state['input'][$identifier])) {
-        $form_state['input'][$identifier] = $this->value;
+      $user_input = $form_state->getUserInput();
+      if ($exposed && !isset($user_input[$identifier])) {
+        $user_input[$identifier] = $this->value;
+        $form_state->setUserInput($user_input);
       }
       // If we're configuring an exposed filter, add an - Any - option.
-      if (empty($form_state['exposed']) || empty($this->options['expose']['required'])) {
-        $form['value']['#options'] = array('All' => t('- Any -')) + $form['value']['#options'];
+      if (!$exposed || empty($this->options['expose']['required'])) {
+        $form['value']['#options'] = array('All' => $this->t('- Any -')) + $form['value']['#options'];
       }
     }
   }
 
   protected function valueValidate($form, FormStateInterface $form_state) {
-    if (isset($form_state['values']['options']['value']) && $form_state['values']['options']['value'] == 'All' && !empty($form_state['values']['options']['expose']['required'])) {
-      form_set_error('value', $form_state, t('You must select a value unless this is an non-required exposed filter.'));
+    if ($form_state->getValue(array('options', 'value')) == 'All' && !$form_state->isValueEmpty(array('options', 'expose', 'required'))) {
+      $form_state->setErrorByName('value', $this->t('You must select a value unless this is an non-required exposed filter.'));
     }
   }
 
   public function adminSummary() {
     if ($this->isAGroup()) {
-      return t('grouped');
+      return $this->t('grouped');
     }
     if (!empty($this->options['exposed'])) {
-      return t('exposed');
+      return $this->t('exposed');
     }
     if (empty($this->value_options)) {
       $this->getValueOptions();

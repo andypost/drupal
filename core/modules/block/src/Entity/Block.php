@@ -21,7 +21,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
  * @ConfigEntityType(
  *   id = "block",
  *   label = @Translation("Block"),
- *   controllers = {
+ *   handlers = {
  *     "access" = "Drupal\block\BlockAccessControlHandler",
  *     "view_builder" = "Drupal\block\BlockViewBuilder",
  *     "list_builder" = "Drupal\block\BlockListBuilder",
@@ -164,7 +164,7 @@ class Block extends ConfigEntityBase implements BlockInterface, EntityWithPlugin
    * this block is placed in instead.
    */
   public function getListCacheTags() {
-    return array('theme' => $this->theme);
+    return array('theme:' . $this->theme);
   }
 
   /**

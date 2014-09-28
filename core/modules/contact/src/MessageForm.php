@@ -44,6 +44,13 @@ class MessageForm extends ContentEntityForm {
   protected $languageManager;
 
   /**
+   * The contact mail handler service.
+   *
+   * @var \Drupal\contact\MailHandlerInterface
+   */
+  protected $mailHandler;
+
+  /**
    * Constructs a MessageForm object.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
@@ -52,11 +59,14 @@ class MessageForm extends ContentEntityForm {
    *   The flood control mechanism.
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager service.
+   * @param \Drupal\contact\MailHandlerInterface $mail_handler
+   *   The contact mail handler service.
    */
-  public function __construct(EntityManagerInterface $entity_manager, FloodInterface $flood, LanguageManagerInterface $language_manager) {
+  public function __construct(EntityManagerInterface $entity_manager, FloodInterface $flood, LanguageManagerInterface $language_manager, MailHandlerInterface $mail_handler) {
     parent::__construct($entity_manager);
     $this->flood = $flood;
     $this->languageManager = $language_manager;
+    $this->mailHandler = $mail_handler;
   }
 
   /**
@@ -66,7 +76,8 @@ class MessageForm extends ContentEntityForm {
     return new static(
       $container->get('entity.manager'),
       $container->get('flood'),
-      $container->get('language_manager')
+      $container->get('language_manager'),
+      $container->get('contact.mail_handler')
     );
   }
 
@@ -87,7 +98,7 @@ class MessageForm extends ContentEntityForm {
       $form['preview']['message'] = $this->entityManager->getViewBuilder('contact_message')->view($message, 'full');
     }
 
-    $language_configuration = $this->moduleHandler->invoke('language', 'get_default_configuration', array('contact_message', $message->getCategory()->id()));
+    $language_configuration = $this->moduleHandler->invoke('language', 'get_default_configuration', array('contact_message', $message->getContactForm()->id()));
     $form['langcode'] = array(
       '#title' => $this->t('Language'),
       '#type' => 'language_select',
@@ -140,7 +151,7 @@ class MessageForm extends ContentEntityForm {
 
     $form['copy'] = array(
       '#type' => 'checkbox',
-      '#title' => $this->t('Send yourself a copy.'),
+      '#title' => $this->t('Send yourself a copy'),
       // Do not allow anonymous users to send themselves a copy, because it can
       // be abused to spam people.
       '#access' => $user->isAuthenticated(),
@@ -156,13 +167,8 @@ class MessageForm extends ContentEntityForm {
     $elements['submit']['#value'] = $this->t('Send message');
     $elements['preview'] = array(
       '#value' => $this->t('Preview'),
-      '#validate' => array(
-        array($this, 'validate'),
-      ),
-      '#submit' => array(
-        array($this, 'submit'),
-        array($this, 'preview'),
-      ),
+      '#validate' => array('::validate'),
+      '#submit' => array('::submitForm', '::preview'),
     );
     return $elements;
   }
@@ -173,84 +179,18 @@ class MessageForm extends ContentEntityForm {
   public function preview(array $form, FormStateInterface $form_state) {
     $message = $this->entity;
     $message->preview = TRUE;
-    $form_state['rebuild'] = TRUE;
+    $form_state->setRebuild();
   }
 
   /**
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $user = $this->currentUser();
-
-    $language_interface = $this->languageManager->getCurrentLanguage();
     $message = $this->entity;
-
-    $sender = clone $this->entityManager->getStorage('user')->load($user->id());
-    if ($user->isAnonymous()) {
-      // At this point, $sender contains an anonymous user, so we need to take
-      // over the submitted form values.
-      $sender->name = $message->getSenderName();
-      $sender->mail = $message->getSenderMail();
-
-      // For the email message, clarify that the sender name is not verified; it
-      // could potentially clash with a username on this site.
-      $sender->name = $this->t('!name (not verified)', array('!name' => $message->getSenderName()));
-    }
-
-    // Build email parameters.
-    $params['contact_message'] = $message;
-    $params['sender'] = $sender;
-
-    if (!$message->isPersonal()) {
-      // Send to the category recipient(s), using the site's default language.
-      $category = $message->getCategory();
-      $params['contact_category'] = $category;
-
-      $to = implode(', ', $category->recipients);
-      $recipient_langcode = $this->languageManager->getDefaultLanguage()->getId();
-    }
-    elseif ($recipient = $message->getPersonalRecipient()) {
-      // Send to the user in the user's preferred language.
-      $to = $recipient->getEmail();
-      $recipient_langcode = $recipient->getPreferredLangcode();
-      $params['recipient'] = $recipient;
-    }
-    else {
-      throw new \RuntimeException($this->t('Unable to determine message recipient.'));
-    }
-
-    // Send email to the recipient(s).
-    $key_prefix = $message->isPersonal() ? 'user' : 'page';
-    drupal_mail('contact', $key_prefix . '_mail', $to, $recipient_langcode, $params, $sender->getEmail());
-
-    // If requested, send a copy to the user, using the current language.
-    if ($message->copySender()) {
-      drupal_mail('contact', $key_prefix . '_copy', $sender->getEmail(), $language_interface->id, $params, $sender->getEmail());
-    }
-
-    // If configured, send an auto-reply, using the current language.
-    if (!$message->isPersonal() && $category->reply) {
-      // User contact forms do not support an auto-reply message, so this
-      // message always originates from the site.
-      drupal_mail('contact', 'page_autoreply', $sender->getEmail(), $language_interface->id, $params);
-    }
+    $user = $this->currentUser();
+    $this->mailHandler->sendMailMessages($message, $user);
 
     $this->flood->register('contact', $this->config('contact.settings')->get('flood.interval'));
-    if (!$message->isPersonal()) {
-      $this->logger('contact')->notice('%sender-name (@sender-from) sent an email regarding %category.', array(
-        '%sender-name' => $sender->getUsername(),
-        '@sender-from' => $sender->getEmail(),
-        '%category' => $category->label(),
-      ));
-    }
-    else {
-      $this->logger('contact')->notice('%sender-name (@sender-from) sent %recipient-name an email.', array(
-        '%sender-name' => $sender->getUsername(),
-        '@sender-from' => $sender->getEmail(),
-        '%recipient-name' => $message->getPersonalRecipient()->getUsername(),
-      ));
-    }
-
     drupal_set_message($this->t('Your message has been sent.'));
 
     // To avoid false error messages caused by flood control, redirect away from

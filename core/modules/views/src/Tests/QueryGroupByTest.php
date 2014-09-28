@@ -33,7 +33,7 @@ class QueryGroupByTest extends ViewUnitTestBase {
   /**
    * The storage for the test entity type.
    *
-   * @var \Drupal\Core\Entity\ContentEntityDatabaseStorage
+   * @var \Drupal\Core\Entity\Sql\SqlContentEntityStorage
    */
   public $storage;
 
@@ -43,6 +43,7 @@ class QueryGroupByTest extends ViewUnitTestBase {
   protected function setUp() {
     parent::setUp();
 
+    $this->installEntitySchema('user');
     $this->installEntitySchema('entity_test');
 
     $this->storage = $this->container->get('entity.manager')->getStorage('entity_test');

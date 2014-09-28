@@ -22,16 +22,16 @@ class FileFieldDisplayTest extends FileFieldTestBase {
   function testNodeDisplay() {
     $field_name = strtolower($this->randomMachineName());
     $type_name = 'article';
-    $field_settings = array(
+    $field_storage_settings = array(
       'display_field' => '1',
       'display_default' => '1',
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
     );
-    $instance_settings = array(
+    $field_settings = array(
       'description_field' => '1',
     );
     $widget_settings = array();
-    $this->createFileField($field_name, 'node', $type_name, $field_settings, $instance_settings, $widget_settings);
+    $this->createFileField($field_name, 'node', $type_name, $field_storage_settings, $field_settings, $widget_settings);
 
     // Create a new node *without* the file field set, and check that the field
     // is not shown for each node display.
@@ -87,6 +87,7 @@ class FileFieldDisplayTest extends FileFieldTestBase {
     $edit[$field_name . '[0][display]'] = FALSE;
     $edit[$field_name . '[1][display]'] = FALSE;
     $this->drupalPostForm("node/$nid/edit", $edit, t('Preview'));
+    $this->clickLink(t('Back to content editing'));
     $this->assertRaw($field_name . '[0][display]', 'First file appears as expected.');
     $this->assertRaw($field_name . '[1][display]', 'Second file appears as expected.');
   }

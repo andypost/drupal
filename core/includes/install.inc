@@ -363,7 +363,7 @@ function _drupal_rewrite_settings_is_simple($type, $value) {
  * Helper for drupal_rewrite_settings().
  *
  * Checks whether this token represents a valid array index: a number or a
- * stirng.
+ * string.
  *
  * @param int $type
  *   The token type
@@ -647,8 +647,9 @@ function drupal_install_system($install_state) {
   // Install base system configuration.
   \Drupal::service('config.installer')->installDefaultConfig('core', 'core');
 
-  // Install System module.
+  // Install System module and rebuild the newly available routes.
   $kernel->getContainer()->get('module_handler')->install(array('system'), FALSE);
+  \Drupal::service('router.builder')->rebuild();
 
   // DrupalKernel::prepareLegacyRequest() above calls into
   // DrupalKernel::bootCode(), which primes file_get_stream_wrappers()'s static

@@ -59,7 +59,7 @@ class TypedDataManager extends DefaultPluginManager {
     $this->alterInfo('data_type_info');
     $this->setCacheBackend($cache_backend, 'typed_data_types_plugins');
 
-    parent::__construct('Plugin/DataType', $namespaces, $module_handler, 'Drupal\Core\TypedData\Annotation\DataType');
+    parent::__construct('Plugin/DataType', $namespaces, $module_handler, NULL, 'Drupal\Core\TypedData\Annotation\DataType');
   }
 
   /**
@@ -377,7 +377,7 @@ class TypedDataManager extends DefaultPluginManager {
       $constraints['NotNull'] = array();
     }
     // Check if the class provides allowed values.
-    if (is_subclass_of($definition->getClass(),'Drupal\Core\TypedData\AllowedValuesInterface')) {
+    if (is_subclass_of($definition->getClass(),'Drupal\Core\TypedData\OptionsProviderInterface')) {
       $constraints['AllowedValues'] = array();
     }
     // Add any constraints about referenced data.

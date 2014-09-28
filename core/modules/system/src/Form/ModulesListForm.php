@@ -210,6 +210,12 @@ class ModulesListForm extends FormBase {
       );
     }
 
+    // If testing modules are shown, collapse the corresponding package by
+    // default.
+    if (isset($form['modules']['Testing'])) {
+      $form['modules']['Testing']['#open'] = FALSE;
+    }
+
     // Lastly, sort all packages by title.
     uasort($form['modules'], array('\Drupal\Component\Utility\SortArray', 'sortByTitleProperty'));
 
@@ -288,6 +294,7 @@ class ModulesListForm extends FormBase {
           $request->attributes->set('_route_name', $module->info['configure']);
           $route_object = $this->routeProvider->getRouteByName($module->info['configure']);
           $request->attributes->set('_route', $route_object);
+          $request->attributes->add($route_parameters);
           $description = $this->titleResolver->getTitle($request, $route_object);
         }
 
@@ -416,7 +423,7 @@ class ModulesListForm extends FormBase {
    *   An array of modules to install and their dependencies.
    */
   protected function buildModuleList(FormStateInterface $form_state) {
-    $packages = $form_state['values']['modules'];
+    $packages = $form_state->getValue('modules');
 
     // Build a list of modules to install.
     $modules = array(

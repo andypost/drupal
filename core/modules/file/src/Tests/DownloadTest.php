@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
  * @group file
  */
 class DownloadTest extends FileManagedTestBase {
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
     // Clear out any hook calls.
     file_test_reset();
@@ -126,6 +126,7 @@ class DownloadTest extends FileManagedTestBase {
       $this->checkUrl('public', '', $basename, $base_path . '/' . file_stream_wrapper_get_instance_by_scheme('public')->getDirectoryPath() . '/' . $basename_encoded);
       $this->checkUrl('private', '', $basename, $base_path . '/' . $script_path . 'system/files/' . $basename_encoded);
     }
+    $this->assertEqual(file_create_url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=='), 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==', t('Generated URL matches expected URL.'));
   }
 
   /**
@@ -154,7 +155,7 @@ class DownloadTest extends FileManagedTestBase {
     $file = $this->createFile($filepath, NULL, $scheme);
 
     $url = file_create_url($file->getFileUri());
-    $this->assertEqual($url, $expected_url, 'Generated URL matches expected URL.');
+    $this->assertEqual($url, $expected_url);
 
     if ($scheme == 'private') {
       // Tell the implementation of hook_file_download() in file_test.module

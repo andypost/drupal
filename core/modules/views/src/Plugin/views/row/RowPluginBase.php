@@ -82,7 +82,7 @@ abstract class RowPluginBase extends PluginBase {
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
     if (isset($this->base_table)) {
-      $executable = $form_state['view']->getExecutable();
+      $executable = $form_state->get('view')->getExecutable();
 
       // A whole bunch of code to figure out what relationships are valid for
       // this item.
@@ -102,7 +102,7 @@ abstract class RowPluginBase extends PluginBase {
       }
 
       if (!empty($relationship_options)) {
-        $relationship_options = array_merge(array('none' => t('Do not use a relationship')), $relationship_options);
+        $relationship_options = array_merge(array('none' => $this->t('Do not use a relationship')), $relationship_options);
         $rel = empty($this->options['relationship']) ? 'none' : $this->options['relationship'];
         if (empty($relationship_options[$rel])) {
           // Pick the first relationship.
@@ -111,7 +111,7 @@ abstract class RowPluginBase extends PluginBase {
 
         $form['relationship'] = array(
           '#type' => 'select',
-          '#title' => t('Relationship'),
+          '#title' => $this->t('Relationship'),
           '#options' => $relationship_options,
           '#default_value' => $rel,
         );

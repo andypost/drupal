@@ -7,6 +7,7 @@
 
 namespace Drupal\image\Tests;
 
+use Drupal\Component\Utility\String;
 use Drupal\image\ImageStyleInterface;
 
 /**
@@ -69,30 +70,30 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $style_path = $admin_path . '/manage/' . $style_name;
     $effect_edits = array(
       'image_resize' => array(
-        'data[width]' => 100,
-        'data[height]' => 101,
+        'width' => 100,
+        'height' => 101,
       ),
       'image_scale' => array(
-        'data[width]' => 110,
-        'data[height]' => 111,
-        'data[upscale]' => 1,
+        'width' => 110,
+        'height' => 111,
+        'upscale' => 1,
       ),
       'image_scale_and_crop' => array(
-        'data[width]' => 120,
-        'data[height]' => 121,
+        'width' => 120,
+        'height' => 121,
       ),
       'image_crop' => array(
-        'data[width]' => 130,
-        'data[height]' => 131,
-        'data[anchor]' => 'center-center',
+        'width' => 130,
+        'height' => 131,
+        'anchor' => 'left-top',
       ),
       'image_desaturate' => array(
         // No options for desaturate.
       ),
       'image_rotate' => array(
-        'data[degrees]' => 5,
-        'data[random]' => 1,
-        'data[bgcolor]' => '#FFFF00',
+        'degrees' => 5,
+        'random' => 1,
+        'bgcolor' => '#FFFF00',
       ),
     );
 
@@ -115,28 +116,38 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
 
     // Add each sample effect to the style.
     foreach ($effect_edits as $effect => $edit) {
+      $edit_data = array();
+      foreach ($edit as $field => $value) {
+        $edit_data['data[' . $field . ']'] = $value;
+      }
       // Add the effect.
       $this->drupalPostForm($style_path, array('new' => $effect), t('Add'));
       if (!empty($edit)) {
-        $this->drupalPostForm(NULL, $edit, t('Add effect'));
+        $this->drupalPostForm(NULL, $edit_data, t('Add effect'));
       }
     }
 
     // Load the saved image style.
     $style = entity_load('image_style', $style_name);
+
+    // Ensure that third party settings were added to the config entity.
+    // These are added by a hook_image_style_presave() implemented in
+    // image_module_test module.
+    $this->assertEqual('bar', $style->getThirdPartySetting('image_module_test', 'foo'), 'Third party settings were added to the image style.');
+
     // Ensure that the image style URI matches our expected path.
     $style_uri_path = $style->url();
     $this->assertTrue(strpos($style_uri_path, $style_path) !== FALSE, 'The image style URI is correct.');
 
-    // Confirm that all effects on the image style have settings on the effect
-    // edit form that match what was saved.
+    // Confirm that all effects on the image style have settings that match
+    // what was saved.
     $uuids = array();
     foreach ($style->getEffects() as $uuid => $effect) {
       // Store the uuid for later use.
       $uuids[$effect->getPluginId()] = $uuid;
-      $this->drupalGet($style_path . '/effects/' . $uuid);
+      $effect_configuration = $effect->getConfiguration();
       foreach ($effect_edits[$effect->getPluginId()] as $field => $value) {
-        $this->assertFieldByName($field, $value, format_string('The %field field in the %effect effect has the correct value of %value.', array('%field' => $field, '%effect' => $effect->getPluginId(), '%value' => $value)));
+        $this->assertEqual($value, $effect_configuration['data'][$field], String::format('The %field field in the %effect effect has the correct value of %value.', array('%field' => $field, '%effect' => $effect->getPluginId(), '%value' => $value)));
       }
     }
 
@@ -237,6 +248,17 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
         '%style' => $style->label,
       )));
 
+    // Additional test on Rotate effect, for transparent background.
+    $edit = array(
+      'data[degrees]' => 5,
+      'data[random]' => 0,
+      'data[bgcolor]' => '',
+    );
+    $this->drupalPostForm($style_path, array('new' => 'image_rotate'), t('Add'));
+    $this->drupalPostForm(NULL, $edit, t('Add effect'));
+    $style = entity_load_unchanged('image_style', $style_name);
+    $this->assertEqual(count($style->getEffects()), 6, 'Rotate effect with transparent background was added.');
+
     // Style deletion form.
 
     // Delete the style.
@@ -322,15 +344,15 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $this->drupalPostForm(NULL, array('label' => 'Test style effect edit', 'name' => $style_name), t('Create new style'));
     $this->drupalPostForm(NULL, array('new' => 'image_scale_and_crop'), t('Add'));
     $this->drupalPostForm(NULL, array('data[width]' => '300', 'data[height]' => '200'), t('Add effect'));
-    $this->assertText(t('Scale and crop 300x200'));
+    $this->assertText(t('Scale and crop 300×200'));
 
     // There should normally be only one edit link on this page initially.
     $this->clickLink(t('Edit'));
     $this->drupalPostForm(NULL, array('data[width]' => '360', 'data[height]' => '240'), t('Update effect'));
-    $this->assertText(t('Scale and crop 360x240'));
+    $this->assertText(t('Scale and crop 360×240'));
 
     // Check that the previous effect is replaced.
-    $this->assertNoText(t('Scale and crop 300x200'));
+    $this->assertNoText(t('Scale and crop 300×200'));
 
     // Add another scale effect.
     $this->drupalGet('admin/config/media/image-styles/add');
@@ -345,8 +367,8 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
 
     // Add another scale effect and make sure both exist.
     $this->drupalPostForm(NULL, array('data[width]' => '12', 'data[height]' => '19'), t('Add effect'));
-    $this->assertText(t('Scale 24x19'));
-    $this->assertText(t('Scale 12x19'));
+    $this->assertText(t('Scale 24×19'));
+    $this->assertText(t('Scale 12×19'));
 
     // Try to edit a nonexistent effect.
     $uuid = $this->container->get('uuid');

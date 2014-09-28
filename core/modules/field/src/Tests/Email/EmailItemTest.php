@@ -18,23 +18,16 @@ use Drupal\field\Tests\FieldUnitTestBase;
  */
 class EmailItemTest extends FieldUnitTestBase {
 
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = array('email');
-
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
-    // Create an email field and instance for validation.
+    // Create an email field storage and field for validation.
     entity_create('field_storage_config', array(
       'name' => 'field_email',
       'entity_type' => 'entity_test',
       'type' => 'email',
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'entity_test',
       'field_name' => 'field_email',
       'bundle' => 'entity_test',
@@ -76,6 +69,11 @@ class EmailItemTest extends FieldUnitTestBase {
     $entity->save();
     $entity = entity_load('entity_test', $id);
     $this->assertEqual($entity->field_email->value, $new_value);
+
+    // Test sample item generation.
+    $entity = entity_create('entity_test');
+    $entity->field_email->generateSampleItems();
+    $this->entityValidateAndSave($entity);
   }
 
 }

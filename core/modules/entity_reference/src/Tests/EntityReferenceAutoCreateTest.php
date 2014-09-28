@@ -19,7 +19,7 @@ class EntityReferenceAutoCreateTest extends WebTestBase {
 
   public static $modules = array('entity_reference', 'node');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Create "referencing" and "referenced" node types.
@@ -41,7 +41,7 @@ class EntityReferenceAutoCreateTest extends WebTestBase {
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
     ))->save();
 
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'label' => 'Entity reference field',
       'field_name' => 'test_field',
       'entity_type' => 'node',

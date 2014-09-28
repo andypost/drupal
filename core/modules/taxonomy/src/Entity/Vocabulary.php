@@ -8,6 +8,7 @@
 namespace Drupal\taxonomy\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBundleBase;
+use Drupal\Core\Config\Entity\ThirdPartySettingsTrait;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\taxonomy\VocabularyInterface;
 
@@ -17,7 +18,7 @@ use Drupal\taxonomy\VocabularyInterface;
  * @ConfigEntityType(
  *   id = "taxonomy_vocabulary",
  *   label = @Translation("Taxonomy vocabulary"),
- *   controllers = {
+ *   handlers = {
  *     "storage" = "Drupal\taxonomy\VocabularyStorage",
  *     "list_builder" = "Drupal\taxonomy\VocabularyListBuilder",
  *     "form" = {
@@ -35,15 +36,16 @@ use Drupal\taxonomy\VocabularyInterface;
  *     "weight" = "weight"
  *   },
  *   links = {
- *     "add-form" = "taxonomy.term_add",
- *     "delete-form" = "taxonomy.vocabulary_delete",
- *     "reset" = "taxonomy.vocabulary_reset",
- *     "overview-form" = "taxonomy.overview_terms",
- *     "edit-form" = "taxonomy.vocabulary_edit"
+ *     "add-form" = "entity.taxonomy_term.add_form",
+ *     "delete-form" = "entity.taxonomy_vocabulary.delete_form",
+ *     "reset-form" = "entity.taxonomy_vocabulary.reset_form",
+ *     "overview-form" = "entity.taxonomy_vocabulary.overview_form",
+ *     "edit-form" = "entity.taxonomy_vocabulary.edit_form"
  *   }
  * )
  */
 class Vocabulary extends ConfigEntityBundleBase implements VocabularyInterface {
+  use ThirdPartySettingsTrait;
 
   /**
    * The taxonomy vocabulary ID.

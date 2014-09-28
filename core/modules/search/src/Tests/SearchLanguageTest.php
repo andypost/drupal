@@ -7,8 +7,8 @@
 
 namespace Drupal\search\Tests;
 
-use Drupal\Core\Language\Language;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
  * Tests advanced search with different languages added.
@@ -24,7 +24,7 @@ class SearchLanguageTest extends SearchTestBase {
    */
   public static $modules = array('language');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Create and login user.
@@ -32,11 +32,7 @@ class SearchLanguageTest extends SearchTestBase {
     $this->drupalLogin($test_user);
 
     // Add a new language.
-    $language = new Language(array(
-      'id' => 'es',
-      'name' => 'Spanish',
-    ));
-    language_save($language);
+    ConfigurableLanguage::createFromLangcode('es')->save();
 
     // Make the body field translatable. The title is already translatable by
     // definition. The parent class has already created the article and page
@@ -102,7 +98,7 @@ class SearchLanguageTest extends SearchTestBase {
 
     // Ensure selecting no language does not make the query different.
     $this->drupalPostForm('search/node', array(), t('Advanced search'));
-    $this->assertEqual($this->getUrl(), url('search/node/', array('query' => array('keys' => ''), 'absolute' => TRUE)), 'Correct page redirection, no language filtering.');
+    $this->assertUrl(\Drupal::url('search.view_node_search', [], ['query' => ['keys' => ''], 'absolute' => TRUE]), [], 'Correct page redirection, no language filtering.');
 
     // Pick French and ensure it is selected.
     $edit = array('language[fr]' => TRUE);

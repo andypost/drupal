@@ -26,10 +26,21 @@ use Drupal\Tests\UnitTestCase;
  */
 class PathProcessorTest extends UnitTestCase {
 
+  /**
+   * Configuration for the languageManager stub.
+   *
+   * @var \Drupal\Core\Language\LanguageInterface[]
+   */
   protected $languages;
+
+  /**
+   *  The language manager stub used to construct a PathProcessorLanguage object.
+   *
+   * @var \Drupal\language\ConfigurableLanguageManagerInterface|\PHPUnit_Framework_MockObject_MockBuilder
+   */
   protected $languageManager;
 
-  public function setUp() {
+  protected function setUp() {
 
     // Set up some languages to be used by the language-based path processor.
     $languages = array();

@@ -22,7 +22,7 @@ class UserPasswordResetTest extends WebTestBase {
    */
   protected $account;
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Create a user.
@@ -37,7 +37,7 @@ class UserPasswordResetTest extends WebTestBase {
     // Set the last login time that is used to generate the one-time link so
     // that it is definitely over a second ago.
     $account->login = REQUEST_TIME - mt_rand(10, 100000);
-    db_update('users')
+    db_update('users_field_data')
       ->fields(array('login' => $account->getLastLoginTime()))
       ->condition('uid', $account->id())
       ->execute();
@@ -139,7 +139,7 @@ class UserPasswordResetTest extends WebTestBase {
     );
     $this->drupalPostForm('user', $edit, t('Log in'));
     $this->assertRaw(t('Sorry, unrecognized username or password. <a href="@password">Have you forgotten your password?</a>',
-      array('@password' => url('user/password', array('query' => array('name' => $edit['name']))))));
+      array('@password' => \Drupal::url('user.pass', [], array('query' => array('name' => $edit['name']))))));
     unset($edit['pass']);
     $this->drupalGet('user/password', array('query' => array('name' => $edit['name'])));
     $this->assertFieldByName('name', $edit['name'], 'User name found.');

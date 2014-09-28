@@ -96,23 +96,23 @@ class BulkForm extends FieldPluginBase {
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     $form['action_title'] = array(
       '#type' => 'textfield',
-      '#title' => t('Action title'),
+      '#title' => $this->t('Action title'),
       '#default_value' => $this->options['action_title'],
-      '#description' => t('The title shown above the actions dropdown.'),
+      '#description' => $this->t('The title shown above the actions dropdown.'),
     );
 
     $form['include_exclude'] = array(
       '#type' => 'radios',
-      '#title' => t('Available actions'),
+      '#title' => $this->t('Available actions'),
       '#options' => array(
-        'exclude' => t('All actions, except selected'),
-        'include' => t('Only selected actions'),
+        'exclude' => $this->t('All actions, except selected'),
+        'include' => $this->t('Only selected actions'),
       ),
       '#default_value' => $this->options['include_exclude'],
     );
     $form['selected_actions'] = array(
       '#type' => 'checkboxes',
-      '#title' => t('Selected actions'),
+      '#title' => $this->t('Selected actions'),
       '#options' => $this->getBulkOptions(FALSE),
       '#default_value' => $this->options['selected_actions'],
     );
@@ -126,14 +126,15 @@ class BulkForm extends FieldPluginBase {
   public function validateOptionsForm(&$form, FormStateInterface $form_state) {
     parent::validateOptionsForm($form, $form_state);
 
-    $form_state['values']['options']['selected_actions'] = array_filter($form_state['values']['options']['selected_actions']);
+    $selected_actions = $form_state->getValue(array('options', 'selected_actions'));
+    $form_state->getValue(array('options', 'selected_actions'), array_filter($selected_actions));
   }
 
   /**
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    return '<!--form-item-' . $this->options['id'] . '--' . $this->view->row_index . '-->';
+    return '<!--form-item-' . $this->options['id'] . '--' . $values->index . '-->';
   }
 
   /**
@@ -174,14 +175,14 @@ class BulkForm extends FieldPluginBase {
           '#type' => 'checkbox',
           // We are not able to determine a main "title" for each row, so we can
           // only output a generic label.
-          '#title' => t('Update this item'),
+          '#title' => $this->t('Update this item'),
           '#title_display' => 'invisible',
-          '#default_value' => !empty($form_state['values'][$this->options['id']][$row_index]) ? 1 : NULL,
+          '#default_value' => !empty($form_state->getValue($this->options['id'])[$row_index]) ? 1 : NULL,
         );
       }
 
       // Replace the form submit button label.
-      $form['actions']['submit']['#value'] = t('Apply');
+      $form['actions']['submit']['#value'] = $this->t('Apply');
 
       // Ensure a consistent container for filters/operations in the view header.
       $form['header'] = array(
@@ -250,16 +251,16 @@ class BulkForm extends FieldPluginBase {
    *   The current state of the form.
    */
   public function viewsFormSubmit(&$form, FormStateInterface $form_state) {
-    if ($form_state['step'] == 'views_form_views_form') {
+    if ($form_state->get('step') == 'views_form_views_form') {
       // Filter only selected checkboxes.
-      $selected = array_filter($form_state['values'][$this->options['id']]);
+      $selected = array_filter($form_state->getValue($this->options['id']));
       $entities = array();
       foreach (array_intersect_key($this->view->result, $selected) as $row) {
         $entity = $this->getEntity($row);
         $entities[$entity->id()] = $entity;
       }
 
-      $action = $this->actions[$form_state['values']['action']];
+      $action = $this->actions[$form_state->getValue('action')];
       $action->execute($entities);
 
       $operation_definition = $action->getPluginDefinition();
@@ -267,7 +268,7 @@ class BulkForm extends FieldPluginBase {
         $form_state->setRedirect($operation_definition['confirm_form_route_name']);
       }
 
-      $count = count(array_filter($form_state['values'][$this->options['id']]));
+      $count = count(array_filter($form_state->getValue($this->options['id'])));
       if ($count) {
         drupal_set_message($this->formatPlural($count, '%action was applied to @count item.', '%action was applied to @count items.', array(
           '%action' => $action->label(),
@@ -284,16 +285,16 @@ class BulkForm extends FieldPluginBase {
    *  Message displayed when no items are selected.
    */
   protected function emptySelectedMessage() {
-    return t('No items selected.');
+    return $this->t('No items selected.');
   }
 
   /**
    * {@inheritdoc}
    */
   public function viewsFormValidate(&$form, FormStateInterface $form_state) {
-    $selected = array_filter($form_state['values'][$this->options['id']]);
+    $selected = array_filter($form_state->getValue($this->options['id']));
     if (empty($selected)) {
-      form_set_error('', $form_state, $this->emptySelectedMessage());
+      $form_state->setErrorByName('', $this->emptySelectedMessage());
     }
   }
 

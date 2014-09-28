@@ -44,7 +44,7 @@ class MigrateVocabularyFieldInstanceTest extends MigrateDrupalTestBase {
         array(array(4), array('node', 'tags')),
       )
     );
-    $this->prepareIdMappings($id_mappings);
+    $this->prepareMigrations($id_mappings);
 
     // Create the vocab.
     entity_create('taxonomy_vocabulary', array(
@@ -83,12 +83,12 @@ class MigrateVocabularyFieldInstanceTest extends MigrateDrupalTestBase {
   public function testVocabularyFieldInstance() {
     // Test that the field exists.
     $field_id = 'node.article.tags';
-    $field = entity_load('field_instance_config', $field_id);
+    $field = entity_load('field_config', $field_id);
     $this->assertEqual($field->id(), $field_id, 'Field instance exists on article bundle.');
 
     // Test the page bundle as well.
     $field_id = 'node.page.tags';
-    $field = entity_load('field_instance_config', $field_id);
+    $field = entity_load('field_config', $field_id);
     $this->assertEqual($field->id(), $field_id, 'Field instance exists on page bundle.');
 
     $this->assertEqual(array('node', 'article', 'tags'), entity_load('migration', 'd6_vocabulary_field_instance')->getIdMap()->lookupDestinationID(array(4, 'article')));

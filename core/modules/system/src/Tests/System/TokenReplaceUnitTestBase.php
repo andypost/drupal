@@ -35,10 +35,12 @@ abstract class TokenReplaceUnitTestBase extends EntityUnitTestBase {
    */
   public static $modules = array('system');
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
     // Install default system configuration.
     $this->installConfig(array('system'));
+    $this->installSchema('system', array('router'));
+    \Drupal::service('router.builder')->rebuild();
 
     $this->interfaceLanguage = \Drupal::languageManager()->getCurrentLanguage();
     $this->tokenService = \Drupal::token();

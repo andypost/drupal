@@ -117,7 +117,7 @@ class SelectionBase implements SelectionInterface {
         $bundle_fields = array_filter($entity_manager->getFieldDefinitions($entity_type_id, $bundle), function ($field_definition) {
           return !$field_definition->isComputed();
         });
-        foreach ($bundle_fields as $instance_name => $field_definition) {
+        foreach ($bundle_fields as $field_name => $field_definition) {
           /* @var \Drupal\Core\Field\FieldDefinitionInterface $field_definition */
           $columns = $field_definition->getFieldStorageDefinition()->getColumns();
           // If there is more than one column, display them all, otherwise just
@@ -125,11 +125,11 @@ class SelectionBase implements SelectionInterface {
           // @todo: Use property labels instead of the column name.
           if (count($columns) > 1) {
             foreach ($columns as $column_name => $column_info) {
-              $fields[$instance_name . '.' . $column_name] = t('@label (@column)', array('@label' => $field_definition->getLabel(), '@column' => $column_name));
+              $fields[$field_name . '.' . $column_name] = t('@label (@column)', array('@label' => $field_definition->getLabel(), '@column' => $column_name));
             }
           }
           else {
-            $fields[$instance_name] = t('@label', array('@label' => $field_definition->getLabel()));
+            $fields[$field_name] = t('@label', array('@label' => $field_definition->getLabel()));
           }
         }
       }
@@ -243,13 +243,13 @@ class SelectionBase implements SelectionInterface {
     if (empty($entities)) {
       if ($strict) {
         // Error if there are no entities available for a required field.
-        form_error($element, $form_state, t('There are no entities matching "%value".', $params));
+        $form_state->setError($element, t('There are no entities matching "%value".', $params));
       }
     }
     elseif (count($entities) > 5) {
       $params['@id'] = key($entities);
       // Error if there are more than 5 matching entities.
-      form_error($element, $form_state, t('Many entities are called %value. Specify the one you want by appending the id in parentheses, like "@value (@id)".', $params));
+      $form_state->setError($element, t('Many entities are called %value. Specify the one you want by appending the id in parentheses, like "@value (@id)".', $params));
     }
     elseif (count($entities) > 1) {
       // More helpful error if there are only a few matching entities.
@@ -258,7 +258,7 @@ class SelectionBase implements SelectionInterface {
         $multiples[] = $name . ' (' . $id . ')';
       }
       $params['@id'] = $id;
-      form_error($element, $form_state, t('Multiple entities match this reference; "%multiple". Specify the one you want by appending the id in parentheses, like "@value (@id)".', array('%multiple' => implode('", "', $multiples))));
+      $form_state->setError($element, t('Multiple entities match this reference; "%multiple". Specify the one you want by appending the id in parentheses, like "@value (@id)".', array('%multiple' => implode('", "', $multiples))));
     }
     else {
       // Take the one and only matching entity.

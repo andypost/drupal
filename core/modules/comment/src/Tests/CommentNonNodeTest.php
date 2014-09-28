@@ -10,7 +10,7 @@ namespace Drupal\comment\Tests;
 use Drupal\comment\CommentInterface;
 use Drupal\comment\Entity\CommentType;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
-use Drupal\field\Entity\FieldInstanceConfig;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\simpletest\WebTestBase;
 use Drupal\Core\Entity\EntityInterface;
 
@@ -30,7 +30,7 @@ class CommentNonNodeTest extends WebTestBase {
    */
   protected $admin_user;
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Create a bundle for entity_test.
@@ -94,8 +94,8 @@ class CommentNonNodeTest extends WebTestBase {
     $edit = array();
     $edit['comment_body[0][value]'] = $comment;
 
-    $instance = FieldInstanceConfig::loadByName('entity_test', 'entity_test', 'comment');
-    $preview_mode = $instance->getSetting('preview');
+    $field = FieldConfig::loadByName('entity_test', 'entity_test', 'comment');
+    $preview_mode = $field->getSetting('preview');
 
     // Must get the page before we test for fields.
     if ($entity !== NULL) {
@@ -375,7 +375,7 @@ class CommentNonNodeTest extends WebTestBase {
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
     $this->drupalPostForm(NULL, array(
-      'field[settings][comment_type]' => 'foobar',
+      'field_storage[settings][comment_type]' => 'foobar',
     ), t('Save field settings'));
 
     $this->drupalPostForm(NULL, array(), t('Save settings'));
@@ -391,7 +391,7 @@ class CommentNonNodeTest extends WebTestBase {
     $this->drupalPostForm(NULL, $edit, t('Save'));
     // Re-use another comment type.
     $this->drupalPostForm(NULL, array(
-      'field[settings][comment_type]' => 'foobar',
+      'field_storage[settings][comment_type]' => 'foobar',
     ), t('Save field settings'));
     $this->drupalPostForm(NULL, array(), t('Save settings'));
     $this->assertRaw(t('Saved %name configuration', array('%name' => 'Barfoo')));
@@ -430,6 +430,8 @@ class CommentNonNodeTest extends WebTestBase {
     $this->drupalGet('entity_test_string_id/structure/entity_test/fields');
     // Ensure field isn't shown for string IDs.
     $this->assertNoOption('edit-fields-add-new-field-type', 'comment');
+    // Ensure a core field type shown.
+    $this->assertOption('edit-fields-add-new-field-type', 'boolean');
 
     // Create a bundle for entity_test_no_id.
     entity_test_create_bundle('entity_test', 'Entity Test', 'entity_test_no_id');
@@ -440,6 +442,8 @@ class CommentNonNodeTest extends WebTestBase {
     $this->drupalGet('entity_test_no_id/structure/entity_test/fields');
     // Ensure field isn't shown for empty IDs.
     $this->assertNoOption('edit-fields-add-new-field-type', 'comment');
+    // Ensure a core field type shown.
+    $this->assertOption('edit-fields-add-new-field-type', 'boolean');
   }
 
 }

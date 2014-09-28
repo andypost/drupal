@@ -69,23 +69,23 @@ class ManyToOne extends ArgumentPluginBase {
     // allow + for or, , for and
     $form['break_phrase'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Allow multiple values'),
-      '#description' => t('If selected, users can enter multiple values in the form of 1+2+3 (for OR) or 1,2,3 (for AND).'),
+      '#title' => $this->t('Allow multiple values'),
+      '#description' => $this->t('If selected, users can enter multiple values in the form of 1+2+3 (for OR) or 1,2,3 (for AND).'),
       '#default_value' => !empty($this->options['break_phrase']),
       '#fieldset' => 'more',
     );
 
     $form['add_table'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Allow multiple filter values to work together'),
-      '#description' => t('If selected, multiple instances of this filter can work together, as though multiple values were supplied to the same filter. This setting is not compatible with the "Reduce duplicates" setting.'),
+      '#title' => $this->t('Allow multiple filter values to work together'),
+      '#description' => $this->t('If selected, multiple instances of this filter can work together, as though multiple values were supplied to the same filter. This setting is not compatible with the "Reduce duplicates" setting.'),
       '#default_value' => !empty($this->options['add_table']),
       '#fieldset' => 'more',
     );
 
     $form['require_value'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Do not display items with no value in summary'),
+      '#title' => $this->t('Do not display items with no value in summary'),
       '#default_value' => !empty($this->options['require_value']),
       '#fieldset' => 'more',
     );
@@ -120,12 +120,8 @@ class ManyToOne extends ArgumentPluginBase {
     }
 
     if (!empty($this->options['break_phrase'])) {
-      if (!empty($this->definition['numeric'])) {
-        $this->breakPhrase($this->argument, $this);
-      }
-      else {
-        $this->breakPhraseString($this->argument, $this);
-      }
+      $force_int = !empty($this->definition['numeric']);
+      $this->unpackArgumentValue($force_int);
     }
     else {
       $this->value = array($this->argument);
@@ -137,11 +133,12 @@ class ManyToOne extends ArgumentPluginBase {
 
   function title() {
     if (!$this->argument) {
-      return !empty($this->definition['empty field name']) ? $this->definition['empty field name'] : t('Uncategorized');
+      return !empty($this->definition['empty field name']) ? $this->definition['empty field name'] : $this->t('Uncategorized');
     }
 
     if (!empty($this->options['break_phrase'])) {
-      $this->breakPhrase($this->argument, $this);
+      $force_int = !empty($this->definition['numeric']);
+      $this->unpackArgumentValue($force_int);
     }
     else {
       $this->value = array($this->argument);
@@ -151,11 +148,11 @@ class ManyToOne extends ArgumentPluginBase {
     // @todo -- both of these should check definition for alternate keywords.
 
     if (empty($this->value)) {
-      return !empty($this->definition['empty field name']) ? $this->definition['empty field name'] : t('Uncategorized');
+      return !empty($this->definition['empty field name']) ? $this->definition['empty field name'] : $this->t('Uncategorized');
     }
 
     if ($this->value === array(-1)) {
-      return !empty($this->definition['invalid input']) ? $this->definition['invalid input'] : t('Invalid input');
+      return !empty($this->definition['invalid input']) ? $this->definition['invalid input'] : $this->t('Invalid input');
     }
 
     return implode($this->operator == 'or' ? ' + ' : ', ', $this->titleQuery());

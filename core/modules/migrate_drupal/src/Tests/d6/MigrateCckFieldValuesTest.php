@@ -34,7 +34,7 @@ class MigrateCckFieldValuesTest extends MigrateNodeTestBase {
       'name' => 'field_test',
       'type' => 'text',
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'node',
       'field_name' => 'field_test',
       'bundle' => 'story',
@@ -45,7 +45,7 @@ class MigrateCckFieldValuesTest extends MigrateNodeTestBase {
       'type' => 'integer',
       'cardinality' => -1,
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'node',
       'field_name' => 'field_test_two',
       'bundle' => 'story',
@@ -55,7 +55,7 @@ class MigrateCckFieldValuesTest extends MigrateNodeTestBase {
       'name' => 'field_test_three',
       'type' => 'decimal',
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'node',
       'field_name' => 'field_test_three',
       'bundle' => 'story',
@@ -65,10 +65,22 @@ class MigrateCckFieldValuesTest extends MigrateNodeTestBase {
       'name' => 'field_test_integer_selectlist',
       'type' => 'integer',
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'node',
       'field_name' => 'field_test_integer_selectlist',
       'bundle' => 'story',
+    ))->save();
+
+    entity_create('field_storage_config', array(
+      'entity_type' => 'node',
+      'name' => 'field_multivalue',
+      'type' => 'integer',
+      'cardinality' => -1,
+    ))->save();
+    entity_create('field_config', array(
+      'entity_type' => 'node',
+      'field_name' => 'field_multivalue',
+      'bundle' => 'test_planet',
     ))->save();
 
     // Add some id mappings for the dependant migrations.
@@ -82,9 +94,10 @@ class MigrateCckFieldValuesTest extends MigrateNodeTestBase {
       'd6_node' => array(
         array(array(1), array(1)),
         array(array(2), array(2)),
+        array(array(3), array(3)),
       ),
     );
-    $this->prepareIdMappings($id_mappings);
+    $this->prepareMigrations($id_mappings);
 
     $migrations = entity_load_multiple('migration', array('d6_cck_field_values:*'));
     foreach ($migrations as $migration) {
@@ -105,6 +118,11 @@ class MigrateCckFieldValuesTest extends MigrateNodeTestBase {
     $this->assertEqual($node->field_test_two[1]->value, 20, 'Multi field second value is correct.');
     $this->assertEqual($node->field_test_three->value, '42.42', 'Single field second value is correct.');
     $this->assertEqual($node->field_test_integer_selectlist[0]->value, '3412', 'Integer select list value is correct');
+
+    $planet_node = Node::load(3);
+    $this->assertEqual($planet_node->field_multivalue->value, 33);
+    $this->assertEqual($planet_node->field_multivalue[1]->value, 44);
+
   }
 
 }

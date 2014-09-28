@@ -188,6 +188,16 @@ class Drupal {
   }
 
   /**
+   * Retrives the request stack.
+   *
+   * @return \Symfony\Component\HttpFoundation\RequestStack
+   *   The request stack
+   */
+  public static function requestStack() {
+    return static::$container->get('request_stack');
+  }
+
+  /**
    * Retrieves the currently active route match object.
    *
    * @return \Drupal\Core\Routing\RouteMatchInterface
@@ -624,6 +634,15 @@ class Drupal {
   }
 
   /**
+   * Gets the theme service.
+   *
+   * @return \Drupal\Core\Theme\ThemeManagerInterface
+   */
+  public static function theme() {
+    return static::$container->get('theme.manager');
+  }
+
+  /**
    * Gets the syncing state.
    *
    * @return bool
@@ -655,6 +674,25 @@ class Drupal {
    */
   public static function menuTree() {
     return static::$container->get('menu.link_tree');
+  }
+
+  /**
+   * Returns the path validator.
+   *
+   * @return \Drupal\Core\Path\PathValidatorInterface
+   */
+  public static function pathValidator() {
+    return static::$container->get('path.validator');
+  }
+
+  /**
+   * Returns the access manager service.
+   *
+   * @return \Drupal\Core\Access\AccessManagerInterface
+   *   The access manager service.
+   */
+  public static function accessManager() {
+    return static::$container->get('access_manager');
   }
 
 }

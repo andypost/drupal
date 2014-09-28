@@ -19,7 +19,7 @@ interface FormatterInterface extends PluginSettingsInterface {
   /**
    * Returns a form to configure settings for the formatter.
    *
-   * Invoked from \Drupal\field_ui\Form\FieldInstanceEditForm to allow
+   * Invoked from \Drupal\field_ui\Form\FieldEditForm to allow
    * administrators to configure the formatter. The field_ui module takes care
    * of handling submitted form values.
    *
@@ -86,5 +86,16 @@ interface FormatterInterface extends PluginSettingsInterface {
    *   consecutive numeric indexes starting from 0.
    */
   public function viewElements(FieldItemListInterface $items);
+
+  /**
+   * Returns if the formatter can be used for the provided field.
+   *
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
+   *   The field definition that should be checked.
+   *
+   * @return bool
+   *   TRUE if the formatter can be used, FALSE otherwise.
+   */
+  public static function isApplicable(FieldDefinitionInterface $field_definition);
 
 }

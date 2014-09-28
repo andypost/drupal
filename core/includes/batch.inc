@@ -45,7 +45,7 @@ function _batch_page(Request $request) {
     $batch = \Drupal::service('batch.storage')->load($request_id);
     if (!$batch) {
       drupal_set_message(t('No active batch.'), 'error');
-      return new RedirectResponse(url('<front>', array('absolute' => TRUE)));
+      return new RedirectResponse(\Drupal::url('<front>', [], ['absolute' => TRUE]));
     }
   }
   // Restore safe strings from previous batches.
@@ -388,7 +388,8 @@ function _batch_next_set() {
     if (isset($current_set['form_submit']) && ($callback = $current_set['form_submit']) && is_callable($callback)) {
       // We use our stored copies of $form and $form_state to account for
       // possible alterations by previous form submit handlers.
-      call_user_func_array($callback, array(&$batch['form_state']['complete_form'], &$batch['form_state']));
+      $complete_form = &$batch['form_state']->getCompleteForm();
+      call_user_func_array($callback, array(&$complete_form, &$batch['form_state']));
     }
     return TRUE;
   }
@@ -469,7 +470,7 @@ function _batch_finished() {
     // If no redirection happened, redirect to the originating page. In case the
     // form needs to be rebuilt, save the final $form_state for
     // \Drupal\Core\Form\FormBuilderInterface::buildForm().
-    if (!empty($_batch['form_state']['rebuild'])) {
+    if ($_batch['form_state']->isRebuilding()) {
       $_SESSION['batch_form_state'] = $_batch['form_state'];
     }
     $callback = $_batch['redirect_callback'];

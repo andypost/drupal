@@ -45,7 +45,7 @@ abstract class MigrateTermNodeTestBase extends MigrateDrupalTestBase {
           ),
         ),
       ))->save();
-      entity_create('field_instance_config', array(
+      entity_create('field_config', array(
         'field_name' => $name,
         'entity_type' => 'node',
         'bundle' => 'story',
@@ -67,7 +67,7 @@ abstract class MigrateTermNodeTestBase extends MigrateDrupalTestBase {
         array(array(2), array(2)),
       ),
     );
-    $this->prepareIdMappings($id_mappings);
+    $this->prepareMigrations($id_mappings);
 
     $vids = array(1, 2, 3);
     for ($i = 1; $i <= 2; $i++) {

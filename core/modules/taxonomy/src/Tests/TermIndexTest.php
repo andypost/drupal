@@ -17,7 +17,14 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
  */
 class TermIndexTest extends TaxonomyTestBase {
 
-  function setUp() {
+  /**
+   * Modules to enable.
+   *
+   * @var array
+   */
+  public static $modules = array('views');
+
+  protected function setUp() {
     parent::setUp();
 
     // Create an administrative user.
@@ -42,7 +49,7 @@ class TermIndexTest extends TaxonomyTestBase {
         ),
       ),
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_name' => $this->field_name_1,
       'bundle' => 'article',
       'entity_type' => 'node',
@@ -73,7 +80,7 @@ class TermIndexTest extends TaxonomyTestBase {
         ),
       ),
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_name' => $this->field_name_2,
       'bundle' => 'article',
       'entity_type' => 'node',

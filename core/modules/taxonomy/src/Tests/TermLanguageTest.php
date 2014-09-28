@@ -7,7 +7,7 @@
 
 namespace Drupal\taxonomy\Tests;
 
-use Drupal\Core\Language\Language;
+use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
  * Tests the language functionality for the taxonomy terms.
@@ -18,7 +18,7 @@ class TermLanguageTest extends TaxonomyTestBase {
 
   public static $modules = array('language');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Create an administrative user.
@@ -30,11 +30,10 @@ class TermLanguageTest extends TaxonomyTestBase {
 
     // Add some custom languages.
     foreach (array('aa', 'bb', 'cc') as $language_code) {
-      $language = new Language(array(
+      ConfigurableLanguage::create(array(
         'id' => $language_code,
-        'name' => $this->randomMachineName(),
-      ));
-      language_save($language);
+        'label' => $this->randomMachineName(),
+      ))->save();
     }
   }
 
@@ -96,12 +95,7 @@ class TermLanguageTest extends TaxonomyTestBase {
 
     // Change the default language of the site and check if the default terms
     // language is still correctly selected.
-    $old_default = \Drupal::languageManager()->getDefaultLanguage();
-    $old_default->default = FALSE;
-    language_save($old_default);
-    $new_default = \Drupal::languageManager()->getLanguage('cc');
-    $new_default->default = TRUE;
-    language_save($new_default);
+    \Drupal::config('system.site')->set('langcode', 'cc')->save();
     $edit = array(
       'default_language[langcode]' => 'site_default',
       'default_language[language_show]' => TRUE,

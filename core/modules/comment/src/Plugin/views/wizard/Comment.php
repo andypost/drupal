@@ -69,8 +69,8 @@ class Comment extends WizardPluginBase {
    */
   protected function rowStyleOptions() {
     $options = array();
-    $options['comment'] = t('comments');
-    $options['fields'] = t('fields');
+    $options['comment'] = $this->t('comments');
+    $options['fields'] = $this->t('fields');
     return $options;
   }
 
@@ -87,11 +87,11 @@ class Comment extends WizardPluginBase {
       case 'comment':
         $style_form['row_options']['links'] = array(
           '#type' => 'select',
-          '#title' => t('Should links be displayed below each comment'),
+          '#title' => $this->t('Should links be displayed below each comment'),
           '#title_display' => 'invisible',
           '#options' => array(
-            1 => t('with links (allow users to reply to the comment, etc.)'),
-            0 => t('without links'),
+            1 => $this->t('with links (allow users to reply to the comment, etc.)'),
+            0 => $this->t('without links'),
           ),
           '#default_value' => 1,
         );
@@ -104,8 +104,8 @@ class Comment extends WizardPluginBase {
    */
   protected function pageDisplayOptions(array $form, FormStateInterface $form_state) {
     $display_options = parent::pageDisplayOptions($form, $form_state);
-    $row_plugin = isset($form_state['values']['page']['style']['row_plugin']) ? $form_state['values']['page']['style']['row_plugin'] : NULL;
-    $row_options = isset($form_state['values']['page']['style']['row_options']) ? $form_state['values']['page']['style']['row_options'] : array();
+    $row_plugin = $form_state->getValue(array('page', 'style', 'row_plugin'));
+    $row_options = $form_state->getValue(array('page', 'style', 'row_options'), array());
     $this->display_options_row($display_options, $row_plugin, $row_options);
     return $display_options;
   }
@@ -115,8 +115,8 @@ class Comment extends WizardPluginBase {
    */
   protected function blockDisplayOptions(array $form, FormStateInterface $form_state) {
     $display_options = parent::blockDisplayOptions($form, $form_state);
-    $row_plugin = isset($form_state['values']['block']['style']['row_plugin']) ? $form_state['values']['block']['style']['row_plugin'] : NULL;
-    $row_options = isset($form_state['values']['block']['style']['row_options']) ? $form_state['values']['block']['style']['row_options'] : array();
+    $row_plugin = $form_state->getValue(array('block', 'style', 'row_plugin'));
+    $row_options = $form_state->getValue(array('block', 'style', 'row_options'), array());
     $this->display_options_row($display_options, $row_plugin, $row_options);
     return $display_options;
   }

@@ -14,10 +14,6 @@ use Drupal\Tests\UnitTestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-if (!defined('DRUPAL_ROOT')) {
-  define('DRUPAL_ROOT', dirname(dirname(substr(__DIR__, 0, -strlen(__NAMESPACE__)))));
-}
-
 /**
  * Defines a base unit test for testing existence of local tasks.
  *
@@ -100,7 +96,7 @@ abstract class LocalTaskIntegrationTest extends UnitTestCase {
     $property = new \ReflectionProperty('Drupal\Core\Menu\LocalTaskManager', 'moduleHandler');
     $property->setAccessible(TRUE);
     $property->setValue($manager, $module_handler);
-    // Set all the modules as being existant.
+    // Set all the modules as being existent.
     $module_handler->expects($this->any())
       ->method('moduleExists')
       ->will($this->returnCallback(function ($module) use ($module_dirs) {
@@ -127,7 +123,7 @@ abstract class LocalTaskIntegrationTest extends UnitTestCase {
     $property->setValue($manager, $factory);
 
     $cache_backend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
-    $manager->setCacheBackend($cache_backend, 'local_task.en', array('local_task' => 1));
+    $manager->setCacheBackend($cache_backend, 'local_task.en', array('local_task'));
 
     return $manager;
   }

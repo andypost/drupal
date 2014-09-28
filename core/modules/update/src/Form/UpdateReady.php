@@ -75,7 +75,7 @@ class UpdateReady extends FormBase {
 
     $form['backup'] = array(
       '#prefix' => '<strong>',
-      '#markup' => $this->t('Back up your database and site before you continue. <a href="@backup_url">Learn how</a>.', array('@backup_url' => url('http://drupal.org/node/22281'))),
+      '#markup' => $this->t('Back up your database and site before you continue. <a href="@backup_url">Learn how</a>.', array('@backup_url' => 'http://drupal.org/node/22281')),
       '#suffix' => '</strong>',
     );
 
@@ -100,7 +100,7 @@ class UpdateReady extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Store maintenance_mode setting so we can restore it when done.
     $_SESSION['maintenance_mode'] = $this->state->get('system.maintenance_mode');
-    if ($form_state['values']['maintenance_mode'] == TRUE) {
+    if ($form_state->getValue('maintenance_mode') == TRUE) {
       $this->state->set('system.maintenance_mode', TRUE);
     }
 

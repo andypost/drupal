@@ -52,7 +52,7 @@ class BookTest extends WebTestBase {
    */
   protected $admin_user;
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // node_access_test requires a node_access_rebuild().
@@ -200,9 +200,9 @@ class BookTest extends WebTestBase {
 
     // Compute the expected breadcrumb.
     $expected_breadcrumb = array();
-    $expected_breadcrumb[] = url('');
+    $expected_breadcrumb[] = \Drupal::url('<front>');
     foreach ($breadcrumb as $a_node) {
-      $expected_breadcrumb[] = url('node/' . $a_node->id());
+      $expected_breadcrumb[] = $a_node->url();
     }
 
     // Fetch links in the current breadcrumb.

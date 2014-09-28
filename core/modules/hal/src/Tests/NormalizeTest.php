@@ -17,7 +17,7 @@ class NormalizeTest extends NormalizerTestBase {
   /**
    * {@inheritdoc}
    */
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     \Drupal::service('router.builder')->rebuild();
@@ -36,7 +36,6 @@ class NormalizeTest extends NormalizerTestBase {
     $values = array(
       'langcode' => 'de',
       'name' => $this->randomMachineName(),
-      'user_id' => 1,
       'field_test_text' => array(
         'value' => $this->randomMachineName(),
         'format' => 'full_html',

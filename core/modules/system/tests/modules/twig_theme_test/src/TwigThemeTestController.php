@@ -7,6 +7,8 @@
 
 namespace Drupal\twig_theme_test;
 
+use Drupal\Core\Url;
+
 /**
  * Controller routines for Twig theme test routes.
  */
@@ -16,7 +18,7 @@ class TwigThemeTestController {
    * Menu callback for testing PHP variables in a Twig template.
    */
   public function phpVariablesRender() {
-    return _theme('twig_theme_test_php_variables');
+    return \Drupal::theme()->render('twig_theme_test_php_variables', array());
   }
 
   /**
@@ -34,6 +36,16 @@ class TwigThemeTestController {
   public function urlGeneratorRender() {
     return array(
       '#theme' => 'twig_theme_test_url_generator',
+    );
+  }
+
+  /**
+   * Renders for testing link_generator functions in a Twig template.
+   */
+  public function linkGeneratorRender() {
+    return array(
+      '#theme' => 'twig_theme_test_link_generator',
+      '#test_url' => new Url('user.register'),
     );
   }
 

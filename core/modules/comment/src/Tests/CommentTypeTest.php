@@ -10,7 +10,7 @@ use Drupal\comment\Entity\Comment;
 use Drupal\comment\Entity\CommentType;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\field\Entity\FieldInstanceConfig;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\node\Entity\Node;
 
 /**
@@ -41,7 +41,7 @@ class CommentTypeTest extends CommentTestBase {
   /**
    * Sets the test up.
    */
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
     $this->adminUser = $this->drupalCreateUser($this->permissions);
   }
@@ -76,6 +76,17 @@ class CommentTypeTest extends CommentTestBase {
     // Check that the comment type was created in site default language.
     $default_langcode = \Drupal::languageManager()->getDefaultLanguage()->id;
     $this->assertEqual($comment_type->language()->getId(), $default_langcode);
+
+    // Edit the comment-type and ensure that we cannot change the entity-type.
+    $this->drupalGet('admin/structure/comment/manage/foo');
+    $this->assertNoField('target_entity_type_id', 'Entity type file not present');
+    $this->assertText(t('Target entity type'));
+    // Save the form and ensure the entity-type value is preserved even though
+    // the field isn't present.
+    $this->drupalPostForm(NULL, array(), t('Save'));
+    \Drupal::entityManager()->getStorage('comment_type')->resetCache(array('foo'));
+    $comment_type = CommentType::load('foo');
+    $this->assertEqual($comment_type->getTargetEntityTypeId(), 'node');
   }
 
   /**
@@ -84,8 +95,8 @@ class CommentTypeTest extends CommentTestBase {
   public function testCommentTypeEditing() {
     $this->drupalLogin($this->adminUser);
 
-    $instance = FieldInstanceConfig::loadByName('comment', 'comment', 'comment_body');
-    $this->assertEqual($instance->getLabel(), 'Comment', 'Comment body field was found.');
+    $field = FieldConfig::loadByName('comment', 'comment', 'comment_body');
+    $this->assertEqual($field->getLabel(), 'Comment', 'Comment body field was found.');
 
     // Change the comment type name.
     $this->drupalGet('admin/structure/comment');
@@ -97,7 +108,7 @@ class CommentTypeTest extends CommentTestBase {
     $this->drupalGet('admin/structure/comment');
     $this->assertRaw('Bar', 'New name was displayed.');
     $this->clickLink('Manage fields');
-    $this->assertEqual(url('admin/structure/comment/manage/comment/fields', array('absolute' => TRUE)), $this->getUrl(), 'Original machine name was used in URL.');
+    $this->assertUrl(\Drupal::url('field_ui.overview_comment', array('comment_type' => 'comment'), array('absolute' => TRUE)), [], 'Original machine name was used in URL.');
 
     // Remove the body field.
     $this->drupalPostForm('admin/structure/comment/manage/comment/fields/comment.comment.comment_body/delete', array(), t('Delete'));

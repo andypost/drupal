@@ -7,7 +7,7 @@
 
 namespace Drupal\node\Tests\Config;
 
-use Drupal\field\Entity\FieldInstanceConfig;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\simpletest\DrupalUnitTestBase;
 
 /**
@@ -27,7 +27,7 @@ class NodeImportCreateTest extends DrupalUnitTestBase {
   /**
    * Set the default field storage backend for fields created during tests.
    */
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
     $this->installEntitySchema('user');
 
@@ -73,7 +73,7 @@ class NodeImportCreateTest extends DrupalUnitTestBase {
     // Check that the content type was created.
     $node_type = entity_load('node_type', $node_type_id);
     $this->assertTrue($node_type, 'Import node type from staging was created.');
-    $this->assertFalse(FieldInstanceConfig::loadByName('node', $node_type_id, 'body'));
+    $this->assertFalse(FieldConfig::loadByName('node', $node_type_id, 'body'));
   }
 
 }

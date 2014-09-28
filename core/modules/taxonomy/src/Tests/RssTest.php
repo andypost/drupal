@@ -24,7 +24,7 @@ class RssTest extends TaxonomyTestBase {
    */
   public static $modules = array('node', 'field_ui', 'views');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     $this->admin_user = $this->drupalCreateUser(array('administer taxonomy', 'bypass node access', 'administer content types', 'administer node display'));
@@ -47,7 +47,7 @@ class RssTest extends TaxonomyTestBase {
       ),
     ));
     $this->fieldStorage->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_storage' => $this->fieldStorage,
       'bundle' => 'article',
     ))->save();
@@ -98,7 +98,7 @@ class RssTest extends TaxonomyTestBase {
       'key' => 'category',
       'value' => $term1->getName(),
       'attributes' => array(
-        'domain' => url('taxonomy/term/' . $term1->id(), array('absolute' => TRUE)),
+        'domain' => $term1->url('canonical', array('absolute' => TRUE)),
       ),
     );
     $this->assertRaw(format_xml_elements(array($test_element)), 'Term is displayed when viewing the rss feed.');

@@ -16,8 +16,14 @@ interface CacheableInterface {
   /**
    * The cache keys associated with this potentially cacheable object.
    *
+   * Cache keys may either be static (just strings) or tokens (placeholders
+   * that are converted to static keys by the @cache_contexts service, depending
+   * depending on the request).
+   *
    * @return array
-   *   An array of strings or cache constants, used to generate a cache ID.
+   *   An array of strings or cache context tokens, used to generate a cache ID.
+   *
+   * @see \Drupal\Core\Cache\CacheContexts::convertTokensToKeys()
    */
   public function getCacheKeys();
 
@@ -28,14 +34,6 @@ interface CacheableInterface {
    *  An array of cache tags.
    */
   public function getCacheTags();
-
-  /**
-   * The bin to use for this potentially cacheable object.
-   *
-   * @return string
-   *   The name of the cache bin to use.
-   */
-  public function getCacheBin();
 
   /**
    * The maximum age for which this object may be cached.

@@ -8,6 +8,7 @@
 namespace Drupal\menu_ui\Tests;
 
 use Drupal\simpletest\WebTestBase;
+use Drupal\menu_link_content\Entity\MenuLinkContent;
 
 /**
  * Add, edit, and delete a node with menu link.
@@ -23,7 +24,7 @@ class MenuNodeTest extends WebTestBase {
    */
   public static $modules = array('menu_ui', 'test_page_test', 'node');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
     $this->drupalCreateContentType(array('type' => 'page', 'name' => 'Basic page'));
 
@@ -126,7 +127,7 @@ class MenuNodeTest extends WebTestBase {
 
     // Add a menu link to the Administration menu.
     $item = entity_create('menu_link_content', array(
-      'route_name' => 'node.view',
+      'route_name' => 'entity.node.canonical',
       'route_parameters' => array('node' => $node->id()),
       'title' => $this->randomMachineName(16),
       'menu_name' => 'admin',
@@ -140,7 +141,7 @@ class MenuNodeTest extends WebTestBase {
     $this->assertText('Provide a menu link', 'Link in not allowed menu not shown in node edit form');
     // Assert that the link is still in the Administration menu after save.
     $this->drupalPostForm('node/' . $node->id() . '/edit', $edit, t('Save'));
-    $link = entity_load('menu_link_content', $item->id());
+    $link = MenuLinkContent::load($item->id());
     $this->assertTrue($link, 'Link in not allowed menu still exists after saving node');
 
     // Move the menu link back to the Tools menu.
@@ -150,7 +151,7 @@ class MenuNodeTest extends WebTestBase {
     $child_node = $this->drupalCreateNode(array('type' => 'article'));
     // Assign a menu link to the second node, being a child of the first one.
     $child_item = entity_create('menu_link_content', array(
-      'route_name' => 'node.view',
+      'route_name' => 'entity.node.canonical',
       'route_parameters' => array('node' => $child_node->id()),
       'title' => $this->randomMachineName(16),
       'parent' => $item->getPluginId(),

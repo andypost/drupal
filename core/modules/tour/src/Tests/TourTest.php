@@ -7,7 +7,7 @@
 
 namespace Drupal\tour\Tests;
 
-use Drupal\Core\Language\Language;
+use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
  * Tests the functionality of tour tips.
@@ -58,7 +58,7 @@ class TourTest extends TourTestBasic {
     $elements = $this->xpath('//li[@data-id=:data_id and @class=:classes and ./p//a[@href=:href and contains(., :text)]]', array(
       ':classes' => 'tip-module-tour-test tip-type-text tip-tour-test-1',
       ':data_id' => 'tour-test-1',
-      ':href' =>  url('<front>', array('absolute' => TRUE)),
+      ':href' =>  \Drupal::url('<front>', [], ['absolute' => TRUE]),
       ':text' => 'Drupal',
     ));
     $this->assertEqual(count($elements), 1, 'Found Token replacement.');
@@ -86,7 +86,7 @@ class TourTest extends TourTestBasic {
 
     // Enable Italian language and navigate to it/tour-test1 and verify italian
     // version of tip is found.
-    language_save(new Language(array('id' => 'it')));
+    ConfigurableLanguage::createFromLangcode('it')->save();
     $this->drupalGet('it/tour-test-1');
 
     $elements = $this->cssSelect("li[data-id=tour-test-1] h2:contains('La pioggia cade in spagna')");
@@ -94,8 +94,6 @@ class TourTest extends TourTestBasic {
 
     $elements = $this->cssSelect("li[data-id=tour-test-2] h2:contains('The quick brown fox')");
     $this->assertNotEqual(count($elements), 1, 'Did not find English variant of tip 1.');
-
-    language_save(new Language(array('id' => 'en')));
 
     // Programmatically create a tour for use through the remainder of the test.
     $tour = entity_create('tour', array(

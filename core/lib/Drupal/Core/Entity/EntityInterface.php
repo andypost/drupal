@@ -103,9 +103,9 @@ interface EntityInterface extends AccessibleInterface {
    * example:
    * @code
    * links = {
-   *   "canonical" = "node.view",
-   *   "edit-form" = "node.page_edit",
-   *   "version-history" = "node.revision_overview"
+   *   "canonical" = "entity.node.canonical",
+   *   "edit-form" = "entity.node.edit_form",
+   *   "version-history" = "entity.node.version_history"
    * }
    * @endcode
    * or specified in a callback function set like:
@@ -119,10 +119,13 @@ interface EntityInterface extends AccessibleInterface {
    *
    * @param string $rel
    *   The link relationship type, for example: canonical or edit-form.
+   * @param array $options
+   *   See \Drupal\Core\Routing\UrlGeneratorInterface::generateFromRoute() for
+   *   the available options.
    *
    * @return \Drupal\Core\Url
    */
-  public function urlInfo($rel = 'canonical');
+  public function urlInfo($rel = 'canonical', array $options = array());
 
   /**
    * Returns the public URL for this entity.

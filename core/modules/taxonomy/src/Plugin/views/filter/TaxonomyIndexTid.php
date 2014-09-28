@@ -71,9 +71,9 @@ class TaxonomyIndexTid extends ManyToOne {
       if (empty($this->definition['vocabulary'])) {
         $form['vid'] = array(
           '#type' => 'radios',
-          '#title' => t('Vocabulary'),
+          '#title' => $this->t('Vocabulary'),
           '#options' => $options,
-          '#description' => t('Select which vocabulary to show terms for in the regular options.'),
+          '#description' => $this->t('Select which vocabulary to show terms for in the regular options.'),
           '#default_value' => $this->options['vid'],
         );
       }
@@ -81,14 +81,14 @@ class TaxonomyIndexTid extends ManyToOne {
 
     $form['type'] = array(
       '#type' => 'radios',
-      '#title' => t('Selection type'),
-      '#options' => array('select' => t('Dropdown'), 'textfield' => t('Autocomplete')),
+      '#title' => $this->t('Selection type'),
+      '#options' => array('select' => $this->t('Dropdown'), 'textfield' => $this->t('Autocomplete')),
       '#default_value' => $this->options['type'],
     );
 
     $form['hierarchy'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Show hierarchy in dropdown'),
+      '#title' => $this->t('Show hierarchy in dropdown'),
       '#default_value' => !empty($this->options['hierarchy']),
       '#states' => array(
         'visible' => array(
@@ -102,7 +102,7 @@ class TaxonomyIndexTid extends ManyToOne {
     $vocabulary = entity_load('taxonomy_vocabulary', $this->options['vid']);
     if (empty($vocabulary) && $this->options['limit']) {
       $form['markup'] = array(
-        '#markup' => '<div class="form-item">' . t('An invalid vocabulary is selected. Please change it in the options.') . '</div>',
+        '#markup' => '<div class="form-item">' . $this->t('An invalid vocabulary is selected. Please change it in the options.') . '</div>',
       );
       return;
     }
@@ -120,7 +120,7 @@ class TaxonomyIndexTid extends ManyToOne {
       }
 
       $form['value'] = array(
-        '#title' => $this->options['limit'] ? t('Select terms from vocabulary @voc', array('@voc' => $vocabulary->label())) : t('Select terms'),
+        '#title' => $this->options['limit'] ? $this->t('Select terms from vocabulary @voc', array('@voc' => $vocabulary->label())) : $this->t('Select terms'),
         '#type' => 'textfield',
         '#default_value' => $default,
       );
@@ -161,7 +161,7 @@ class TaxonomyIndexTid extends ManyToOne {
 
       $default_value = (array) $this->value;
 
-      if (!empty($form_state['exposed'])) {
+      if ($exposed = $form_state->get('exposed')) {
         $identifier = $this->options['expose']['identifier'];
 
         if (!empty($this->options['expose']['reduce'])) {
@@ -193,19 +193,21 @@ class TaxonomyIndexTid extends ManyToOne {
       }
       $form['value'] = array(
         '#type' => 'select',
-        '#title' => $this->options['limit'] ? t('Select terms from vocabulary @voc', array('@voc' => $vocabulary->label())) : t('Select terms'),
+        '#title' => $this->options['limit'] ? $this->t('Select terms from vocabulary @voc', array('@voc' => $vocabulary->label())) : $this->t('Select terms'),
         '#multiple' => TRUE,
         '#options' => $options,
         '#size' => min(9, count($options)),
         '#default_value' => $default_value,
       );
 
-      if (!empty($form_state['exposed']) && isset($identifier) && !isset($form_state['input'][$identifier])) {
-        $form_state['input'][$identifier] = $default_value;
+      $user_input = $form_state->getUserInput();
+      if ($exposed && isset($identifier) && !isset($user_input[$identifier])) {
+        $user_input[$identifier] = $default_value;
+        $form_state->setUserInput($user_input);
       }
     }
 
-    if (empty($form_state['exposed'])) {
+    if (!$form_state->get('exposed')) {
       // Retain the helper option
       $this->helper->buildOptionsForm($form, $form_state);
     }
@@ -217,11 +219,9 @@ class TaxonomyIndexTid extends ManyToOne {
       return;
     }
 
-    $values = Tags::explode($form_state['values']['options']['value']);
-    $tids = $this->validate_term_strings($form['value'], $values, $form_state);
-
-    if ($tids) {
-      $form_state['values']['options']['value'] = $tids;
+    $values = Tags::explode($form_state->getValue('options', 'value'));
+    if ($tids = $this->validate_term_strings($form['value'], $values, $form_state)) {
+      $form_state->setValue(array('options', 'value'), $tids);
     }
   }
 
@@ -261,8 +261,8 @@ class TaxonomyIndexTid extends ManyToOne {
 
     // We only validate if they've chosen the text field style.
     if ($this->options['type'] != 'textfield') {
-      if ($form_state['values'][$identifier] != 'All')  {
-        $this->validated_exposed_input = (array) $form_state['values'][$identifier];
+      if ($form_state->getValue($identifier) != 'All')  {
+        $this->validated_exposed_input = (array) $form_state->getValue($identifier);
       }
       return;
     }
@@ -271,7 +271,7 @@ class TaxonomyIndexTid extends ManyToOne {
       return;
     }
 
-    $values = Tags::explode($form_state['values'][$identifier]);
+    $values = Tags::explode($form_state->getValue($identifier));
 
     $tids = $this->validate_term_strings($form[$identifier], $values, $form_state);
     if ($tids) {
@@ -322,7 +322,7 @@ class TaxonomyIndexTid extends ManyToOne {
     }
 
     if ($missing && !empty($this->options['error_message'])) {
-      form_error($form, $form_state, format_plural(count($missing), 'Unable to find term: @terms', 'Unable to find terms: @terms', array('@terms' => implode(', ', array_keys($missing)))));
+      $form_state->setError($form, format_plural(count($missing), 'Unable to find term: @terms', 'Unable to find terms: @terms', array('@terms' => implode(', ', array_keys($missing)))));
     }
     elseif ($missing && empty($this->options['error_message'])) {
       $tids = array(0);
@@ -342,7 +342,7 @@ class TaxonomyIndexTid extends ManyToOne {
     }
     $form['error_message'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Display error message'),
+      '#title' => $this->t('Display error message'),
       '#default_value' => !empty($this->options['error_message']),
     );
   }

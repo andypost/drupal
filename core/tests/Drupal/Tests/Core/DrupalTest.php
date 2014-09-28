@@ -8,6 +8,7 @@
 namespace Drupal\Tests\Core;
 
 use Drupal\Tests\UnitTestCase;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Tests the Drupal class.
@@ -23,7 +24,7 @@ class DrupalTest extends UnitTestCase {
    */
   protected $container;
 
-  public function setUp() {
+  protected function setUp() {
     $this->container = $this->getMockBuilder('Symfony\Component\DependencyInjection\ContainerBuilder')
       ->setMethods(array('get'))
       ->getMock();
@@ -129,6 +130,18 @@ class DrupalTest extends UnitTestCase {
     $this->setMockContainerService('queue', $queue);
 
     $this->assertNotNull(\Drupal::queue('test_queue', TRUE));
+  }
+
+  /**
+   * Tests the testRequestStack() method.
+   *
+   * @covers ::requestStack
+   */
+  public function testRequestStack() {
+    $request_stack = new RequestStack();
+    $this->setMockContainerService('request_stack', $request_stack);
+
+    $this->assertSame($request_stack, \Drupal::requestStack());
   }
 
   /**
@@ -317,6 +330,30 @@ class DrupalTest extends UnitTestCase {
   public function testFormBuilder() {
     $this->setMockContainerService('form_builder');
     $this->assertNotNull(\Drupal::formBuilder());
+  }
+
+  /**
+   * Tests the menuTree() method.
+   */
+  public function testMenuTree() {
+    $this->setMockContainerService('menu.link_tree');
+    $this->assertNotNull(\Drupal::menuTree());
+  }
+
+  /**
+   * Tests the pathValidator() method.
+   */
+  public function testPathValidator() {
+    $this->setMockContainerService('path.validator');
+    $this->assertNotNull(\Drupal::pathValidator());
+  }
+
+  /**
+   * Tests the accessManager() method.
+   */
+  public function testAccessManager() {
+    $this->setMockContainerService('access_manager');
+    $this->assertNotNull(\Drupal::accessManager());
   }
 
   /**

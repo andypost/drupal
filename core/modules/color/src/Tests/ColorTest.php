@@ -51,7 +51,7 @@ class ColorTest extends WebTestBase {
   /**
    * {@inheritdoc}
    */
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Create user.
@@ -66,11 +66,11 @@ class ColorTest extends WebTestBase {
       ),
       'color_test_theme' => array(
         'palette_input' => 'palette[bg]',
-        'scheme' => '',
+        'scheme' => 'custom',
         'scheme_color' => '#3b3b3b',
       ),
     );
-    theme_enable(array_keys($this->themes));
+    \Drupal::service('theme_handler')->install(array_keys($this->themes));
 
     // Array filled with valid and not valid color values.
     $this->colorTests = array(

@@ -6,7 +6,7 @@
  */
 
 namespace Drupal\node\Tests;
-use Drupal\field\Entity\FieldInstanceConfig;
+use Drupal\field\Entity\FieldConfig;
 
 /**
  * Ensures that node type functions work correctly.
@@ -78,8 +78,8 @@ class NodeTypeTest extends NodeTestBase {
     $web_user = $this->drupalCreateUser(array('bypass node access', 'administer content types', 'administer node fields'));
     $this->drupalLogin($web_user);
 
-    $instance = FieldInstanceConfig::loadByName('node', 'page', 'body');
-    $this->assertEqual($instance->getLabel(), 'Body', 'Body field was found.');
+    $field = FieldConfig::loadByName('node', 'page', 'body');
+    $this->assertEqual($field->getLabel(), 'Body', 'Body field was found.');
 
     // Verify that title and body fields are displayed.
     $this->drupalGet('node/add/page');
@@ -108,7 +108,7 @@ class NodeTypeTest extends NodeTestBase {
     $this->assertRaw('Bar', 'New name was displayed.');
     $this->assertRaw('Lorem ipsum', 'New description was displayed.');
     $this->clickLink('Bar');
-    $this->assertEqual(url('node/add/bar', array('absolute' => TRUE)), $this->getUrl(), 'New machine name was used in URL.');
+    $this->assertUrl(\Drupal::url('node.add', ['node_type' => 'bar'], ['absolute' => TRUE]), [], 'New machine name was used in URL.');
     $this->assertRaw('Foo', 'Title field was found.');
     $this->assertRaw('Body', 'Body field was found.');
 
@@ -185,6 +185,9 @@ class NodeTypeTest extends NodeTestBase {
     $this->assertText(t('This action cannot be undone.'), 'The node type deletion confirmation form is available.');
     // Test that forum node type could not be deleted while forum active.
     $this->container->get('module_handler')->install(array('forum'));
+    // Call to flush all caches after installing the forum module in the same
+    // way installing a module through the UI does.
+    $this->resetAll();
     $this->drupalGet('admin/structure/types/manage/forum');
     $this->assertNoLink(t('Delete'));
     $this->drupalGet('admin/structure/types/manage/forum/delete');

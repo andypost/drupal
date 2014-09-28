@@ -60,17 +60,17 @@ abstract class SortPluginBase extends HandlerBase {
    */
   public function adminSummary() {
     if (!empty($this->options['exposed'])) {
-      return t('Exposed');
+      return $this->t('Exposed');
     }
     switch ($this->options['order']) {
       case 'ASC':
       case 'asc':
       default:
-        return t('asc');
+        return $this->t('asc');
         break;
       case 'DESC';
       case 'desc';
-        return t('desc');
+        return $this->t('desc');
         break;
     }
   }
@@ -109,19 +109,19 @@ abstract class SortPluginBase extends HandlerBase {
       '#attributes' => array('class' => array('js-only')),
     );
     $form['expose_button']['checkbox']['checkbox'] = array(
-      '#title' => t('Expose this sort to visitors, to allow them to change it'),
+      '#title' => $this->t('Expose this sort to visitors, to allow them to change it'),
       '#type' => 'checkbox',
     );
 
     // Then add the button itself.
     if (empty($this->options['exposed'])) {
       $form['expose_button']['markup'] = array(
-        '#markup' => '<div class="description exposed-description" style="float: left; margin-right:10px">' . t('This sort is not exposed. Expose it to allow the users to change it.') . '</div>',
+        '#markup' => '<div class="description exposed-description" style="float: left; margin-right:10px">' . $this->t('This sort is not exposed. Expose it to allow the users to change it.') . '</div>',
       );
       $form['expose_button']['button'] = array(
         '#limit_validation_errors' => array(),
         '#type' => 'submit',
-        '#value' => t('Expose sort'),
+        '#value' => $this->t('Expose sort'),
         '#submit' => array(array($this, 'displayExposedForm')),
         '#attributes' => array('class' => array('use-ajax-submit')),
       );
@@ -129,12 +129,12 @@ abstract class SortPluginBase extends HandlerBase {
     }
     else {
       $form['expose_button']['markup'] = array(
-        '#markup' => '<div class="description exposed-description">' . t('This sort is exposed. If you hide it, users will not be able to change it.') . '</div>',
+        '#markup' => '<div class="description exposed-description">' . $this->t('This sort is exposed. If you hide it, users will not be able to change it.') . '</div>',
       );
       $form['expose_button']['button'] = array(
         '#limit_validation_errors' => array(),
         '#type' => 'submit',
-        '#value' => t('Hide sort'),
+        '#value' => $this->t('Hide sort'),
         '#submit' => array(array($this, 'displayExposedForm')),
         '#attributes' => array('class' => array('use-ajax-submit')),
       );
@@ -157,7 +157,9 @@ abstract class SortPluginBase extends HandlerBase {
    * Simple submit handler
    */
   public function submitOptionsForm(&$form, FormStateInterface $form_state) {
-    unset($form_state['values']['expose_button']); // don't store this.
+    // Do not store this values.
+    $form_state->unsetValue('expose_button');
+
     $this->sortSubmit($form, $form_state);
     if (!empty($this->options['exposed'])) {
       $this->submitExposeForm($form, $form_state);
@@ -171,7 +173,7 @@ abstract class SortPluginBase extends HandlerBase {
     $options = $this->sortOptions();
     if (!empty($options)) {
       $form['order'] = array(
-        '#title' => t('Order'),
+        '#title' => $this->t('Order'),
         '#type' => 'radios',
         '#options' => $options,
         '#default_value' => $this->options['order'],
@@ -189,8 +191,8 @@ abstract class SortPluginBase extends HandlerBase {
    */
   protected function sortOptions() {
     return array(
-      'ASC' => t('Sort ascending'),
-      'DESC' => t('Sort descending'),
+      'ASC' => $this->t('Sort ascending'),
+      'DESC' => $this->t('Sort descending'),
     );
   }
 
@@ -205,7 +207,7 @@ abstract class SortPluginBase extends HandlerBase {
     $form['expose']['label'] = array(
       '#type' => 'textfield',
       '#default_value' => $this->options['expose']['label'],
-      '#title' => t('Label'),
+      '#title' => $this->t('Label'),
       '#required' => TRUE,
       '#size' => 40,
       '#weight' => -1,

@@ -63,12 +63,12 @@ class ConfigTranslationListController extends ControllerBase {
       throw new NotFoundHttpException();
     }
     $entity_type = $mapper->getType();
-    // If the mapper, for example the mapper for field instances, has a custom
-    // list controller defined, use it. Other mappers, for examples the ones for
+    // If the mapper, for example the mapper for fields, has a custom list
+    // controller defined, use it. Other mappers, for examples the ones for
     // node_type and block, fallback to the generic configuration translation
     // list controller.
     $build = $this->entityManager()
-      ->getController($entity_type, 'config_translation_list')
+      ->getHandler($entity_type, 'config_translation_list')
       ->setMapperDefinition($mapper_definition)
       ->render();
     $build['#title'] = $mapper->getTypeLabel();

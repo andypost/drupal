@@ -50,10 +50,10 @@ class Role extends AccessPluginBase {
   public function summaryTitle() {
     $count = count($this->options['role']);
     if ($count < 1) {
-      return t('No role(s) selected');
+      return $this->t('No role(s) selected');
     }
     elseif ($count > 1) {
-      return t('Multiple roles');
+      return $this->t('Multiple roles');
     }
     else {
       $rids = user_role_names();
@@ -74,22 +74,22 @@ class Role extends AccessPluginBase {
     parent::buildOptionsForm($form, $form_state);
     $form['role'] = array(
       '#type' => 'checkboxes',
-      '#title' => t('Role'),
+      '#title' => $this->t('Role'),
       '#default_value' => $this->options['role'],
       '#options' => array_map('\Drupal\Component\Utility\String::checkPlain', user_role_names()),
-      '#description' => t('Only the checked roles will be able to access this display. Note that users with "access all views" can see any view, regardless of role.'),
+      '#description' => $this->t('Only the checked roles will be able to access this display. Note that users with "access all views" can see any view, regardless of role.'),
     );
   }
 
   public function validateOptionsForm(&$form, FormStateInterface $form_state) {
-    if (!array_filter($form_state['values']['access_options']['role'])) {
-      form_error($form['role'], $form_state, t('You must select at least one role if type is "by role"'));
-    }
-  }
+    $role = $form_state->getValue(array('access_options', 'role'));
+    $role = array_filter($role);
 
-  public function submitOptionsForm(&$form, FormStateInterface $form_state) {
-    // I hate checkboxes.
-    $form_state['values']['access_options']['role'] = array_filter($form_state['values']['access_options']['role']);
+    if (!$role) {
+      $form_state->setError($form['role'], $this->t('You must select at least one role if type is "by role"'));
+    }
+
+    $form_state->setValue(array('access_options', 'role'), $role);
   }
 
 }

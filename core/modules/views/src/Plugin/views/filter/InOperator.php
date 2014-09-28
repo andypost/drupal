@@ -40,7 +40,7 @@ class InOperator extends FilterPluginBase {
   public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
     parent::init($view, $display, $options);
 
-    $this->value_title = t('Options');
+    $this->value_title = $this->t('Options');
     $this->value_options = NULL;
   }
 
@@ -69,7 +69,7 @@ class InOperator extends FilterPluginBase {
       }
     }
     else {
-      $this->value_options = array(t('Yes'), t('No'));
+      $this->value_options = array(t('Yes'), $this->t('No'));
     }
 
     return $this->value_options;
@@ -84,8 +84,8 @@ class InOperator extends FilterPluginBase {
     parent::buildExposeForm($form, $form_state);
     $form['expose']['reduce'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Limit list to selected items'),
-      '#description' => t('If checked, the only items presented to the user will be the ones selected here.'),
+      '#title' => $this->t('Limit list to selected items'),
+      '#description' => $this->t('If checked, the only items presented to the user will be the ones selected here.'),
       '#default_value' => !empty($this->options['expose']['reduce']), // safety
     );
   }
@@ -108,16 +108,16 @@ class InOperator extends FilterPluginBase {
   function operators() {
     $operators = array(
       'in' => array(
-        'title' => t('Is one of'),
-        'short' => t('in'),
-        'short_single' => t('='),
+        'title' => $this->t('Is one of'),
+        'short' => $this->t('in'),
+        'short_single' => $this->t('='),
         'method' => 'opSimple',
         'values' => 1,
       ),
       'not in' => array(
-        'title' => t('Is not one of'),
-        'short' => t('not in'),
-        'short_single' => t('<>'),
+        'title' => $this->t('Is not one of'),
+        'short' => $this->t('not in'),
+        'short_single' => $this->t('<>'),
         'method' => 'opSimple',
         'values' => 1,
       ),
@@ -126,15 +126,15 @@ class InOperator extends FilterPluginBase {
     if (!empty($this->definition['allow empty'])) {
       $operators += array(
         'empty' => array(
-          'title' => t('Is empty (NULL)'),
+          'title' => $this->t('Is empty (NULL)'),
           'method' => 'opEmpty',
-          'short' => t('empty'),
+          'short' => $this->t('empty'),
           'values' => 0,
         ),
         'not empty' => array(
-          'title' => t('Is not empty (NOT NULL)'),
+          'title' => $this->t('Is not empty (NOT NULL)'),
           'method' => 'opEmpty',
-          'short' => t('not empty'),
+          'short' => $this->t('not empty'),
           'values' => 0,
         ),
       );
@@ -170,9 +170,10 @@ class InOperator extends FilterPluginBase {
     $form['value'] = array();
     $options = array();
 
-    if (empty($form_state['exposed'])) {
+    $exposed = $form_state->get('exposed');
+    if (!$exposed) {
       // Add a select all option to the value form.
-      $options = array('all' => t('Select all'));
+      $options = array('all' => $this->t('Select all'));
     }
 
     $this->getValueOptions();
@@ -183,7 +184,7 @@ class InOperator extends FilterPluginBase {
     if (!empty($form['operator'])) {
       $source = ':input[name="options[operator]"]';
     }
-    if (!empty($form_state['exposed'])) {
+    if ($exposed) {
       $identifier = $this->options['expose']['identifier'];
 
       if (empty($this->options['expose']['use_operator']) || empty($this->options['expose']['operator_id'])) {
@@ -227,12 +228,14 @@ class InOperator extends FilterPluginBase {
         '#multiple' => TRUE,
         '#size' => count($options) > 8 ? 8 : count($options),
       );
-      if (!empty($form_state['exposed']) && !isset($form_state['input'][$identifier])) {
-        $form_state['input'][$identifier] = $default_value;
+      $user_input = $form_state->getUserInput();
+      if ($exposed && !isset($user_input[$identifier])) {
+        $user_input[$identifier] = $default_value;
+        $form_state->setUserInput($user_input);
       }
 
       if ($which == 'all') {
-        if (empty($form_state['exposed']) && (in_array($this->valueFormType, array('checkbox', 'checkboxes', 'radios', 'select')))) {
+        if (!$exposed && (in_array($this->valueFormType, ['checkbox', 'checkboxes', 'radios', 'select']))) {
           $form['value']['#prefix'] = '<div id="edit-options-value-wrapper">';
           $form['value']['#suffix'] = '</div>';
         }
@@ -306,15 +309,15 @@ class InOperator extends FilterPluginBase {
     // *only* a list of checkboxes that were set, and we can use that
     // instead.
 
-    $form_state['values']['options']['value'] = $form['value']['#value'];
+    $form_state->setValue(array('options', 'value'), $form['value']['#value']);
   }
 
   public function adminSummary() {
     if ($this->isAGroup()) {
-      return t('grouped');
+      return $this->t('grouped');
     }
     if (!empty($this->options['exposed'])) {
-      return t('exposed');
+      return $this->t('exposed');
     }
     $info = $this->operators();
 
@@ -335,7 +338,7 @@ class InOperator extends FilterPluginBase {
       }
       // Choose different kind of ouput for 0, a single and multiple values.
       if (count($this->value) == 0) {
-        $values = t('Unknown');
+        $values = $this->t('Unknown');
       }
       else if (count($this->value) == 1) {
         // If any, use the 'single' short name of the operator instead.
@@ -412,7 +415,7 @@ class InOperator extends FilterPluginBase {
     }
 
     if (!in_array($this->operator, $this->operatorValues(1))) {
-      $errors[] = t('The operator is invalid on filter: @filter.', array('@filter' => $this->adminLabel(TRUE)));
+      $errors[] = $this->t('The operator is invalid on filter: @filter.', array('@filter' => $this->adminLabel(TRUE)));
     }
     if (is_array($this->value)) {
       if (!isset($this->value_options)) {
@@ -435,11 +438,11 @@ class InOperator extends FilterPluginBase {
       }
       // Choose different kind of ouput for 0, a single and multiple values.
       if (count($this->value) == 0) {
-        $errors[] = t('No valid values found on filter: @filter.', array('@filter' => $this->adminLabel(TRUE)));
+        $errors[] = $this->t('No valid values found on filter: @filter.', array('@filter' => $this->adminLabel(TRUE)));
       }
     }
     elseif (!empty($this->value) && ($this->operator == 'in' || $this->operator == 'not in')) {
-      $errors[] = t('The value @value is not an array for @operator on filter: @filter', array('@value' => var_export($this->value), '@operator' => $this->operator, '@filter' => $this->adminLabel(TRUE)));
+      $errors[] = $this->t('The value @value is not an array for @operator on filter: @filter', array('@value' => var_export($this->value), '@operator' => $this->operator, '@filter' => $this->adminLabel(TRUE)));
     }
     return $errors;
   }

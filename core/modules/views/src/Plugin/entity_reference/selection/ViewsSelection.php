@@ -105,8 +105,8 @@ class ViewsSelection implements SelectionInterface {
     else {
       $form['view']['no_view_help'] = array(
         '#markup' => '<p>' . t('No eligible views were found. <a href="@create">Create a view</a> with an <em>Entity Reference</em> display, or add such a display to an <a href="@existing">existing view</a>.', array(
-          '@create' => url('admin/structure/views/add'),
-          '@existing' => url('admin/structure/views'),
+          '@create' => \Drupal::url('views_ui.add'),
+          '@existing' => \Drupal::url('views_ui.list'),
         )) . '</p>',
       );
     }
@@ -222,7 +222,7 @@ class ViewsSelection implements SelectionInterface {
       list($view, $display) = explode(':', $element['view_and_display']['#value']);
     }
     else {
-      form_error($element, $form_state, t('The views entity selection mode requires a view.'));
+      $form_state->setError($element, t('The views entity selection mode requires a view.'));
       return;
     }
 

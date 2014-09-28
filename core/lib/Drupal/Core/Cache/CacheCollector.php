@@ -114,11 +114,21 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
    * @param array $tags
    *   (optional) The tags to specify for the cache item.
    */
-  public function __construct($cid, CacheBackendInterface $cache, LockBackendInterface $lock, $tags = array()) {
+  public function __construct($cid, CacheBackendInterface $cache, LockBackendInterface $lock, array $tags = array()) {
+    Cache::validateTags($tags);
     $this->cid = $cid;
     $this->cache = $cache;
     $this->tags = $tags;
     $this->lock = $lock;
+  }
+
+  /**
+   * Gets the cache ID.
+   *
+   * @return string
+   */
+  protected function getCid() {
+    return $this->cid;
   }
 
   /**
@@ -191,10 +201,10 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
    * Resolves a cache miss.
    *
    * When an offset is not found in the object, this is treated as a cache
-   * miss. This method allows classes using this implementatio to look up the
+   * miss. This method allows classes using this implementation to look up the
    * actual value and allow it to be cached.
    *
-   * @param sring $key
+   * @param string $key
    *   The offset that was requested.
    *
    * @return mixed
@@ -221,19 +231,20 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
     }
 
     // Lock cache writes to help avoid stampedes.
-    $lock_name = $this->cid . ':' . __CLASS__;
+    $cid = $this->getCid();
+    $lock_name = $cid . ':' . __CLASS__;
     if (!$lock || $this->lock->acquire($lock_name)) {
       // Set and delete operations invalidate the cache item. Try to also load
       // an eventually invalidated cache entry, only update an invalidated cache
       // entry if the creation date did not change as this could result in an
       // inconsistent cache.
-      if ($cache = $this->cache->get($this->cid, $this->cacheInvalidated)) {
+      if ($cache = $this->cache->get($cid, $this->cacheInvalidated)) {
         if ($this->cacheInvalidated && $cache->created != $this->cacheCreated) {
           // We have invalidated the cache in this request and got a different
           // cache entry. Do not attempt to overwrite data that might have been
           // changed in a different request. We'll let the cache rebuild in
           // later requests.
-          $this->cache->delete($this->cid);
+          $this->cache->delete($cid);
           $this->lock->release($lock_name);
           return;
         }
@@ -243,7 +254,7 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
       foreach ($this->keysToRemove as $delete_key) {
         unset($data[$delete_key]);
       }
-      $this->cache->set($this->cid, $data, Cache::PERMANENT, $this->tags);
+      $this->cache->set($cid, $data, Cache::PERMANENT, $this->tags);
       if ($lock) {
         $this->lock->release($lock_name);
       }
@@ -272,7 +283,7 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
       Cache::deleteTags($this->tags);
     }
     else {
-      $this->cache->delete($this->cid);
+      $this->cache->delete($this->getCid());
     }
   }
 
@@ -293,7 +304,7 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
     // The cache was not yet loaded, set flag to TRUE.
     $this->cacheLoaded = TRUE;
 
-    if ($cache = $this->cache->get($this->cid)) {
+    if ($cache = $this->cache->get($this->getCid())) {
       $this->cacheCreated = $cache->created;
       $this->storage = $cache->data;
     }
@@ -305,7 +316,7 @@ abstract class CacheCollector implements CacheCollectorInterface, DestructableIn
   protected function invalidateCache() {
     // Invalidate the cache to make sure that other requests immediately see the
     // deletion before this request is terminated.
-    $this->cache->invalidate($this->cid);
+    $this->cache->invalidate($this->getCid());
     $this->cacheInvalidated = TRUE;
   }
 

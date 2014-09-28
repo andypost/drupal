@@ -62,8 +62,8 @@ function hook_hook_info() {
  * Long-running tasks and tasks that could time out, such as retrieving remote
  * data, sending email, and intensive file tasks, should use the queue API
  * instead of executing the tasks directly. To do this, first define one or
- * more queues via hook_queue_info(). Then, add items that need to be
- * processed to the defined queues.
+ * more queues via a \Drupal\Core\Annotation\QueueWorker plugin. Then, add items
+ * that need to be processed to the defined queues.
  */
 function hook_cron() {
   // Short-running operation example, not using a queue:
@@ -99,46 +99,6 @@ function hook_data_type_info_alter(&$data_types) {
 }
 
 /**
- * Declare queues holding items that need to be run periodically.
- *
- * While there can be only one hook_cron() process running at the same time,
- * there can be any number of processes defined here running. Because of
- * this, long running tasks are much better suited for this API. Items queued
- * in hook_cron() might be processed in the same cron run if there are not many
- * items in the queue, otherwise it might take several requests, which can be
- * run in parallel.
- *
- * You can create queues, add items to them, claim them, etc without declaring
- * the queue in this hook if you want, however, you need to take care of
- * processing the items in the queue in that case.
- *
- * @return
- *   An associative array where the key is the queue name and the value is
- *   again an associative array. Possible keys are:
- *   - 'worker callback': A PHP callable to call that is an implementation of
- *     callback_queue_worker().
- *   - 'cron': (optional) An associative array containing the optional key:
- *     - 'time': (optional) How much time Drupal cron should spend on calling
- *       this worker in seconds. Defaults to 15.
- *     If the cron key is not defined, the queue will not be processed by cron,
- *     and must be processed by other means.
- *
- * @see hook_cron()
- * @see hook_queue_info_alter()
- */
-function hook_queue_info() {
-  $queues['aggregator_feeds'] = array(
-    'title' => t('Aggregator refresh'),
-    'worker callback' => array('Drupal\my_module\MyClass', 'aggregatorRefresh'),
-    // Only needed if this queue should be processed by cron.
-    'cron' => array(
-      'time' => 60,
-    ),
-  );
-  return $queues;
-}
-
-/**
  * Alter cron queue information before cron runs.
  *
  * Called by \Drupal\Core\Cron to allow modules to alter cron queue settings
@@ -147,42 +107,14 @@ function hook_queue_info() {
  * @param array $queues
  *   An array of cron queue information.
  *
- * @see hook_queue_info()
+ * @see \Drupal\Core\QueueWorker\QueueWorkerInterface
+ * @see \Drupal\Core\Annotation\QueueWorker
  * @see \Drupal\Core\Cron
  */
 function hook_queue_info_alter(&$queues) {
   // This site has many feeds so let's spend 90 seconds on each cron run
   // updating feeds instead of the default 60.
   $queues['aggregator_feeds']['cron']['time'] = 90;
-}
-
-/**
- * Work on a single queue item.
- *
- * Callback for hook_queue_info().
- *
- * @param $queue_item_data
- *   The data that was passed to \Drupal\Core\Queue\QueueInterface::createItem()
- *   when the item was queued.
- *
- * @throws \Exception
- *   The worker callback may throw an exception to indicate there was a problem.
- *   The cron process will log the exception, and leave the item in the queue to
- *   be processed again later.
- * @throws \Drupal\Core\Queue\SuspendQueueException
- *   More specifically, a SuspendQueueException should be thrown when the
- *   callback is aware that the problem will affect all subsequent workers of
- *   its queue. For example, a callback that makes HTTP requests may find that
- *   the remote server is not responding. The cron process will behave as with a
- *   normal Exception, and in addition will not attempt to process further items
- *   from the current item's queue during the current cron run.
- *
- * @see \Drupal\Core\Cron::run()
- */
-function callback_queue_worker($queue_item_data) {
-  $node = node_load($queue_item_data);
-  $node->title = 'Updated title';
-  $node->save();
 }
 
 /**
@@ -193,14 +125,16 @@ function callback_queue_worker($queue_item_data) {
  * specify their default values. The values returned by this hook will be
  * merged with the elements returned by form constructor implementations and so
  * can return defaults for any Form APIs keys in addition to those explicitly
- * documented by \Drupal\Core\Render\ElementInfoInterface::getInfo().
+ * documented by \Drupal\Core\Render\ElementInfoManagerInterface::getInfo().
  *
  * @return array
  *   An associative array with structure identical to that of the return value
- *   of \Drupal\Core\Render\ElementInfoInterface::getInfo().
+ *   of \Drupal\Core\Render\ElementInfoManagerInterface::getInfo().
+ *
+ * @deprecated Use an annotated class instead, see
+ *   \Drupal\Core\Render\Element\ElementInterface.
  *
  * @see hook_element_info_alter()
- * @see system_element_info()
  */
 function hook_element_info() {
   $types['filter_format'] = array(
@@ -217,7 +151,7 @@ function hook_element_info() {
  *
  * @param array $types
  *   An associative array with structure identical to that of the return value
- *   of \Drupal\Core\Render\ElementInfoInterface::getInfo().
+ *   of \Drupal\Core\Render\ElementInfoManagerInterface::getInfo().
  *
  * @see hook_element_info()
  */
@@ -372,7 +306,7 @@ function hook_ajax_render_alter(array &$data) {
  *   Nested array of renderable elements that make up the page.
  *
  * @see hook_page_alter()
- * @see drupal_render_page()
+ * @see DefaultHtmlFragmentRenderer::render()
  */
 function hook_page_build(&$page) {
   $path = drupal_get_path('module', 'foo');
@@ -411,9 +345,10 @@ function hook_page_build(&$page) {
  *   patten is the route name followed by a dot and a unique suffix. For
  *   example, an additional logout link might have a machine name of
  *   user.logout.navigation, and default links provided to edit the article and
- *   page content types could use machine names node.type_edit.article and
- *   node.type_edit.page. Since the machine name may be arbitrary, you should
- *   never write code that assumes it is identical to the route name.
+ *   page content types could use machine names
+ *   entity.node_type.edit_form.article and entity.node_type.edit_form.page.
+ *   Since the machine name may be arbitrary, you should never write code that
+ *   assumes it is identical to the route name.
  *
  *   The value corresponding to each machine name key is an associative array
  *   that may contain the following key-value pairs:
@@ -656,7 +591,7 @@ function hook_contextual_links_plugins_alter(array &$contextual_links) {
  *   Nested array of renderable elements that make up the page.
  *
  * @see hook_page_build()
- * @see drupal_render_page()
+ * @see DefaultHtmlFragmentRenderer::render()
  */
 function hook_page_alter(&$page) {
   // Add help text to the user login block.
@@ -671,7 +606,7 @@ function hook_page_alter(&$page) {
  *
  * One popular use of this hook is to add form elements to the node form. When
  * altering a node form, the node entity can be retrieved by invoking
- * $form_state['controller']->getEntity().
+ * $form_state->getFormObject()->getEntity().
  *
  * In addition to hook_form_alter(), which is called for all forms, there are
  * two more specific form hooks available. The first,
@@ -694,7 +629,7 @@ function hook_page_alter(&$page) {
  * @param $form_state
  *   The current state of the form. The arguments that
  *   \Drupal::formBuilder()->getForm() was originally called with are available
- *   in the array $form_state['build_info']['args'].
+ *   in the array $form_state->getBuildInfo()['args'].
  * @param $form_id
  *   String representing the name of the form itself. Typically this is the
  *   name of the function that generated the form.
@@ -733,7 +668,7 @@ function hook_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_stat
  * @param $form_state
  *   The current state of the form. The arguments that
  *   \Drupal::formBuilder()->getForm() was originally called with are available
- *   in the array $form_state['build_info']['args'].
+ *   in the array $form_state->getBuildInfo()['args'].
  * @param $form_id
  *   String representing the name of the form itself. Typically this is the
  *   name of the function that generated the form.
@@ -770,7 +705,7 @@ function hook_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $f
  *
  * To identify the base form ID for a particular form (or to determine whether
  * one exists) check the $form_state. The base form ID is stored under
- * $form_state['build_info']['base_form_id'].
+ * $form_state->getBuildInfo()['base_form_id'].
  *
  * Form alter hooks are called in the following order: hook_form_alter(),
  * hook_form_BASE_FORM_ID_alter(), hook_form_FORM_ID_alter(). See
@@ -937,53 +872,6 @@ function hook_system_info_alter(array &$info, \Drupal\Core\Extension\Extension $
   if (empty($info['datestamp'])) {
     $info['datestamp'] = $file->getMTime();
   }
-}
-
-/**
- * Define user permissions.
- *
- * This hook can supply permissions that the module defines, so that they
- * can be selected on the user permissions page and used to grant or restrict
- * access to actions the module performs.
- *
- * Permissions are checked using \Drupal::currentUser()->hasPermission().
- *
- * For a detailed usage example, see page_example.module.
- *
- * @return
- *   An array whose keys are permission names and whose corresponding values
- *   are arrays containing the following key-value pairs:
- *   - title: The human-readable name of the permission, to be shown on the
- *     permission administration page. This should be wrapped in the t()
- *     function so it can be translated.
- *   - description: (optional) A description of what the permission does. This
- *     should be wrapped in the t() function so it can be translated.
- *   - restrict access: (optional) A boolean which can be set to TRUE to
- *     indicate that site administrators should restrict access to this
- *     permission to trusted users. This should be used for permissions that
- *     have inherent security risks across a variety of potential use cases
- *     (for example, the "administer filters" and "bypass node access"
- *     permissions provided by Drupal core). When set to TRUE, a standard
- *     warning message defined in user_admin_permissions() will be displayed
- *     with the permission on the permission administration page. Defaults
- *     to FALSE.
- *   - warning: (optional) A translated warning message to display for this
- *     permission on the permission administration page. This warning overrides
- *     the automatic warning generated by 'restrict access' being set to TRUE.
- *     This should rarely be used, since it is important for all permissions to
- *     have a clear, consistent security warning that is the same across the
- *     site. Use the 'description' key instead to provide any information that
- *     is specific to the permission you are defining.
- *
- * @ingroup user_api
- */
-function hook_permission() {
-  return array(
-    'administer my module' =>  array(
-      'title' => t('Administer my module'),
-      'description' => t('Perform administration tasks for my module.'),
-    ),
-  );
 }
 
 /**
@@ -1290,7 +1178,7 @@ function hook_mail($key, &$message, $params) {
     $node = $params['node'];
     $variables += array(
       '%uid' => $node->getOwnerId(),
-      '%url' => url('node/' . $node->id(), array('absolute' => TRUE)),
+      '%url' => $node->url('canonical', array('absolute' => TRUE)),
       '%node_type' => node_get_type_label($node),
       '%title' => $node->getTitle(),
       '%teaser' => $node->teaser,
@@ -1390,6 +1278,29 @@ function hook_modules_installed($modules) {
  */
 function hook_module_preuninstall($module) {
   mymodule_cache_clear();
+}
+
+/**
+ * Perform necessary actions when themes are installed.
+ *
+ * @param array $themes
+ *   An array of theme names which are installed.
+ */
+function hook_themes_installed(array $themes) {
+  // Add some state entries depending on the theme.
+  foreach ($themes as $theme) {
+    \Drupal::state()->set('example.' . $theme, 'some-value');
+  }
+}
+
+/**
+ * Perform necessary actions when themes are uninstalled.
+ */
+function hook_themes_uninstalled(array $themes) {
+  // Remove some state entries depending on the theme.
+  foreach ($themes as $theme) {
+    \Drupal::state()->delete('example.' . $theme);
+  }
 }
 
 /**
@@ -1676,7 +1587,7 @@ function hook_requirements($phase) {
       );
     }
 
-    $requirements['cron']['description'] .= ' ' . t('You can <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron')));
+    $requirements['cron']['description'] .= ' ' . t('You can <a href="@cron">run cron manually</a>.', array('@cron' => \Drupal::url('system.run_cron')));
 
     $requirements['cron']['title'] = t('Cron maintenance tasks');
   }
@@ -2439,7 +2350,7 @@ function hook_tokens($type, $tokens, array $data = array(), array $options = arr
           break;
 
         case 'edit-url':
-          $replacements[$original] = url('node/' . $node->id() . '/edit', $url_options);
+          $replacements[$original] = $node->url('edit-form', $url_options);
           break;
 
         // Default values for the chained tokens handled below.
@@ -2866,51 +2777,4 @@ function hook_config_schema_info_alter(&$definitions) {
 
 /**
  * @} End of "addtogroup hooks".
- */
-
-/**
- * @defgroup annotation Annotations
- * @{
- * Annotations for class discovery and metadata description.
- *
- * The Drupal plugin system has a set of reusable components that developers
- * can use, override, and extend in their modules. Most of the plugins use
- * annotations, which let classes register themselves as plugins and describe
- * their metadata. (Annotations can also be used for other purposes, though
- * at the moment, Drupal only uses them for the plugin system.)
- *
- * To annotate a class as a plugin, add code similar to the following to the
- * end of the documentation block immediately preceding the class declaration:
- * @code
- * * @ContentEntityType(
- * *   id = "comment",
- * *   label = @Translation("Comment"),
- * *   ...
- * *   base_table = "comment"
- * * )
- * @endcode
- *
- * Note that you must use double quotes; single quotes will not work in
- * annotations.
- *
- * Some annotation types, which extend the "@ PluginID" annotation class, have
- * only a single 'id' key in their annotation. For these, it is possible to use
- * a shorthand annotation. For example:
- * @code
- * * @ViewsArea("entity")
- * @endcode
- * in place of
- * @code
- * * @ViewsArea(
- * *   id = "entity"
- * *)
- * @endcode
- *
- * The available annotation classes are listed in this topic, and can be
- * identified when you are looking at the Drupal source code by having
- * "@ Annotation" in their documentation blocks (without the space after @). To
- * find examples of annotation for a particular annotation class, such as
- * EntityType, look for class files that have an @ annotation section using the
- * annotation class.
- * @}
  */

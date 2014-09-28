@@ -28,14 +28,14 @@ class TaxonomyImageTest extends TaxonomyTestBase {
    */
   public static $modules = array('image');
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Remove access content permission from registered users.
     user_role_revoke_permissions(DRUPAL_AUTHENTICATED_RID, array('access content'));
 
     $this->vocabulary = $this->createVocabulary();
-    // Add a field instance to the vocabulary.
+    // Add a field to the vocabulary.
     $entity_type = 'taxonomy_term';
     $name = 'field_test';
     entity_create('field_storage_config', array(
@@ -46,7 +46,7 @@ class TaxonomyImageTest extends TaxonomyTestBase {
         'uri_scheme' => 'private',
       ),
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_name' => $name,
       'entity_type' => $entity_type,
       'bundle' => $this->vocabulary->id(),

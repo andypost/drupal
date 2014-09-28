@@ -23,7 +23,7 @@ class NodeAttributesTest extends NodeTestBase {
    */
   public static $modules = array('rdf');
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     rdf_get_mapping('node', 'article')
@@ -36,7 +36,7 @@ class NodeAttributesTest extends NodeTestBase {
       ->setFieldMapping('created', array(
         'properties' => array('dc:date', 'dc:created'),
         'datatype' => 'xsd:dateTime',
-        'datatype_callback' => array('callable' => 'date_iso8601'),
+        'datatype_callback' => array('callable' => 'Drupal\rdf\CommonDataConverter::dateIso8601Value'),
       ))
       ->save();
   }
@@ -52,8 +52,8 @@ class NodeAttributesTest extends NodeTestBase {
       'title' => $this->randomMachineName(8) . "'",
     ));
 
-    $node_uri = url('node/' . $node->id(), array('absolute' => TRUE));
-    $base_uri = url('<front>', array('absolute' => TRUE));
+    $node_uri = $node->url('canonical', ['absolute' => TRUE]);
+    $base_uri = \Drupal::url('<front>', [], ['absolute' => TRUE]);
 
     // Parses front page where the node is displayed in its teaser form.
     $parser = new \EasyRdf_Parser_Rdfa();

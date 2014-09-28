@@ -7,28 +7,26 @@
 
 namespace Drupal\Core\Entity;
 
-use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\TypedData\TranslatableInterface;
 use Drupal\Core\Render\Element;
-use Drupal\entity\Entity\EntityViewDisplay;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Base class for entity view controllers.
+ * Base class for entity view builders.
  *
  * @ingroup entity_api
  */
-class EntityViewBuilder extends EntityControllerBase implements EntityControllerInterface, EntityViewBuilderInterface {
+class EntityViewBuilder extends EntityHandlerBase implements EntityHandlerInterface, EntityViewBuilderInterface {
 
   /**
-   * The type of entities for which this controller is instantiated.
+   * The type of entities for which this view builder is instantiated.
    *
    * @var string
    */
@@ -161,7 +159,7 @@ class EntityViewBuilder extends EntityControllerBase implements EntityController
       '#langcode' => $langcode,
       // Collect cache defaults for this entity.
       '#cache' => array(
-        'tags' => NestedArray::mergeDeep($this->getCacheTag(), $entity->getCacheTag()),
+        'tags' => Cache::mergeTags($this->getCacheTag(), $entity->getCacheTag()),
       ),
     );
 
@@ -344,7 +342,7 @@ class EntityViewBuilder extends EntityControllerBase implements EntityController
    * {@inheritdoc}
    */
   public function getCacheTag() {
-    return array($this->entityTypeId . '_view' => TRUE);
+    return array($this->entityTypeId . '_view');
   }
 
   /**
@@ -353,9 +351,9 @@ class EntityViewBuilder extends EntityControllerBase implements EntityController
   public function resetCache(array $entities = NULL) {
     if (isset($entities)) {
       // Always invalidate the ENTITY_TYPE_list tag.
-      $tags = array($this->entityTypeId . '_list' => TRUE);
+      $tags = array($this->entityTypeId . '_list');
       foreach ($entities as $entity) {
-        $tags = NestedArray::mergeDeep($tags, $entity->getCacheTag());
+        $tags = Cache::mergeTags($tags, $entity->getCacheTag());
       }
       Cache::invalidateTags($tags);
     }

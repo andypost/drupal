@@ -13,10 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Stores information about the state of a form.
- *
- * @todo Remove usage of \ArrayAccess in https://www.drupal.org/node/2310255.
  */
-class FormState implements FormStateInterface, \ArrayAccess {
+class FormState implements FormStateInterface {
 
   /**
    * Tracks if any errors have been set on any form.
@@ -24,13 +22,6 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * @var bool
    */
   protected static $anyErrors = FALSE;
-
-  /**
-   * The internal storage of the form state.
-   *
-   * @var array
-   */
-  protected $internalStorage = array();
 
   /**
    * The complete form structure.
@@ -61,7 +52,7 @@ class FormState implements FormStateInterface, \ArrayAccess {
    *     'name' as needed by module_load_include(). The files listed here are
    *     automatically loaded by form_get_cache(). By default the current menu
    *     router item's 'file' definition is added, if any. Use
-   *     form_load_include() to add include files from a form constructor.
+   *     self::loadInclude() to add include files from a form constructor.
    *   - form_id: Identification of the primary form being constructed and
    *     processed.
    *   - base_form_id: Identification for a base form, as declared in the form
@@ -92,12 +83,12 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * re-submit the form). However, if 'rebuild' has been set to TRUE, then a new
    * copy of the form is immediately built and sent to the browser, instead of a
    * redirect. This is used for multi-step forms, such as wizards and
-   * confirmation forms. Normally, $form_state['rebuild'] is set by a submit
-   * handler, since its is usually logic within a submit handler that determines
-   * whether a form is done or requires another step. However, a validation
-   * handler may already set $form_state['rebuild'] to cause the form processing
-   * to bypass submit handlers and rebuild the form instead, even if there are
-   * no validation errors.
+   * confirmation forms. Normally, self::$rebuild is set by a submit handler,
+   * since its is usually logic within a submit handler that determines whether
+   * a form is done or requires another step. However, a validation handler may
+   * already set self::$rebuild to cause the form processing to bypass submit
+   * handlers and rebuild the form instead, even if there are no validation
+   * errors.
    *
    * This property is uncacheable.
    *
@@ -165,7 +156,8 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * each of these page requests. Often, it is necessary or desired to persist
    * the $form and $form_state variables from the initial page request to the
    * one that processes the submission. 'cache' can be set to TRUE to do this.
-   * A prominent example is an Ajax-enabled form, in which ajax_process_form()
+   * A prominent example is an Ajax-enabled form, in which
+   * \Drupal\Core\Render\Element\RenderElement::processAjaxForm()
    * enables form caching for all forms that include an element with the #ajax
    * property. (The Ajax handler has no way to build the form itself, so must
    * rely on the cached version.) Note that the persistence of $form and
@@ -196,7 +188,7 @@ class FormState implements FormStateInterface, \ArrayAccess {
    *
    * @var array
    */
-  protected $values;
+  protected $values = array();
 
   /**
    * The array of values as they were submitted by the user.
@@ -216,10 +208,6 @@ class FormState implements FormStateInterface, \ArrayAccess {
 
   /**
    * If TRUE and the method is GET, a form_id is not necessary.
-   *
-   * This should only be used on RESTful GET forms that do NOT write data, as
-   * this could lead to security issues. It is useful so that searches do not
-   * need to have a form_id in their query arguments to trigger the search.
    *
    * This property is uncacheable.
    *
@@ -326,7 +314,7 @@ class FormState implements FormStateInterface, \ArrayAccess {
    *  conflict with ones used by the Form API or other modules is to use the
    *  module name as the key name or a prefix for the key name. For example, the
    *  entity form classes use $this->entity in entity forms, or
-   *  $form_state['controller']->getEntity() outside the controller, to store
+   *  $form_state->getFormObject()->getEntity() outside the controller, to store
    *  information about the entity being edited, and this information stays
    *  available across successive clicks of the "Preview" button (if available)
    *  as well as when the "Save" button is finally clicked.
@@ -383,6 +371,13 @@ class FormState implements FormStateInterface, \ArrayAccess {
   /**
    * Stores which errors should be limited during validation.
    *
+   * An array of "sections" within which user input must be valid. If the
+   * element is within one of these sections, the error must be recorded.
+   * Otherwise, it can be suppressed. self::$limit_validation_errors can be an
+   * empty array, in which case all errors are suppressed. For example, a
+   * "Previous" button might want its submit action to be triggered even if none
+   * of the submitted values are valid.
+   *
    * This property is uncacheable.
    *
    * @var array|null
@@ -394,37 +389,30 @@ class FormState implements FormStateInterface, \ArrayAccess {
    *
    * This property is uncacheable.
    *
-   * @var array|null
+   * @var array
    */
-  protected $validate_handlers;
+  protected $validate_handlers = [];
 
   /**
    * Stores the gathered submission handlers.
    *
    * This property is uncacheable.
    *
-   * @var array|null
+   * @var array
    */
-  protected $submit_handlers;
-
-  /**
-   * Constructs a \Drupal\Core\Form\FormState object.
-   *
-   * @param array $form_state_additions
-   *   (optional) An associative array used to build the current state of the
-   *   form. Use this to pass additional information to the form, such as the
-   *   langcode. Defaults to an empty array.
-   */
-  public function __construct(array $form_state_additions = array()) {
-    $this->setFormState($form_state_additions);
-  }
+  protected $submit_handlers = [];
 
   /**
    * {@inheritdoc}
    */
   public function setFormState(array $form_state_additions) {
     foreach ($form_state_additions as $key => $value) {
-      $this->set($key, $value);
+      if (property_exists($this, $key)) {
+        $this->{$key} = $value;
+      }
+      else {
+        $this->set($key, $value);
+      }
     }
     return $this;
   }
@@ -432,22 +420,376 @@ class FormState implements FormStateInterface, \ArrayAccess {
   /**
    * {@inheritdoc}
    */
-  public function getCacheableArray($allowed_keys = array()) {
-    $cacheable_array = array(
-      'build_info' => $this->build_info,
-      'response' => $this->response,
+  public function setAlwaysProcess($always_process = TRUE) {
+    $this->always_process = (bool) $always_process;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAlwaysProcess() {
+    return $this->always_process;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setButtons(array $buttons) {
+    $this->buttons = $buttons;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getButtons() {
+    return $this->buttons;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setCached($cache = TRUE) {
+    $this->cache = (bool) $cache;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isCached() {
+    return empty($this->no_cache) && $this->cache;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function disableCache() {
+    $this->no_cache = TRUE;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setExecuted() {
+    $this->executed = TRUE;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isExecuted() {
+    return $this->executed;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setGroups(array $groups) {
+    $this->groups = $groups;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function &getGroups() {
+    return $this->groups;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setHasFileElement($has_file_element = TRUE) {
+    $this->has_file_element = (bool) $has_file_element;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasFileElement() {
+    return $this->has_file_element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLimitValidationErrors($limit_validation_errors) {
+    $this->limit_validation_errors = $limit_validation_errors;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLimitValidationErrors() {
+    return $this->limit_validation_errors;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setMethod($method) {
+    $this->method = strtoupper($method);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isMethodType($method_type) {
+    return $this->method === strtoupper($method_type);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValidationEnforced($must_validate = TRUE) {
+    $this->must_validate = (bool) $must_validate;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isValidationEnforced() {
+    return $this->must_validate;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function disableRedirect($no_redirect = TRUE) {
+    $this->no_redirect = (bool) $no_redirect;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isRedirectDisabled() {
+   return $this->no_redirect;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProcessInput($process_input = TRUE) {
+    $this->process_input = (bool) $process_input;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isProcessingInput() {
+    return $this->process_input;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProgrammed($programmed = TRUE) {
+    $this->programmed = (bool) $programmed;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isProgrammed() {
+    return $this->programmed;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProgrammedBypassAccessCheck($programmed_bypass_access_check = TRUE) {
+    $this->programmed_bypass_access_check = (bool) $programmed_bypass_access_check;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isBypassingProgrammedAccessChecks() {
+    return $this->programmed_bypass_access_check;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setRebuildInfo(array $rebuild_info) {
+    $this->rebuild_info = $rebuild_info;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRebuildInfo() {
+    return $this->rebuild_info;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function addRebuildInfo($property, $value) {
+    $rebuild_info = $this->getRebuildInfo();
+    $rebuild_info[$property] = $value;
+    $this->setRebuildInfo($rebuild_info);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setStorage(array $storage) {
+    $this->storage = $storage;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function &getStorage() {
+    return $this->storage;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSubmitHandlers(array $submit_handlers) {
+    $this->submit_handlers = $submit_handlers;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSubmitHandlers() {
+    return $this->submit_handlers;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSubmitted() {
+    $this->submitted = TRUE;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isSubmitted() {
+    return $this->submitted;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTemporary(array $temporary) {
+    $this->temporary = $temporary;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTemporary() {
+    return $this->temporary;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTriggeringElement($triggering_element) {
+    $this->triggering_element = $triggering_element;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function &getTriggeringElement() {
+    return $this->triggering_element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValidateHandlers(array $validate_handlers) {
+    $this->validate_handlers = $validate_handlers;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getValidateHandlers() {
+    return $this->validate_handlers;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValidationComplete($validation_complete = TRUE) {
+    $this->validation_complete = (bool) $validation_complete;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isValidationComplete() {
+    return $this->validation_complete;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function loadInclude($module, $type, $name = NULL) {
+    if (!isset($name)) {
+      $name = $module;
+    }
+    $build_info = $this->getBuildInfo();
+    if (!isset($build_info['files']["$module:$name.$type"])) {
+      // Only add successfully included files to the form state.
+      if ($result = $this->moduleLoadInclude($module, $type, $name)) {
+        $build_info['files']["$module:$name.$type"] = array(
+          'type' => $type,
+          'module' => $module,
+          'name' => $name,
+        );
+        $this->setBuildInfo($build_info);
+        return $result;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheableArray() {
+    return [
+      'build_info' => $this->getBuildInfo(),
+      'response' => $this->getResponse(),
+      'programmed' => $this->isProgrammed(),
+      'programmed_bypass_access_check' => $this->isBypassingProgrammedAccessChecks(),
+      'process_input' => $this->isProcessingInput(),
+      'has_file_element' => $this->hasFileElement(),
+      'storage' => $this->getStorage(),
+      // Use the properties directly, since self::isCached() combines them and
+      // cannot be relied upon.
       'cache' => $this->cache,
       'no_cache' => $this->no_cache,
-      'programmed' => $this->programmed,
-      'programmed_bypass_access_check' => $this->programmed_bypass_access_check,
-      'process_input' => $this->process_input,
-      'has_file_element' => $this->has_file_element,
-      'storage' => $this->storage,
-    ) + $this->internalStorage;
-    foreach ($allowed_keys as $allowed_key) {
-      $cacheable_array[$allowed_key] = $this->get($allowed_key);
-    }
-    return $cacheable_array;
+    ];
   }
 
   /**
@@ -468,70 +810,16 @@ class FormState implements FormStateInterface, \ArrayAccess {
   /**
    * {@inheritdoc}
    */
-  public function offsetExists($offset) {
-    return isset($this->{$offset}) || isset($this->internalStorage[$offset]);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function &offsetGet($offset) {
-    $value = &$this->get($offset);
+  public function &get($property) {
+    $value = &NestedArray::getValue($this->storage, (array) $property);
     return $value;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function offsetSet($offset, $value) {
-    $this->set($offset, $value);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function offsetUnset($offset) {
-    if (property_exists($this, $offset)) {
-      $this->{$offset} = NULL;
-    }
-    unset($this->internalStorage[$offset]);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setIfNotExists($property, $value) {
-    if (!$this->has($property)) {
-      $this->set($property, $value);
-    }
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function &get($property) {
-    if (property_exists($this, $property)) {
-      return $this->{$property};
-    }
-    else {
-      if (!isset($this->internalStorage[$property])) {
-        $this->internalStorage[$property] = NULL;
-      }
-      return $this->internalStorage[$property];
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function set($property, $value) {
-    if (property_exists($this, $property)) {
-      $this->{$property} = $value;
-    }
-    else {
-      $this->internalStorage[$property] = $value;
-    }
+    NestedArray::setValue($this->storage, (array) $property, $value, TRUE);
     return $this;
   }
 
@@ -539,56 +827,132 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * {@inheritdoc}
    */
   public function has($property) {
-    if (property_exists($this, $property)) {
-      return $this->{$property} !== NULL;
-    }
+    $exists = NULL;
+    NestedArray::getValue($this->storage, (array) $property, $exists);
+    return $exists;
+  }
 
-    return array_key_exists($property, $this->internalStorage);
+  /**
+   * {@inheritdoc}
+   */
+  public function setBuildInfo(array $build_info) {
+    $this->build_info = $build_info;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getBuildInfo() {
+    return $this->build_info;
   }
 
   /**
    * {@inheritdoc}
    */
   public function addBuildInfo($property, $value) {
-    $build_info = $this->get('build_info');
+    $build_info = $this->getBuildInfo();
     $build_info[$property] = $value;
-    $this->set('build_info', $build_info);
+    $this->setBuildInfo($build_info);
     return $this;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getValues() {
-    return $this->values ?: array();
+  public function &getUserInput() {
+    return $this->input;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function addValue($property, $value) {
-    $values = $this->getValues();
-    $values[$property] = $value;
-    $this->set('values', $values);
+  public function setUserInput(array $user_input) {
+    $this->input = $user_input;
     return $this;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setValueForElement($element, $value) {
-    $values = $this->getValues();
-    NestedArray::setValue($values, $element['#parents'], $value, TRUE);
-    $this->set('values', $values);
+  public function &getValues() {
+    return $this->values;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function &getValue($key, $default = NULL) {
+    $exists = NULL;
+    $value = &NestedArray::getValue($this->getValues(), (array) $key, $exists);
+    if (!$exists) {
+      $value = $default;
+    }
+    return $value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValues(array $values) {
+    $this->values = $values;
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValue($key, $value) {
+    NestedArray::setValue($this->getValues(), (array) $key, $value, TRUE);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function unsetValue($key) {
+    NestedArray::unsetValue($this->getValues(), (array) $key);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasValue($key) {
+    $exists = NULL;
+    $value = NestedArray::getValue($this->getValues(), (array) $key, $exists);
+    return $exists && isset($value);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isValueEmpty($key) {
+    $exists = NULL;
+    $value = NestedArray::getValue($this->getValues(), (array) $key, $exists);
+    return !$exists || empty($value);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValueForElement(array $element, $value) {
+    return $this->setValue($element['#parents'], $value);
   }
 
   /**
    * {@inheritdoc}
    */
   public function setResponse(Response $response) {
-    $this->set('response', $response);
+    $this->response = $response;
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getResponse() {
+    return $this->response;
   }
 
   /**
@@ -603,7 +967,7 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * {@inheritdoc}
    */
   public function setRedirectUrl(Url $url) {
-    $this->set('redirect', $url);
+    $this->redirect = $url;
     return $this;
   }
 
@@ -613,19 +977,19 @@ class FormState implements FormStateInterface, \ArrayAccess {
   public function getRedirect() {
     // Skip redirection for form submissions invoked via
     // \Drupal\Core\Form\FormBuilderInterface::submitForm().
-    if ($this->get('programmed')) {
+    if ($this->isProgrammed()) {
       return FALSE;
     }
     // Skip redirection if rebuild is activated.
-    if ($this->get('rebuild')) {
+    if ($this->isRebuilding()) {
       return FALSE;
     }
     // Skip redirection if it was explicitly disallowed.
-    if ($this->get('no_redirect')) {
+    if ($this->isRedirectDisabled()) {
       return FALSE;
     }
 
-    return $this->get('redirect');
+    return $this->redirect;
   }
 
   /**
@@ -649,31 +1013,24 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * {@inheritdoc}
    */
   public function setErrorByName($name, $message = '') {
-    if ($this->get('validation_complete')) {
+    if ($this->isValidationComplete()) {
       throw new \LogicException('Form errors cannot be set after form validation has finished.');
     }
 
     $errors = $this->getErrors();
     if (!isset($errors[$name])) {
       $record = TRUE;
-      $limit_validation_errors = $this->get('limit_validation_errors');
+      $limit_validation_errors = $this->getLimitValidationErrors();
       if ($limit_validation_errors !== NULL) {
-        // #limit_validation_errors is an array of "sections" within which user
-        // input must be valid. If the element is within one of these sections,
-        // the error must be recorded. Otherwise, it can be suppressed.
-        // #limit_validation_errors can be an empty array, in which case all
-        // errors are suppressed. For example, a "Previous" button might want
-        // its submit action to be triggered even if none of the submitted
-        // values are valid.
         $record = FALSE;
         foreach ($limit_validation_errors as $section) {
           // Exploding by '][' reconstructs the element's #parents. If the
           // reconstructed #parents begin with the same keys as the specified
           // section, then the element's values are within the part of
-          // $form_state['values'] that the clicked button requires to be valid,
-          // so errors for this element must be recorded. As the exploded array
-          // will all be strings, we need to cast every value of the section
-          // array to string.
+          // $form_state->getValues() that the clicked button requires to be
+          // valid, so errors for this element must be recorded. As the exploded
+          // array will all be strings, we need to cast every value of the
+          // section array to string.
           if (array_slice(explode('][', $name), 0, count($section)) === array_map('strval', $section)) {
             $record = TRUE;
             break;
@@ -682,7 +1039,7 @@ class FormState implements FormStateInterface, \ArrayAccess {
       }
       if ($record) {
         $errors[$name] = $message;
-        $this->set('errors', $errors);
+        $this->errors = $errors;
         static::setAnyErrors();
         if ($message) {
           $this->drupalSetMessage($message, 'error');
@@ -696,7 +1053,7 @@ class FormState implements FormStateInterface, \ArrayAccess {
   /**
    * {@inheritdoc}
    */
-  public function setError(&$element, $message = '') {
+  public function setError(array &$element, $message = '') {
     $this->setErrorByName(implode('][', $element['#parents']), $message);
     return $this;
   }
@@ -705,14 +1062,14 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * {@inheritdoc}
    */
   public function clearErrors() {
-    $this->set('errors', array());
+    $this->errors = [];
     static::setAnyErrors(FALSE);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getError($element) {
+  public function getError(array $element) {
     if ($errors = $this->getErrors($this)) {
       $parents = array();
       foreach ($element['#parents'] as $parent) {
@@ -729,15 +1086,91 @@ class FormState implements FormStateInterface, \ArrayAccess {
    * {@inheritdoc}
    */
   public function getErrors() {
-    return $this->get('errors');
+    return $this->errors;
   }
 
   /**
    * {@inheritdoc}
    */
   public function setRebuild($rebuild = TRUE) {
-    $this->set('rebuild', $rebuild);
+    $this->rebuild = $rebuild;
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isRebuilding() {
+    return $this->rebuild;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareCallback($callback) {
+    if (is_string($callback) && substr($callback, 0, 2) == '::') {
+      $callback = [$this->getFormObject(), substr($callback, 2)];
+    }
+    return $callback;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setFormObject(FormInterface $form_object) {
+    $this->addBuildInfo('callback_object', $form_object);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFormObject() {
+    return $this->getBuildInfo()['callback_object'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function cleanValues() {
+    // Remove internal Form API values.
+    $this
+      ->unsetValue('form_id')
+      ->unsetValue('form_token')
+      ->unsetValue('form_build_id')
+      ->unsetValue('op');
+
+    // Remove button values.
+    // form_builder() collects all button elements in a form. We remove the button
+    // value separately for each button element.
+    foreach ($this->getButtons() as $button) {
+      // Remove this button's value from the submitted form values by finding
+      // the value corresponding to this button.
+      // We iterate over the #parents of this button and move a reference to
+      // each parent in self::getValues(). For example, if #parents is:
+      //   array('foo', 'bar', 'baz')
+      // then the corresponding self::getValues() part will look like this:
+      // array(
+      //   'foo' => array(
+      //     'bar' => array(
+      //       'baz' => 'button_value',
+      //     ),
+      //   ),
+      // )
+      // We start by (re)moving 'baz' to $last_parent, so we are able unset it
+      // at the end of the iteration. Initially, $values will contain a
+      // reference to self::getValues(), but in the iteration we move the
+      // reference to self::getValue('foo'), and finally to
+      // self::getValue(array('foo', 'bar')), which is the level where we
+      // can unset 'baz' (that is stored in $last_parent).
+      $parents = $button['#parents'];
+      $last_parent = array_pop($parents);
+      $key_exists = NULL;
+      $values = &NestedArray::getValue($this->getValues(), $parents, $key_exists);
+      if ($key_exists && is_array($values)) {
+        unset($values[$last_parent]);
+      }
+    }
   }
 
   /**
@@ -747,6 +1180,13 @@ class FormState implements FormStateInterface, \ArrayAccess {
    */
   protected function drupalSetMessage($message = NULL, $type = 'status', $repeat = FALSE) {
     return drupal_set_message($message, $type, $repeat);
+  }
+
+  /**
+   * Wraps ModuleHandler::loadInclude().
+   */
+  protected function moduleLoadInclude($module, $type, $name = NULL) {
+    return \Drupal::moduleHandler()->loadInclude($module, $type, $name);
   }
 
 }

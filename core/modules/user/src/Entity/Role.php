@@ -7,6 +7,7 @@
 
 namespace Drupal\user\Entity;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\user\RoleInterface;
@@ -17,7 +18,7 @@ use Drupal\user\RoleInterface;
  * @ConfigEntityType(
  *   id = "user_role",
  *   label = @Translation("Role"),
- *   controllers = {
+ *   handlers = {
  *     "storage" = "Drupal\user\RoleStorage",
  *     "access" = "Drupal\user\RoleAccessControlHandler",
  *     "list_builder" = "Drupal\user\RoleListBuilder",
@@ -28,6 +29,7 @@ use Drupal\user\RoleInterface;
  *   },
  *   admin_permission = "administer permissions",
  *   config_prefix = "role",
+ *   static_cache = TRUE,
  *   entity_keys = {
  *     "id" = "id",
  *     "weight" = "weight",

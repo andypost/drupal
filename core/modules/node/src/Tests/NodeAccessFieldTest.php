@@ -42,7 +42,7 @@ class NodeAccessFieldTest extends NodeTestBase {
    */
   protected $field_name;
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     node_access_rebuild();
@@ -58,7 +58,7 @@ class NodeAccessFieldTest extends NodeTestBase {
       'entity_type' => 'node',
       'type' => 'text'
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_name' => $this->field_name,
       'entity_type' => 'node',
       'bundle' => 'page',

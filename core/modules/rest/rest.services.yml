@@ -24,6 +24,9 @@ services:
     arguments: ['@cache.default', '@entity.manager']
   rest.resource_routes:
     class: Drupal\rest\Routing\ResourceRoutes
-    arguments: ['@plugin.manager.rest', '@config.factory']
+    arguments: ['@plugin.manager.rest', '@config.factory', '@logger.channel.rest']
     tags:
       - { name: 'event_subscriber' }
+  logger.channel.rest:
+    parent: logger.channel_base
+    arguments: ['rest']

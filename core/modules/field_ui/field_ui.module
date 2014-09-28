@@ -9,7 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\entity\EntityViewModeInterface;
+use Drupal\Core\Entity\EntityViewModeInterface;
 use Drupal\field_ui\FieldUI;
 use Drupal\field_ui\Plugin\Derivative\FieldUiLocalTask;
 
@@ -21,7 +21,7 @@ function field_ui_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.field_ui':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('The Field UI module provides an administrative user interface (UI) for attaching and managing fields. Fields can be defined at the content-type level for content items and comments, at the vocabulary level for taxonomy terms, and at the site level for user accounts. Other modules may also enable fields to be defined for their data. Field types (text, image, number, etc.) are defined by modules, and collected and managed by the <a href="@field">Field module</a>. For more information, see the online handbook entry for <a href="@field_ui" target="_blank">Field UI module</a>.', array('@field' => url('admin/help/field'), '@field_ui' => 'http://drupal.org/documentation/modules/field-ui')) . '</p>';
+      $output .= '<p>' . t('The Field UI module provides an administrative user interface (UI) for attaching and managing fields. Fields can be defined at the content-type level for content items and comments, at the vocabulary level for taxonomy terms, and at the site level for user accounts. Other modules may also enable fields to be defined for their data. Field types (text, image, number, etc.) are defined by modules, and collected and managed by the <a href="@field">Field module</a>. For more information, see the online handbook entry for <a href="@field_ui" target="_blank">Field UI module</a>.', array('@field' => \Drupal::url('help.page', array('name' => 'field')), '@field_ui' => 'http://drupal.org/documentation/modules/field-ui')) . '</p>';
       $output .= '<h3>' . t('Uses') . '</h3>';
       $output .= '<dl>';
       $output .= '<dt>' . t('Planning fields') . '</dt>';
@@ -40,45 +40,23 @@ function field_ui_help($route_name, RouteMatchInterface $route_match) {
       $output .= '<dd>' . t('Some settings of a reused field are unique to each use of the field; others are shared across all places you use the field. For example, the label of a text field is unique to each use, while the setting for the number of values is shared.') . '</dd>';
       $output .= '<dd>' . t('There are two main reasons for reusing fields. First, reusing fields can save you time over defining new fields. Second, reusing fields also allows you to display, filter, group, and sort content together by field across content types. For example, the contributed Views module allows you to create lists and tables of content. So if you use the same field on multiple content types, you can create a View containing all of those content types together displaying that field, sorted by that field, and/or filtered by that field.') . '</dd>';
       $output .= '<dt>' . t('Fields on content items') . '</dt>';
-      $output .= '<dd>' . t('Fields on content items are defined at the content-type level, on the <em>Manage fields</em> tab of the content type edit page (which you can reach from the <a href="@types">Content types page</a>). When you define a field for a content type, each content item of that type will have that field added to it. Some fields, such as the Title and Body, are provided for you when you create a content type, or are provided on content types created by your installation profile.', array('@types' => url('admin/structure/types'))) . '</dd>';
+      $output .= '<dd>' . t('Fields on content items are defined at the content-type level, on the <em>Manage fields</em> tab of the content type edit page (which you can reach from the <a href="@types">Content types page</a>). When you define a field for a content type, each content item of that type will have that field added to it. Some fields, such as the Title and Body, are provided for you when you create a content type, or are provided on content types created by your installation profile.', array('@types' => \Drupal::url('node.overview_types'))) . '</dd>';
       $output .= '<dt>' . t('Fields on taxonomy terms') . '</dt>';
-      $output .= '<dd>' . t('Fields on taxonomy terms are defined at the taxonomy vocabulary level, on the <em>Manage fields</em> tab of the vocabulary edit page (which you can reach from the <a href="@taxonomy">Taxonomy page</a>). When you define a field for a vocabulary, each term in that vocabulary will have that field added to it. For example, you could define an image field for a vocabulary to store an icon with each term.', array('@taxonomy' => url('admin/structure/taxonomy'))) . '</dd>';
+      $output .= '<dd>' . t('Fields on taxonomy terms are defined at the taxonomy vocabulary level, on the <em>Manage fields</em> tab of the vocabulary edit page (which you can reach from the <a href="@taxonomy">Taxonomy page</a>). When you define a field for a vocabulary, each term in that vocabulary will have that field added to it. For example, you could define an image field for a vocabulary to store an icon with each term.', array('@taxonomy' => \Drupal::url('taxonomy.vocabulary_list'))) . '</dd>';
       $output .= '<dt>' . t('Fields on user accounts') . '</dt>';
-      $output .= '<dd>' . t('Fields on user accounts are defined on a site-wide basis on the <a href="@fields">Manage fields tab</a> of the <a href="@accounts">Account settings</a> page. When you define a field for user accounts, each user account will have that field added to it. For example, you could add a long text field to allow users to include a biography.', array('@fields' => url('admin/config/people/accounts/fields'), '@accounts' => url('admin/config/people/accounts'))) . '</dd>';
+      $output .= '<dd>' . t('Fields on user accounts are defined on a site-wide basis on the <a href="@fields">Manage fields tab</a> of the <a href="@accounts">Account settings</a> page. When you define a field for user accounts, each user account will have that field added to it. For example, you could add a long text field to allow users to include a biography.', array('@fields' => \Drupal::url('field_ui.overview_user'), '@accounts' => \Drupal::url('entity.user.admin_form'))) . '</dd>';
       $output .= '<dt>' . t('Fields on comments') . '</dt>';
-      $output .= '<dd>' . t('Fields on comments are defined at the content-type level, on the <em>Comment fields</em> tab of the content type edit page (which you can reach from the <a href="@types">Content types page</a>). When you add a field for comments, each comment on a content item of that type will have that field added to it. For example, you could add a website field to the comments on forum posts, to allow forum commenters to add a link to their website.', array('@types' => url('admin/structure/types'))) . '</dd>';
+      $output .= '<dd>' . t('Fields on comments are defined at the content-type level, on the <em>Comment fields</em> tab of the content type edit page (which you can reach from the <a href="@types">Content types page</a>). When you add a field for comments, each comment on a content item of that type will have that field added to it. For example, you could add a website field to the comments on forum posts, to allow forum commenters to add a link to their website.', array('@types' => \Drupal::url('node.overview_types'))) . '</dd>';
       $output .= '</dl>';
+      $output .= '<dt>' . t('Managing view modes') . '</dt>';
+      $output .= '<dd>' . t('Each content entity can have various "modes" for viewing. For instance, a content item could be viewed in full content mode on its own page, teaser mode in a list, or RSS mode in a feed. You can create, edit the names of, and delete view modes on the <a href="!view-modes">View modes page</a>. Once a view mode has been set up, you can choose and format fields for the view mode within each entity sub-type on the Manage display page. See the <a href="!field_ui">Field UI module help page</a> for more information.', array('!view-modes' => \Drupal::url('field_ui.entity_view_mode_list'), '!field_ui' => \Drupal::url('help.page', array('name' => 'field_ui')))) . '</dd>';
+      $output .= '<dt>' . t('Managing form modes') . '</dt>';
+      $output .= '<dd>' . t('Each content entity can have various editing forms appropriate for different situations, which are known as "form modes". For instance, you might want to define a quick editing mode that allows users to edit the most important fields, and a full editing mode that gives access to all the fields. You can create, edit the names of, and delete form modes on the <a href="!form-modes">Manage custom form modes page</a>. Once a form mode has been set up, you can choose which fields are available on that form within each entity sub-type on the Manage form display page. See the <a href="!field_ui">Field UI module help page</a> for more information.', array('!form-modes' => \Drupal::url('field_ui.entity_form_mode_list'), '!field_ui' => \Drupal::url('help.page', array('name' => 'field_ui')))) . '</dd>';
       return $output;
 
     case 'field_ui.list':
       return '<p>' . t('This list shows all fields currently in use for easy reference.') . '</p>';
   }
-}
-
-/**
- * Implements hook_permission().
- */
-function field_ui_permission() {
-  $permissions = array();
-
-  foreach (\Drupal::entityManager()->getDefinitions() as $entity_type_id => $entity_type) {
-    if ($entity_type->isFieldable()) {
-      // Create a permission for each fieldable entity to manage
-      // the fields and the display.
-      $permissions['administer ' . $entity_type_id . ' fields'] = array(
-        'title' => t('%entity_label: Administer fields', array('%entity_label' => $entity_type->getLabel())),
-        'restrict access' => TRUE,
-      );
-      $permissions['administer ' . $entity_type_id . ' form display'] = array(
-        'title' => t('%entity_label: Administer form display', array('%entity_label' => $entity_type->getLabel()))
-      );
-      $permissions['administer ' . $entity_type_id . ' display'] = array(
-        'title' => t('%entity_label: Administer display', array('%entity_label' => $entity_type->getLabel()))
-      );
-    }
-  }
-
-  return $permissions;
 }
 
 /**
@@ -94,6 +72,8 @@ function field_ui_theme() {
 
 /**
  * Implements hook_element_info().
+ *
+ * @todo Remove once https://www.drupal.org/node/2326409 is in.
  */
 function field_ui_element_info() {
   return array(
@@ -109,8 +89,8 @@ function field_ui_element_info() {
  */
 function field_ui_entity_type_build(array &$entity_types) {
   /** @var $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
-  $entity_types['field_instance_config']->setFormClass('delete', 'Drupal\field_ui\Form\FieldInstanceConfigDeleteForm');
-  $entity_types['field_instance_config']->setListBuilderClass('Drupal\field_ui\FieldInstanceConfigListBuilder');
+  $entity_types['field_config']->setFormClass('delete', 'Drupal\field_ui\Form\FieldConfigDeleteForm');
+  $entity_types['field_config']->setListBuilderClass('Drupal\field_ui\FieldConfigListBuilder');
   $entity_types['field_storage_config']->setListBuilderClass('Drupal\field_ui\FieldStorageConfigListBuilder');
 
   foreach ($entity_types as $entity_type) {
@@ -151,7 +131,7 @@ function field_ui_entity_bundle_rename($entity_type, $bundle_old, $bundle_new) {
  */
 function field_ui_form_node_type_form_alter(&$form, FormStateInterface $form_state) {
   // We want to display the button only on add page.
-  if ($form_state['controller']->getEntity()->isNew()) {
+  if ($form_state->getFormObject()->getEntity()->isNew()) {
     $form['actions']['save_continue'] = $form['actions']['submit'];
     $form['actions']['save_continue']['#value'] = t('Save and manage fields');
     $form['actions']['save_continue']['#weight'] = $form['actions']['save_continue']['#weight'] + 5;
@@ -200,7 +180,7 @@ function field_ui_entity_operation(EntityInterface $entity) {
  * @see field_ui_form_node_type_form_alter()
  */
 function field_ui_form_node_type_form_submit($form, FormStateInterface $form_state) {
-  if ($form_state['triggering_element']['#parents'][0] === 'save_continue' && $route_info = FieldUI::getOverviewRouteInfo('node', $form_state['values']['type'])) {
+  if ($form_state->getTriggeringElement()['#parents'][0] === 'save_continue' && $route_info = FieldUI::getOverviewRouteInfo('node', $form_state->getValue('type'))) {
     $form_state->setRedirectUrl($route_info);
   }
 }
@@ -307,4 +287,28 @@ function field_ui_local_tasks_alter(&$local_tasks) {
   $container = \Drupal::getContainer();
   $local_task = FieldUiLocalTask::create($container, 'field_ui.fields');
   $local_task->alterLocalTasks($local_tasks);
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function field_ui_entity_type_alter(array &$entity_types) {
+  /** @var $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
+  $form_mode = $entity_types['entity_form_mode'];
+  $form_mode->setListBuilderClass('Drupal\field_ui\EntityFormModeListBuilder');
+  $form_mode->setFormClass('add', 'Drupal\field_ui\Form\EntityFormModeAddForm');
+  $form_mode->setFormClass('edit', 'Drupal\field_ui\Form\EntityDisplayModeEditForm');
+  $form_mode->setFormClass('delete', 'Drupal\field_ui\Form\EntityDisplayModeDeleteForm');
+  $form_mode->set('admin_permission', 'administer display modes');
+  $form_mode->setLinkTemplate('delete-form', 'field_ui.entity_form_mode.delete_form');
+  $form_mode->setLinkTemplate('edit-form', 'field_ui.entity_form_mode.edit_form');
+
+  $view_mode = $entity_types['entity_view_mode'];
+  $view_mode->setListBuilderClass('Drupal\field_ui\EntityDisplayModeListBuilder');
+  $view_mode->setFormClass('add', 'Drupal\field_ui\Form\EntityDisplayModeAddForm');
+  $view_mode->setFormClass('edit', 'Drupal\field_ui\Form\EntityDisplayModeEditForm');
+  $view_mode->setFormClass('delete', 'Drupal\field_ui\Form\EntityDisplayModeDeleteForm');
+  $view_mode->set('admin_permission', 'administer display modes');
+  $view_mode->setLinkTemplate('delete-form', 'field_ui.entity_view_mode.delete_form');
+  $view_mode->setLinkTemplate('edit-form', 'field_ui.entity_view_mode.edit_form');
 }

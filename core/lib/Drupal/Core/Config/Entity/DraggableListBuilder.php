@@ -118,10 +118,21 @@ abstract class DraggableListBuilder extends ConfigEntityListBuilder implements F
     );
 
     $this->entities = $this->load();
+    $delta = 10;
+    // Change the delta of the weight field if have more than 20 entities.
+    if (!empty($this->weightKey)) {
+      $count = count($this->entities);
+      if ($count > 20) {
+        $delta = ceil($count / 2);
+      }
+    }
     foreach ($this->entities as $entity) {
       $row = $this->buildRow($entity);
       if (isset($row['label'])) {
         $row['label'] = array('#markup' => $row['label']);
+      }
+      if (isset($row['weight'])) {
+        $row['weight']['#delta'] = $delta;
       }
       $form[$this->entitiesKey][$entity->id()] = $row;
     }
@@ -147,7 +158,7 @@ abstract class DraggableListBuilder extends ConfigEntityListBuilder implements F
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    foreach ($form_state['values'][$this->entitiesKey] as $id => $value) {
+    foreach ($form_state->getValue($this->entitiesKey) as $id => $value) {
       if (isset($this->entities[$id]) && $this->entities[$id]->get($this->weightKey) != $value['weight']) {
         // Save entity only when its weight was changed.
         $this->entities[$id]->set($this->weightKey, $value['weight']);

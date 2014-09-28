@@ -7,11 +7,10 @@
 
 namespace Drupal\Tests\Core\Access;
 
-use Drupal\Core\Access\AccessManagerInterface;
+use Drupal\Core\Access\AccessResult;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 use Drupal\Core\Access\CsrfAccessCheck;
-use Drupal\Core\Access\AccessInterface;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -35,18 +34,18 @@ class CsrfAccessCheckTest extends UnitTestCase {
   protected $accessCheck;
 
   /**
-   * The mock user account.
+   * The mock route match.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\RouteMatch\RouteMatchInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  protected $account;
+  protected $routeMatch;
 
-  public function setUp() {
+  protected function setUp() {
     $this->csrfToken = $this->getMockBuilder('Drupal\Core\Access\CsrfTokenGenerator')
       ->disableOriginalConstructor()
       ->getMock();
 
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->routeMatch = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
 
     $this->accessCheck = new CsrfAccessCheck($this->csrfToken);
   }
@@ -57,16 +56,17 @@ class CsrfAccessCheckTest extends UnitTestCase {
   public function testAccessTokenPass() {
     $this->csrfToken->expects($this->once())
       ->method('validate')
-      ->with('test_query', '/test-path')
+      ->with('test_query', 'test-path/42')
       ->will($this->returnValue(TRUE));
 
-    $route = new Route('/test-path', array(), array('_csrf_token' => 'TRUE'));
-    $request = Request::create('/test-path?token=test_query');
-    $request->attributes->set('_system_path', '/test-path');
-    // Set the _controller_request flag so tokens are validated.
-    $request->attributes->set('_controller_request', TRUE);
+    $this->routeMatch->expects($this->once())
+      ->method('getRawParameters')
+      ->will($this->returnValue(array('node' => 42)));
 
-    $this->assertSame(AccessInterface::ALLOW, $this->accessCheck->access($route, $request, $this->account));
+    $route = new Route('/test-path/{node}', array(), array('_csrf_token' => 'TRUE'));
+    $request = Request::create('/test-path/42?token=test_query');
+
+    $this->assertEquals(AccessResult::allowed()->setCacheable(FALSE), $this->accessCheck->access($route, $request, $this->routeMatch));
   }
 
   /**
@@ -75,54 +75,17 @@ class CsrfAccessCheckTest extends UnitTestCase {
   public function testAccessTokenFail() {
     $this->csrfToken->expects($this->once())
       ->method('validate')
-      ->with('test_query', '/test-path')
+      ->with('test_query', 'test-path')
       ->will($this->returnValue(FALSE));
+
+    $this->routeMatch->expects($this->once())
+      ->method('getRawParameters')
+      ->will($this->returnValue(array()));
 
     $route = new Route('/test-path', array(), array('_csrf_token' => 'TRUE'));
     $request = Request::create('/test-path?token=test_query');
-    $request->attributes->set('_system_path', '/test-path');
-    // Set the _controller_request flag so tokens are validated.
-    $request->attributes->set('_controller_request', TRUE);
 
-    $this->assertSame(AccessInterface::KILL, $this->accessCheck->access($route, $request, $this->account));
-  }
-
-  /**
-   * Tests the access() method with no _controller_request attribute set.
-   *
-   * This will default to the AccessManagerInterface::ACCESS_MODE_ANY access conjunction.
-   *
-   * @see Drupal\Core\Access\AccessManagerInterface::ACCESS_MODE_ANY
-   */
-  public function testAccessTokenMissAny() {
-    $this->csrfToken->expects($this->never())
-      ->method('validate');
-
-    $route = new Route('/test-path', array(), array('_csrf_token' => 'TRUE'));
-    $request = new Request(array(
-      'token' => 'test_query',
-    ));
-
-    $this->assertSame(AccessInterface::DENY, $this->accessCheck->access($route, $request, $this->account));
-  }
-
-  /**
-   * Tests the access() method with no _controller_request attribute set.
-   *
-   * This will use the AccessManagerInterface::ACCESS_MODE_ALL access conjunction.
-   *
-   * @see Drupal\Core\Access\AccessManagerInterface::ACCESS_MODE_ALL
-   */
-  public function testAccessTokenMissAll() {
-    $this->csrfToken->expects($this->never())
-      ->method('validate');
-
-    $route = new Route('/test-path', array(), array('_csrf_token' => 'TRUE'), array('_access_mode' => AccessManagerInterface::ACCESS_MODE_ALL));
-    $request = new Request(array(
-      'token' => 'test_query',
-    ));
-
-    $this->assertSame(AccessInterface::ALLOW, $this->accessCheck->access($route, $request, $this->account));
+    $this->assertEquals(AccessResult::forbidden()->setCacheable(FALSE), $this->accessCheck->access($route, $request, $this->routeMatch));
   }
 
 }

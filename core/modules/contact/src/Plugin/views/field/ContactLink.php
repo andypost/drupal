@@ -87,9 +87,9 @@ class ContactLink extends Link {
    */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
-    $form['text']['#title'] = t('Link label');
+    $form['text']['#title'] = $this->t('Link label');
     $form['text']['#required'] = TRUE;
-    $form['text']['#default_value'] = empty($this->options['text']) ? t('contact') : $this->options['text'];
+    $form['text']['#default_value'] = empty($this->options['text']) ? $this->t('contact') : $this->options['text'];
   }
 
   /**
@@ -112,14 +112,14 @@ class ContactLink extends Link {
 
     // Check access when we pull up the user account so we know
     // if the user has made the contact page available.
-    if (!$this->accessManager->checkNamedRoute('contact.personal_page', array('user' => $entity->id()), $this->currentUser())) {
+    if (!$this->accessManager->checkNamedRoute('entity.user.contact_form', array('user' => $entity->id()), $this->currentUser())) {
       return;
     }
 
     $this->options['alter']['make_link'] = TRUE;
     $this->options['alter']['path'] = "user/{$entity->id()}/contact";
 
-    $title = t('Contact %user', array('%user' => $entity->name->value));
+    $title = $this->t('Contact %user', array('%user' => $entity->name->value));
     $this->options['alter']['attributes'] = array('title' => $title);
 
     if (!empty($this->options['text'])) {

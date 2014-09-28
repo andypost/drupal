@@ -39,13 +39,13 @@ class HandlerFieldFieldTest extends FieldTestBase {
     parent::setUp();
 
     // Setup basic fields.
-    $this->setUpFields(3);
+    $this->setUpFieldStorages(3);
 
     // Setup a field with cardinality > 1.
     $this->fieldStorages[3] = entity_create('field_storage_config', array(
       'name' => 'field_name_3',
       'entity_type' => 'node',
-      'type' => 'text',
+      'type' => 'string',
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
     ));
     $this->fieldStorages[3]->save();
@@ -53,19 +53,27 @@ class HandlerFieldFieldTest extends FieldTestBase {
     $this->fieldStorages[4] = entity_create('field_storage_config', array(
       'name' => 'field_name_4',
       'entity_type' => 'node',
-      'type' => 'text',
+      'type' => 'string',
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
     ));
     $this->fieldStorages[4]->save();
 
-    $this->setUpInstances();
+    // Setup a text field.
+    $this->fieldStorages[5] = entity_create('field_storage_config', array(
+      'name' => 'field_name_5',
+      'entity_type' => 'node',
+      'type' => 'text',
+    ));
+    $this->fieldStorages[5]->save();
+
+    $this->setUpFields();
 
     // Create some nodes.
     $this->nodes = array();
     for ($i = 0; $i < 3; $i++) {
       $edit = array('type' => 'page');
 
-      for ($key = 0; $key < 3; $key++) {
+      foreach (array(0, 1, 2, 5) as $key) {
         $field_storage = $this->fieldStorages[$key];
         $edit[$field_storage->getName()][0]['value'] = $this->randomMachineName(8);
       }
@@ -125,8 +133,8 @@ class HandlerFieldFieldTest extends FieldTestBase {
   public function _testFormatterSimpleFieldRender() {
     $view = Views::getView('test_view_fieldapi');
     $this->prepareView($view);
-    $view->displayHandlers->get('default')->options['fields'][$this->fieldStorages[0]->getName()]['type'] = 'text_trimmed';
-    $view->displayHandlers->get('default')->options['fields'][$this->fieldStorages[0]->getName()]['settings'] = array(
+    $view->displayHandlers->get('default')->options['fields'][$this->fieldStorages[5]->getName()]['type'] = 'text_trimmed';
+    $view->displayHandlers->get('default')->options['fields'][$this->fieldStorages[5]->getName()]['settings'] = array(
       'trim_length' => 3,
     );
     $this->executeView($view);
@@ -134,8 +142,8 @@ class HandlerFieldFieldTest extends FieldTestBase {
     // Make sure that the formatter works as expected.
     // @TODO: actually there should be a specific formatter.
     for ($i = 0; $i < 2; $i++) {
-      $rendered_field = $view->style_plugin->getField($i, $this->fieldStorages[0]->getName());
-      $this->assertEqual(strlen($rendered_field), 3);
+      $rendered_field = $view->style_plugin->getField($i, $this->fieldStorages[5]->getName());
+      $this->assertEqual(strlen(html_entity_decode($rendered_field)), 3);
     }
   }
 

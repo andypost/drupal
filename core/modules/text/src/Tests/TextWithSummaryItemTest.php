@@ -33,14 +33,14 @@ class TextWithSummaryItemTest extends FieldUnitTestBase {
   protected $fieldStorage;
 
   /**
-   * Field instance.
+   * Field entity.
    *
-   * @var \Drupal\field\Entity\FieldInstanceConfig
+   * @var \Drupal\field\Entity\FieldConfig
    */
-  protected $instance;
+  protected $field;
 
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     $this->installEntitySchema('entity_test_rev');
@@ -72,18 +72,8 @@ class TextWithSummaryItemTest extends FieldUnitTestBase {
     $this->assertTrue($entity->summary_field instanceof FieldItemListInterface, 'Field implements interface.');
     $this->assertTrue($entity->summary_field[0] instanceof FieldItemInterface, 'Field item implements interface.');
     $this->assertEqual($entity->summary_field->value, $value);
-    $this->assertEqual($entity->summary_field->processed, $value);
     $this->assertEqual($entity->summary_field->summary, $summary);
-    $this->assertEqual($entity->summary_field->summary_processed, $summary);
     $this->assertNull($entity->summary_field->format);
-
-    // Enable text processing.
-    $this->instance->settings['text_processing'] = 1;
-    $this->instance->save();
-
-    // Re-load the entity.
-    $entity = entity_load($entity_type, $entity->id(), TRUE);
-
     // Even if no format is given, if text processing is enabled, the default
     // format is used.
     $this->assertEqual($entity->summary_field->processed, "<p>$value</p>\n");
@@ -93,10 +83,15 @@ class TextWithSummaryItemTest extends FieldUnitTestBase {
     $entity->summary_field->format = 'no_filters';
     $this->assertEqual($entity->summary_field->processed, $value);
     $this->assertEqual($entity->summary_field->summary_processed, $summary);
+
+    // Test the generateSampleValue() method.
+    $entity = entity_create($entity_type);
+    $entity->summary_field->generateSampleItems();
+    $this->entityValidateAndSave($entity);
   }
 
   /**
-   * Creates a text_with_summary field and field instance.
+   * Creates a text_with_summary field storage and field.
    *
    * @param string $entity_type
    *   Entity type for which the field should be created.
@@ -112,14 +107,11 @@ class TextWithSummaryItemTest extends FieldUnitTestBase {
       )
     ));
     $this->fieldStorage->save();
-    $this->instance = entity_create('field_instance_config', array(
+    $this->field = entity_create('field_config', array(
       'field_storage' => $this->fieldStorage,
       'bundle' => $entity_type,
-      'settings' => array(
-        'text_processing' => 0,
-      )
     ));
-    $this->instance->save();
+    $this->field->save();
   }
 
 }

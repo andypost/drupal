@@ -109,10 +109,12 @@ class ApcuBackend implements CacheBackendInterface {
 
     $result = apc_fetch(array_keys($map));
     $cache = array();
-    foreach ($result as $key => $item) {
-      $item = $this->prepareItem($item, $allow_invalid);
-      if ($item) {
-        $cache[$map[$key]] = $item;
+    if ($result) {
+      foreach ($result as $key => $item) {
+        $item = $this->prepareItem($item, $allow_invalid);
+        if ($item) {
+          $cache[$map[$key]] = $item;
+        }
       }
     }
     unset($result);
@@ -187,11 +189,13 @@ class ApcuBackend implements CacheBackendInterface {
    * {@inheritdoc}
    */
   public function set($cid, $data, $expire = CacheBackendInterface::CACHE_PERMANENT, array $tags = array()) {
+    Cache::validateTags($tags);
+    $tags = array_unique($tags);
     $cache = new \stdClass();
     $cache->cid = $cid;
     $cache->created = round(microtime(TRUE), 3);
     $cache->expire = $expire;
-    $cache->tags = implode(' ', $this->flattenTags($tags));
+    $cache->tags = implode(' ', $tags);
     $checksum = $this->checksumTags($tags);
     $cache->checksum_invalidations = $checksum['invalidations'];
     $cache->checksum_deletions = $checksum['deletions'];
@@ -283,7 +287,7 @@ class ApcuBackend implements CacheBackendInterface {
    * {@inheritdoc}
    */
   public function deleteTags(array $tags) {
-    foreach ($this->flattenTags($tags) as $tag) {
+    foreach ($tags as $tag) {
       apc_inc($this->deletionsTagsPrefix . $tag, 1, $success);
       if (!$success) {
         apc_store($this->deletionsTagsPrefix . $tag, 1);
@@ -295,40 +299,12 @@ class ApcuBackend implements CacheBackendInterface {
    * {@inheritdoc}
    */
   public function invalidateTags(array $tags) {
-    foreach ($this->flattenTags($tags) as $tag) {
+    foreach ($tags as $tag) {
       apc_inc($this->invalidationsTagsPrefix . $tag, 1, $success);
       if (!$success) {
         apc_store($this->invalidationsTagsPrefix . $tag, 1);
       }
     }
-  }
-
-  /**
-   * Flattens a tags array into a numeric array suitable for string storage.
-   *
-   * @param array $tags
-   *   Associative array of tags to flatten.
-   *
-   * @return array
-   *   Indexed array of flattened tag identifiers.
-   */
-  protected function flattenTags(array $tags) {
-    if (isset($tags[0])) {
-      return $tags;
-    }
-
-    $flat_tags = array();
-    foreach ($tags as $namespace => $values) {
-      if (is_array($values)) {
-        foreach ($values as $value) {
-          $flat_tags[] = "$namespace:$value";
-        }
-      }
-      else {
-        $flat_tags[] = "$namespace:$values";
-      }
-    }
-    return $flat_tags;
   }
 
   /**
@@ -344,7 +320,7 @@ class ApcuBackend implements CacheBackendInterface {
     $checksum = array('invalidations' => 0, 'deletions' => 0);
     $query_tags = array('invalidations' => array(), 'deletions' => array());
 
-    foreach ($this->flattenTags($tags) as $tag) {
+    foreach ($tags as $tag) {
       foreach (array('deletions', 'invalidations') as $type) {
         if (isset(static::$tagCache[$type][$tag])) {
           $checksum[$type] += static::$tagCache[$type][$tag];
@@ -358,8 +334,10 @@ class ApcuBackend implements CacheBackendInterface {
     foreach (array('deletions', 'invalidations') as $type) {
       if ($query_tags[$type]) {
         $result = apc_fetch($query_tags[$type]);
-        static::$tagCache[$type] = array_merge(static::$tagCache[$type], $result);
-        $checksum[$type] += array_sum($result);
+        if ($result) {
+          static::$tagCache[$type] = array_merge(static::$tagCache[$type], $result);
+          $checksum[$type] += array_sum($result);
+        }
       }
     }
 

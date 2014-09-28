@@ -8,6 +8,7 @@
 namespace Drupal\Core\Access;
 
 use Drupal\Core\Routing\Access\AccessInterface as RoutingAccessInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -33,7 +34,7 @@ class CsrfAccessCheck implements RoutingAccessInterface {
    * @param \Drupal\Core\Access\CsrfTokenGenerator $csrf_token
    *   The CSRF token generator.
    */
-  function __construct(CsrfTokenGenerator $csrf_token) {
+  public function __construct(CsrfTokenGenerator $csrf_token) {
     $this->csrfToken = $csrf_token;
   }
 
@@ -44,30 +45,28 @@ class CsrfAccessCheck implements RoutingAccessInterface {
    *   The route to check against.
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request object.
+   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
+   *   The route match object.
    *
-   * @return string
-   *   A \Drupal\Core\Access\AccessInterface constant value.
+   * @return \Drupal\Core\Access\AccessResultInterface
+   *   The access result.
    */
-  public function access(Route $route, Request $request) {
-    // If this is the controller request, check CSRF access as normal.
-    if ($request->attributes->get('_controller_request')) {
-      // @todo Remove dependency on the internal _system_path attribute:
-      //   https://www.drupal.org/node/2293501.
-      return $this->csrfToken->validate($request->query->get('token'), $request->attributes->get('_system_path')) ? static::ALLOW : static::KILL;
+  public function access(Route $route, Request $request, RouteMatchInterface $route_match) {
+    $parameters = $route_match->getRawParameters();
+    $path = ltrim($route->getPath(), '/');
+    // Replace the path parameters with values from the parameters array.
+    foreach ($parameters as $param => $value) {
+      $path = str_replace("{{$param}}", $value, $path);
     }
 
-    // Otherwise, this could be another requested access check that we don't
-    // want to check CSRF tokens on.
-    $conjunction = $route->getOption('_access_mode') ?: AccessManagerInterface::ACCESS_MODE_ANY;
-    // Return ALLOW if all access checks are needed.
-    if ($conjunction == AccessManagerInterface::ACCESS_MODE_ALL) {
-      return static::ALLOW;
+    if ($this->csrfToken->validate($request->query->get('token'), $path)) {
+      $result = AccessResult::allowed();
     }
-    // Return DENY otherwise, as another access checker should grant access
-    // for the route.
     else {
-      return static::DENY;
+      $result = AccessResult::forbidden();
     }
+    // Not cacheable because the CSRF token is highly dynamic.
+    return $result->setCacheable(FALSE);
   }
 
 }

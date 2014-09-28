@@ -29,7 +29,7 @@ class MenuSettingsForm extends ConfigFormBase {
     $config = $this->config('menu_ui.settings');
     $form['intro'] = array(
       '#type' => 'item',
-      '#markup' => t('The Menu UI module allows on-the-fly creation of menu links in the content authoring forms. To configure these settings for a particular content type, visit the <a href="@content-types">Content types</a> page, click the <em>edit</em> link for the content type, and go to the <em>Menu settings</em> section.', array('@content-types' => url('admin/structure/types'))),
+      '#markup' => t('The Menu UI module allows on-the-fly creation of menu links in the content authoring forms. To configure these settings for a particular content type, visit the <a href="@content-types">Content types</a> page, click the <em>edit</em> link for the content type, and go to the <em>Menu settings</em> section.', array('@content-types' => $this->url('node.overview_types'))),
     );
 
     $menu_options = menu_ui_get_menus();
@@ -63,8 +63,8 @@ class MenuSettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('menu_ui.settings')
-      ->set('main_links', $form_state['values']['menu_main_links_source'])
-      ->set('secondary_links', $form_state['values']['menu_secondary_links_source'])
+      ->set('main_links', $form_state->getValue('menu_main_links_source'))
+      ->set('secondary_links', $form_state->getValue('menu_secondary_links_source'))
       ->save();
 
     parent::submitForm($form, $form_state);

@@ -36,7 +36,7 @@ class TranslationLink extends FieldPluginBase {
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     $form['text'] = array(
       '#type' => 'textfield',
-      '#title' => t('Text to display'),
+      '#title' => $this->t('Text to display'),
       '#default_value' => $this->options['text'],
     );
     parent::buildOptionsForm($form, $form_state);
@@ -61,8 +61,8 @@ class TranslationLink extends FieldPluginBase {
    *   The actual rendered text (without the link) of this field.
    */
   protected function renderLink(EntityInterface $entity, ResultRow $values) {
-    if (content_translation_translate_access($entity)) {
-      $text = !empty($this->options['text']) ? $this->options['text'] : t('Translate');
+    if (content_translation_translate_access($entity)->isAllowed()) {
+      $text = !empty($this->options['text']) ? $this->options['text'] : $this->t('Translate');
 
       $this->options['alter']['make_link'] = TRUE;
       $this->options['alter']['path'] = $entity->getSystemPath('drupal:content-translation-overview');

@@ -38,7 +38,7 @@ class MigrateVocabularyEntityDisplayTest extends MigrateDrupalTestBase {
 
     foreach (array('page', 'article', 'story') as $type) {
       entity_create('node_type', array('type' => $type))->save();
-      entity_create('field_instance_config', array(
+      entity_create('field_config', array(
         'label' => 'Tags',
         'description' => '',
         'field_name' => 'tags',
@@ -57,7 +57,7 @@ class MigrateVocabularyEntityDisplayTest extends MigrateDrupalTestBase {
         array(array(4, 'page'), array('node', 'page', 'tags')),
       )
     );
-    $this->prepareIdMappings($id_mappings);
+    $this->prepareMigrations($id_mappings);
 
     $migration = entity_load('migration', 'd6_vocabulary_entity_display');
     $dumps = array(

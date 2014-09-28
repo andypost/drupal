@@ -94,8 +94,8 @@ class Serializer extends StylePluginBase {
 
     $form['formats'] = array(
       '#type' => 'checkboxes',
-      '#title' => t('Accepted request formats'),
-      '#description' => t('Request formats that will be allowed in responses. If none are selected all formats will be allowed.'),
+      '#title' => $this->t('Accepted request formats'),
+      '#description' => $this->t('Request formats that will be allowed in responses. If none are selected all formats will be allowed.'),
       '#options' => array_combine($this->formats, $this->formats),
       '#default_value' => $this->options['formats'],
     );
@@ -107,7 +107,8 @@ class Serializer extends StylePluginBase {
   public function submitOptionsForm(&$form, FormStateInterface $form_state) {
     parent::submitOptionsForm($form, $form_state);
 
-    $form_state['values']['style_options']['formats'] = array_filter($form_state['values']['style_options']['formats']);
+    $formats = $form_state->getValue(array('style_options', 'formats'));
+    $form_state->setValue(array('style_options', 'formats'), array_filter($formats));
   }
 
   /**

@@ -7,8 +7,6 @@
 
 namespace Drupal\locale\Tests;
 
-use Drupal\simpletest\WebTestBase;
-
 /**
  * Tests for the user interface of project interface translations.
  *
@@ -21,12 +19,12 @@ class LocaleUpdateInterfaceTest extends LocaleUpdateBase {
    *
    * @var array
    */
-  public static $modules = array('update', 'locale', 'locale_test_translate');
+  public static $modules = array('locale_test_translate');
 
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
     $admin_user = $this->drupalCreateUser(array('administer modules', 'administer site configuration', 'administer languages', 'access administration pages', 'translate interface'));
     $this->drupalLogin($admin_user);
@@ -45,7 +43,7 @@ class LocaleUpdateInterfaceTest extends LocaleUpdateBase {
     $this->assertNoText(t('Translation update status'), 'No status message');
 
     $this->drupalGet('admin/reports/translations');
-    $this->assertRaw(t('No translatable languages available. <a href="@add_language">Add a language</a> first.', array('@add_language' => url('admin/config/regional/language'))), 'Language message');
+    $this->assertRaw(t('No translatable languages available. <a href="@add_language">Add a language</a> first.', array('@add_language' => \Drupal::url('language.admin_overview'))), 'Language message');
 
     // Add German language.
     $this->addLanguage('de');
@@ -72,7 +70,7 @@ class LocaleUpdateInterfaceTest extends LocaleUpdateBase {
     // Check if updates are available for German.
     $this->drupalGet('admin/reports/status');
     $this->assertText(t('Translation update status'), 'Status message');
-    $this->assertRaw(t('Updates available for: @languages. See the <a href="@updates">Available translation updates</a> page for more information.', array('@languages' => t('German'), '@updates' => url('admin/reports/translations'))), 'Updates available message');
+    $this->assertRaw(t('Updates available for: @languages. See the <a href="@updates">Available translation updates</a> page for more information.', array('@languages' => t('German'), '@updates' => \Drupal::url('locale.translate_status'))), 'Updates available message');
     $this->drupalGet('admin/reports/translations');
     $this->assertText(t('Updates for: @modules', array('@modules' => 'Locale test translate')), 'Translations avaiable');
 
@@ -86,7 +84,7 @@ class LocaleUpdateInterfaceTest extends LocaleUpdateBase {
     // Check if no updates were found.
     $this->drupalGet('admin/reports/status');
     $this->assertText(t('Translation update status'), 'Status message');
-    $this->assertRaw(t('Missing translations for: @languages. See the <a href="@updates">Available translation updates</a> page for more information.', array('@languages' => t('German'), '@updates' => url('admin/reports/translations'))), 'Missing translations message');
+    $this->assertRaw(t('Missing translations for: @languages. See the <a href="@updates">Available translation updates</a> page for more information.', array('@languages' => t('German'), '@updates' => \Drupal::url('locale.translate_status'))), 'Missing translations message');
     $this->drupalGet('admin/reports/translations');
     $this->assertText(t('Missing translations for one project'), 'No translations found');
     $this->assertText(t('@module (@version).', array('@module' => 'Locale test translate', '@version' => '1.3-dev')), 'Release details');

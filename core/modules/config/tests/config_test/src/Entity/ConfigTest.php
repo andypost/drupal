@@ -18,7 +18,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
  * @ConfigEntityType(
  *   id = "config_test",
  *   label = @Translation("Test configuration"),
- *   controllers = {
+ *   handlers = {
  *     "storage" = "Drupal\config_test\ConfigTestStorage",
  *     "list_builder" = "Drupal\config_test\ConfigTestListBuilder",
  *     "form" = {
@@ -133,6 +133,26 @@ class ConfigTest extends ConfigEntityBase implements ConfigTestInterface {
       foreach ($deps as $dep) {
         $this->addDependency($type, $dep);
       }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onDependencyRemoval(array $dependencies) {
+    $changed = FALSE;
+    $fix_deps = \Drupal::state()->get('config_test.fix_dependencies', array());
+    foreach ($dependencies['entity'] as $entity) {
+      if (in_array($entity->getConfigDependencyName(), $fix_deps)) {
+        $key = array_search($entity->getConfigDependencyName(), $this->test_dependencies['entity']);
+        if ($key !== FALSE) {
+          $changed = TRUE;
+          unset($this->test_dependencies['entity'][$key]);
+        }
+      }
+    }
+    if ($changed) {
+      $this->save();
     }
   }
 

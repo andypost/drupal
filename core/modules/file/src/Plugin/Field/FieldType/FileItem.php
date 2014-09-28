@@ -8,6 +8,8 @@
 namespace Drupal\file\Plugin\Field\FieldType;
 
 use Drupal\Component\Utility\Bytes;
+use Drupal\Component\Utility\Random;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Form\FormStateInterface;
@@ -30,25 +32,25 @@ class FileItem extends EntityReferenceItem {
   /**
    * {@inheritdoc}
    */
-  public static function defaultSettings() {
+  public static function defaultStorageSettings() {
     return array(
       'target_type' => 'file',
       'display_field' => FALSE,
       'display_default' => FALSE,
       'uri_scheme' => file_default_scheme(),
-    ) + parent::defaultSettings();
+    ) + parent::defaultStorageSettings();
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function defaultInstanceSettings() {
+  public static function defaultFieldSettings() {
     return array(
       'file_extensions' => 'txt',
       'file_directory' => '',
       'max_filesize' => '',
       'description_field' => 0,
-    ) + parent::defaultInstanceSettings();
+    ) + parent::defaultFieldSettings();
   }
 
   /**
@@ -107,7 +109,7 @@ class FileItem extends EntityReferenceItem {
   /**
    * {@inheritdoc}
    */
-  public function settingsForm(array &$form, FormStateInterface $form_state, $has_data) {
+  public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $element = array();
 
     $element['#attached']['library'][] = 'file/drupal.file';
@@ -125,7 +127,7 @@ class FileItem extends EntityReferenceItem {
       '#description' => t('This setting only has an effect if the display option is enabled.'),
       '#states' => array(
         'visible' => array(
-          ':input[name="field[settings][display_field]"]' => array('checked' => TRUE),
+          ':input[name="field_storage[settings][display_field]"]' => array('checked' => TRUE),
         ),
       ),
     );
@@ -149,7 +151,7 @@ class FileItem extends EntityReferenceItem {
   /**
    * {@inheritdoc}
    */
-  public function instanceSettingsForm(array $form, FormStateInterface $form_state) {
+  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
     $element = array();
     $settings = $this->getSettings();
 
@@ -207,7 +209,7 @@ class FileItem extends EntityReferenceItem {
    * value.
    *
    * This function is assigned as an #element_validate callback in
-   * instanceSettingsForm().
+   * fieldSettingsForm().
    */
   public static function validateDirectory($element, FormStateInterface $form_state) {
     // Strip slashes from the beginning and end of $element['file_directory'].
@@ -219,7 +221,7 @@ class FileItem extends EntityReferenceItem {
    * Form API callback.
    *
    * This function is assigned as an #element_validate callback in
-   * instanceSettingsForm().
+   * fieldSettingsForm().
    *
    * This doubles as a convenience clean-up function and a validation routine.
    * Commas are allowed by the end-user, but ultimately the value will be stored
@@ -231,7 +233,7 @@ class FileItem extends EntityReferenceItem {
       $extensions = array_filter(explode(' ', $extensions));
       $extensions = implode(' ', array_unique($extensions));
       if (!preg_match('/^([a-z0-9]+([.][a-z0-9])* ?)+$/', $extensions)) {
-        form_error($element, $form_state, t('The list of allowed extensions is not valid, be sure to exclude leading dots and to separate extensions with a comma or space.'));
+        $form_state->setError($element, t('The list of allowed extensions is not valid, be sure to exclude leading dots and to separate extensions with a comma or space.'));
       }
       else {
         form_set_value($element, $extensions, $form_state);
@@ -246,16 +248,16 @@ class FileItem extends EntityReferenceItem {
    * \Drupal\Component\Utility\Bytes::toInt().
    *
    * This function is assigned as an #element_validate callback in
-   * instanceSettingsForm().
+   * fieldSettingsForm().
    */
   public static function validateMaxFilesize($element, FormStateInterface $form_state) {
     if (!empty($element['#value']) && !is_numeric(Bytes::toInt($element['#value']))) {
-      form_error($element, $form_state, t('The "!name" option must contain a valid value. You may either leave the text field empty or enter a string like "512" (bytes), "80 KB" (kilobytes) or "50 MB" (megabytes).', array('!name' => t($element['title']))));
+      $form_state->setError($element, t('The "!name" option must contain a valid value. You may either leave the text field empty or enter a string like "512" (bytes), "80 KB" (kilobytes) or "50 MB" (megabytes).', array('!name' => t($element['title']))));
     }
   }
 
   /**
-   * Determines the URI for a file field instance.
+   * Determines the URI for a file field.
    *
    * @param $data
    *   An array of token objects to pass to token_replace().
@@ -301,6 +303,25 @@ class FileItem extends EntityReferenceItem {
     }
 
     return $validators;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
+    $random = new Random();
+    $settings = $field_definition->getSettings();
+
+    // Generate a file entity.
+    $destination = $settings['uri_scheme'] . '://' . $settings['file_directory'] . $random->name(10, TRUE) . '.txt';
+    $data = $random->paragraphs(3);
+    $file = file_save_data($data, $destination, FILE_EXISTS_ERROR);
+    $values = array(
+      'target_id' => $file->id(),
+      'display' => (int)$settings['display_default'],
+      'description' => $random->sentences(10),
+    );
+    return $values;
   }
 
   /**

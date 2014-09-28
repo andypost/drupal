@@ -7,13 +7,13 @@
 
 namespace Drupal\system\Plugin\Block;
 
-use Drupal\Component\Utility\NestedArray;
-use Drupal\block\BlockBase;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Cache\Cache;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Menu\MenuActiveTrailInterface;
 use Drupal\Core\Menu\MenuLinkTreeInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-
 
 /**
  * Provides a generic Menu block.
@@ -77,9 +77,73 @@ class SystemMenuBlock extends BlockBase implements ContainerFactoryPluginInterfa
   /**
    * {@inheritdoc}
    */
+  public function blockForm($form, FormStateInterface $form_state) {
+    $config = $this->configuration;
+
+    $defaults = $this->defaultConfiguration();
+    $form['menu_levels'] = array(
+      '#type' => 'details',
+      '#title' => t('Menu levels'),
+      // Open if not set to defaults.
+      '#open' => $defaults['level'] !== $config['level'] || $defaults['depth'] !== $config['depth'],
+      '#process' => [[get_class(), 'processMenuLevelParents']],
+    );
+
+    $options = range(0, $this->menuTree->maxDepth());
+    unset($options[0]);
+
+    $form['menu_levels']['level'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('Initial menu level'),
+      '#default_value' => $config['level'],
+      '#options' => $options,
+      '#description' => $this->t('The menu will only be visible if the menu item for the current page is at or below the selected starting level. Select level 1 to always keep this menu visible.'),
+      '#required' => TRUE,
+    );
+
+    $options[0] = $this->t('Unlimited');
+
+    $form['menu_levels']['depth'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('Maximum number of menu levels to display'),
+      '#default_value' => $config['depth'],
+      '#options' => $options,
+      '#description' => $this->t('The maximum number of menu levels to show, starting from the initial menu level. For example: with an initial level 2 and a maximum number of 3, menu levels 2, 3 and 4 can be displayed.'),
+      '#required' => TRUE,
+    );
+
+    return $form;
+  }
+
+  /**
+   * Form API callback: Processes the menu_levels field element.
+   *
+   * Adjusts the #parents of menu_levels to save its children at the top level.
+   */
+  public static function processMenuLevelParents(&$element, FormStateInterface $form_state, &$complete_form) {
+    array_pop($element['#parents']);
+    return $element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function build() {
     $menu_name = $this->getDerivativeId();
     $parameters = $this->menuTree->getCurrentRouteMenuTreeParameters($menu_name);
+
+    // Adjust the menu tree parameters based on the block's configuration.
+    $level = $this->configuration['level'];
+    $depth = $this->configuration['depth'];
+    $parameters->setMinDepth($level);
+    // When the depth is configured to zero, there is no depth limit. When depth
+    // is non-zero, it indicates the number of levels that must be displayed.
+    // Hence this is a relative depth that we must convert to an actual
+    // (absolute) depth, that may never exceed the maximum depth.
+    if ($depth > 0) {
+      $parameters->setMaxDepth(min($level + $depth - 1, $this->menuTree->maxDepth()));
+    }
+
     $tree = $this->menuTree->load($menu_name, $parameters);
     $manipulators = array(
       array('callable' => 'menu.default_tree_manipulators:checkAccess'),
@@ -101,7 +165,11 @@ class SystemMenuBlock extends BlockBase implements ContainerFactoryPluginInterfa
     // 1) it is possible to set a different max age for individual blocks, since
     //    this is just the default value.
     // 2) modules can modify caching by implementing hook_block_view_alter()
-    return array('cache' => array('max_age' => \Drupal\Core\Cache\Cache::PERMANENT));
+    return [
+      'cache' => array('max_age' => Cache::PERMANENT),
+      'level' => 1,
+      'depth' => 0,
+    ];
   }
 
   /**
@@ -121,8 +189,9 @@ class SystemMenuBlock extends BlockBase implements ContainerFactoryPluginInterfa
     // the cache tag for this menu to be set: whenever the menu is changed, this
     // menu block must also be re-rendered for that user, because maybe a menu
     // link that is accessible for that user has been added.
-    $tags = array('menu' => array($this->getDerivativeId()));
-    return NestedArray::mergeDeep(parent::getCacheTags(), $tags);
+    $cache_tags = parent::getCacheTags();
+    $cache_tags[] = 'menu:' . $this->getDerivativeId();
+    return $cache_tags;
   }
 
   /**

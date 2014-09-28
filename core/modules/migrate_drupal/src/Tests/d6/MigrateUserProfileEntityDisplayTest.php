@@ -50,7 +50,7 @@ class MigrateUserProfileEntityDisplayTest extends MigrateDrupalTestBase {
     entity_create('field_storage_config', array(
       'entity_type' => 'user',
       'name' => 'profile_sold_to',
-      'type' => 'list_text',
+      'type' => 'list_string',
     ))->save();
     entity_create('field_storage_config', array(
       'entity_type' => 'user',
@@ -75,7 +75,7 @@ class MigrateUserProfileEntityDisplayTest extends MigrateDrupalTestBase {
     ))->save();
     $field_data = Drupal6UserProfileFields::getData('profile_fields');
     foreach ($field_data as $field) {
-      entity_create('field_instance_config', array(
+      entity_create('field_config', array(
         'label' => $field['title'],
         'description' => '',
         'field_name' => $field['name'],

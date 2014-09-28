@@ -27,7 +27,7 @@ class TextFieldTest extends WebTestBase {
   protected $admin_user;
   protected $web_user;
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     $this->admin_user = $this->drupalCreateUser(array('administer filters'));
@@ -53,7 +53,7 @@ class TextFieldTest extends WebTestBase {
       )
     ));
     $field_storage->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_storage' => $field_storage,
       'bundle' => 'entity_test',
     ))->save();
@@ -84,7 +84,7 @@ class TextFieldTest extends WebTestBase {
    * Helper function for testTextfieldWidgets().
    */
   function _testTextfieldWidgets($field_type, $widget_type) {
-    // Setup a field and instance
+    // Create a field.
     $field_name = drupal_strtolower($this->randomMachineName());
     $field_storage = entity_create('field_storage_config', array(
       'name' => $field_name,
@@ -92,13 +92,10 @@ class TextFieldTest extends WebTestBase {
       'type' => $field_type
     ));
     $field_storage->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_storage' => $field_storage,
       'bundle' => 'entity_test',
       'label' => $this->randomMachineName() . '_label',
-      'settings' => array(
-        'text_processing' => TRUE,
-      ),
     ))->save();
     entity_get_form_display('entity_test', 'entity_test', 'default')
       ->setComponent($field_name, array(
@@ -121,8 +118,6 @@ class TextFieldTest extends WebTestBase {
     // Submit with some value.
     $value = $this->randomMachineName();
     $edit = array(
-      'user_id' => 1,
-      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -150,7 +145,7 @@ class TextFieldTest extends WebTestBase {
    * Helper function for testTextfieldWidgetsFormatted().
    */
   function _testTextfieldWidgetsFormatted($field_type, $widget_type) {
-    // Setup a field and instance
+    // Create a field.
     $field_name = drupal_strtolower($this->randomMachineName());
     $field_storage = entity_create('field_storage_config', array(
       'name' => $field_name,
@@ -158,13 +153,10 @@ class TextFieldTest extends WebTestBase {
       'type' => $field_type
     ));
     $field_storage->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'field_storage' => $field_storage,
       'bundle' => 'entity_test',
       'label' => $this->randomMachineName() . '_label',
-      'settings' => array(
-        'text_processing' => TRUE,
-      ),
     ))->save();
     entity_get_form_display('entity_test', 'entity_test', 'default')
       ->setComponent($field_name, array(
@@ -193,8 +185,6 @@ class TextFieldTest extends WebTestBase {
     // Submit with data that should be filtered.
     $value = '<em>' . $this->randomMachineName() . '</em>';
     $edit = array(
-      'user_id' => 1,
-      'name' => $this->randomMachineName(),
       "{$field_name}[0][value]" => $value,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));
@@ -235,8 +225,6 @@ class TextFieldTest extends WebTestBase {
 
     // Edit and change the text format to the new one that was created.
     $edit = array(
-      'user_id' => 1,
-      'name' => $this->randomMachineName(),
       "{$field_name}[0][format]" => $format_id,
     );
     $this->drupalPostForm(NULL, $edit, t('Save'));

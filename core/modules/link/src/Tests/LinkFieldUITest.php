@@ -23,7 +23,7 @@ class LinkFieldUITest extends WebTestBase {
    */
   public static $modules = array('node', 'link', 'field_ui');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     $this->web_user = $this->drupalCreateUser(array('administer content types', 'administer node fields', 'administer node display'));
@@ -47,7 +47,7 @@ class LinkFieldUITest extends WebTestBase {
       'fields[_add_new_field][type]' => 'link',
     );
     $this->drupalPostForm("$type_path/fields", $edit, t('Save'));
-    // Proceed to the Edit (field instance settings) page.
+    // Proceed to the Edit (field settings) page.
     $this->drupalPostForm(NULL, array(), t('Save field settings'));
     // Proceed to the Manage fields overview page.
     $this->drupalPostForm(NULL, array(), t('Save settings'));

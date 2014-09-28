@@ -27,7 +27,7 @@ class MigrateUserPictureInstanceTest extends MigrateDrupalTestBase {
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
     // Add some node mappings to get past checkRequirements().
     $id_mappings = array(
@@ -35,7 +35,7 @@ class MigrateUserPictureInstanceTest extends MigrateDrupalTestBase {
         array(array('user_upload'), array('name', 'bundle')),
       ),
     );
-    $this->prepareIdMappings($id_mappings);
+    $this->prepareMigrations($id_mappings);
     entity_create('field_storage_config', array(
       'entity_type' => 'user',
       'name' => 'user_picture',
@@ -52,7 +52,7 @@ class MigrateUserPictureInstanceTest extends MigrateDrupalTestBase {
    * Tests the Drupal 6 user picture to Drupal 8 picture field instance migration.
    */
   public function testUserPictureFieldInstance() {
-    $field = entity_load('field_instance_config', 'user.user.user_picture');
+    $field = entity_load('field_config', 'user.user.user_picture');
     $settings = $field->getSettings();
     $this->assertEqual($settings['file_extensions'], 'png gif jpg jpeg');
     $this->assertEqual($settings['file_directory'], 'pictures');

@@ -9,11 +9,11 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\Extension\ExtensionDiscovery;
 
 /**
- * Builds a list of enabled themes.
+ * Builds a list of installed themes.
  *
  * @param $type
  *   The type of list to return:
- *   - theme: All enabled themes.
+ *   - theme: All installed themes.
  *
  * @return
  *   An associative array of themes, keyed by name.
@@ -69,7 +69,7 @@ function system_list_reset() {
   // @todo Trigger an event upon module install/uninstall and theme
   //   enable/disable, and move this into an event subscriber.
   // @see https://drupal.org/node/2206347
-  Cache::invalidateTags(array('extension' => TRUE));
+  Cache::invalidateTags(array('extension'));
 }
 
 /**

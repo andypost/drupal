@@ -23,7 +23,7 @@ class ArbitraryRebuildTest extends WebTestBase {
    */
   public static $modules = array('text', 'form_test');
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
 
     // Auto-create a field for testing.
@@ -34,7 +34,7 @@ class ArbitraryRebuildTest extends WebTestBase {
       'cardinality' => -1,
       'translatable' => FALSE,
     ))->save();
-    entity_create('field_instance_config', array(
+    entity_create('field_config', array(
       'entity_type' => 'user',
       'field_name' => 'test_multiple',
       'bundle' => 'user',

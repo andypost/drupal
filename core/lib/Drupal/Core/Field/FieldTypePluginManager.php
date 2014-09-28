@@ -31,7 +31,7 @@ class FieldTypePluginManager extends DefaultPluginManager implements FieldTypePl
    *   The module handler.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct('Plugin/Field/FieldType', $namespaces, $module_handler, 'Drupal\Core\Field\Annotation\FieldType');
+    parent::__construct('Plugin/Field/FieldType', $namespaces, $module_handler, 'Drupal\Core\Field\FieldItemInterface', 'Drupal\Core\Field\Annotation\FieldType');
     $this->alterInfo('field_info');
     $this->setCacheBackend($cache_backend, 'field_types_plugins');
   }
@@ -49,11 +49,11 @@ class FieldTypePluginManager extends DefaultPluginManager implements FieldTypePl
   /**
    * {@inheritdoc}
    */
-  public function getDefaultSettings($type) {
+  public function getDefaultStorageSettings($type) {
     $plugin_definition = $this->getDefinition($type, FALSE);
     if (!empty($plugin_definition['class'])) {
       $plugin_class = DefaultFactory::getPluginClass($type, $plugin_definition);
-      return $plugin_class::defaultSettings();
+      return $plugin_class::defaultStorageSettings();
     }
     return array();
   }
@@ -61,11 +61,11 @@ class FieldTypePluginManager extends DefaultPluginManager implements FieldTypePl
   /**
    * {@inheritdoc}
    */
-  public function getDefaultInstanceSettings($type) {
+  public function getDefaultFieldSettings($type) {
     $plugin_definition = $this->getDefinition($type, FALSE);
     if (!empty($plugin_definition['class'])) {
       $plugin_class = DefaultFactory::getPluginClass($type, $plugin_definition);
-      return $plugin_class::defaultInstanceSettings();
+      return $plugin_class::defaultFieldSettings();
     }
     return array();
   }

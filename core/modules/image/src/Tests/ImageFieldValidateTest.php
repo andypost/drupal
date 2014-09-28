@@ -20,11 +20,11 @@ class ImageFieldValidateTest extends ImageFieldTestBase {
     $field_name = strtolower($this->randomMachineName());
     $min_resolution = 50;
     $max_resolution = 100;
-    $instance_settings = array(
+    $field_settings = array(
       'max_resolution' => $max_resolution . 'x' . $max_resolution,
       'min_resolution' => $min_resolution . 'x' . $min_resolution,
     );
-    $this->createImageField($field_name, 'article', array(), $instance_settings);
+    $this->createImageField($field_name, 'article', array(), $field_settings);
 
     // We want a test image that is too small, and a test image that is too
     // big, so cycle through test image files until we have what we need.
@@ -44,7 +44,7 @@ class ImageFieldValidateTest extends ImageFieldTestBase {
       }
     }
     $this->uploadNodeImage($image_that_is_too_small, $field_name, 'article');
-    $this->assertText(t('The specified file ' . $image_that_is_too_small->filename . ' could not be uploaded. The image is too small; the minimum dimensions are 50x50 pixels.'), 'Node save failed when minimum image resolution was not met.');
+    $this->assertRaw(t('The specified file %name could not be uploaded.', array('%name' => $image_that_is_too_small->filename)) . ' ' . t('The image is too small; the minimum dimensions are %dimensions pixels.', array('%dimensions' => '50x50')), 'Node save failed when minimum image resolution was not met.');
     $this->uploadNodeImage($image_that_is_too_big, $field_name, 'article');
     $this->assertText(t('The image was resized to fit within the maximum allowed dimensions of 100x100 pixels.'), 'Image exceeding max resolution was properly resized.');
   }
@@ -54,13 +54,13 @@ class ImageFieldValidateTest extends ImageFieldTestBase {
    */
   function testRequiredAttributes() {
     $field_name = strtolower($this->randomMachineName());
-    $instance_settings = array(
+    $field_settings = array(
       'alt_field' => 1,
       'alt_field_required' => 1,
       'title_field' => 1,
       'title_field_required' => 1,
     );
-    $this->createImageField($field_name, 'article', array(), $instance_settings);
+    $this->createImageField($field_name, 'article', array(), $field_settings);
     $images = $this->drupalGetTestFiles('image');
     // Let's just use the first image.
     $image = $images[0];

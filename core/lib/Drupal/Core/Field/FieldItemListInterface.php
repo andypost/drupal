@@ -87,8 +87,8 @@ interface FieldItemListInterface extends ListInterface, AccessibleInterface {
    * See \Drupal\Core\Entity\EntityAccessControlHandlerInterface::fieldAccess() for
    * the parameter documentation.
    *
-   * @return bool
-   *   TRUE if access to this field is allowed per default, FALSE otherwise.
+   * @return \Drupal\Core\Access\AccessResultInterface
+   *   The access result.
    */
   public function defaultAccess($operation = 'view', AccountInterface $account = NULL);
 
@@ -181,10 +181,18 @@ interface FieldItemListInterface extends ListInterface, AccessibleInterface {
    */
   public function view($display_options = array());
 
+  /*
+   * Populates a specified number of field items with valid sample data.
+   *
+   * @param int $count
+   *   The number of items to create.
+   */
+  public function generateSampleItems($count = 1);
+
   /**
    * Returns a form for the default value input.
    *
-   * Invoked from \Drupal\field_ui\Form\FieldInstanceEditForm to allow
+   * Invoked from \Drupal\field_ui\Form\FieldEditForm to allow
    * administrators to configure instance-level default value.
    *
    * @param array $form
@@ -193,14 +201,14 @@ interface FieldItemListInterface extends ListInterface, AccessibleInterface {
    *   The form state of the (entire) configuration form.
    *
    * @return array
-   *   The form definition for the field instance default value.
+   *   The form definition for the field default value.
    */
   public function defaultValuesForm(array &$form, FormStateInterface $form_state);
 
   /**
    * Validates the submitted default value.
    *
-   * Invoked from \Drupal\field_ui\Form\FieldInstanceEditForm to allow
+   * Invoked from \Drupal\field_ui\Form\FieldEditForm to allow
    * administrators to configure instance-level default value.
    *
    * @param array $element
@@ -215,7 +223,7 @@ interface FieldItemListInterface extends ListInterface, AccessibleInterface {
   /**
    * Processes the submitted default value.
    *
-   * Invoked from \Drupal\field_ui\Form\FieldInstanceEditForm to allow
+   * Invoked from \Drupal\field_ui\Form\FieldEditForm to allow
    * administrators to configure instance-level default value.
    *
    * @param array $element
@@ -226,7 +234,7 @@ interface FieldItemListInterface extends ListInterface, AccessibleInterface {
    *   The form state of the (entire) configuration form.
    *
    * @return array
-   *   The field instance default value.
+   *   The field default value.
    */
   public function defaultValuesFormSubmit(array $element, array &$form, FormStateInterface $form_state);
 

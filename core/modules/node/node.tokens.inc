@@ -153,7 +153,7 @@ function node_tokens($type, $tokens, array $data = array(), array $options = arr
                   $length = $settings['trim_length'];
                 }
 
-                $output = text_summary($output, $field_definition->getSetting('text_processing') ? $item->format : NULL, $length);
+                $output = text_summary($output, $item->format, $length);
               }
             }
             $replacements[$original] = $output;
@@ -165,11 +165,11 @@ function node_tokens($type, $tokens, array $data = array(), array $options = arr
           break;
 
         case 'url':
-          $replacements[$original] = url('node/' . $node->id(), $url_options);
+          $replacements[$original] = $node->url('canonical', $url_options);
           break;
 
         case 'edit-url':
-          $replacements[$original] = url('node/' . $node->id() . '/edit', $url_options);
+          $replacements[$original] = $node->url('edit-form', $url_options);
           break;
 
         // Default values for the chained tokens handled below.

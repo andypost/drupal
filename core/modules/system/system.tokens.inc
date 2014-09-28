@@ -64,7 +64,7 @@ function system_token_info() {
   );
   $date['custom'] = array(
     'name' => t("Custom format"),
-    'description' => t("A date in a custom format. See !php-date for details.", array('!php-date' => l(t('the PHP documentation'), 'http://php.net/manual/function.date.php'))),
+    'description' => t('A date in a custom format. See <a href="http://php.net/manual/function.date.php">the PHP documentation</a> for details.'),
   );
   $date['since'] = array(
     'name' => t("Time-since"),
@@ -120,15 +120,15 @@ function system_tokens($type, $tokens, array $data = array(), array $options = a
           break;
 
         case 'url':
-          $replacements[$original] = url('<front>', $url_options);
+          $replacements[$original] = \Drupal::url('<front>', array(), $url_options);
           break;
 
         case 'url-brief':
-          $replacements[$original] = preg_replace(array('!^https?://!', '!/$!'), '', url('<front>', $url_options));
+          $replacements[$original] = preg_replace(array('!^https?://!', '!/$!'), '', \Drupal::url('<front>', array(), $url_options));
           break;
 
         case 'login-url':
-          $replacements[$original] = url('user', $url_options);
+          $replacements[$original] = \Drupal::url('user.page', [], $url_options);
           break;
       }
     }

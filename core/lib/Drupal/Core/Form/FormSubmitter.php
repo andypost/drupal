@@ -48,7 +48,7 @@ class FormSubmitter implements FormSubmitterInterface {
    * {@inheritdoc}
    */
   public function doSubmitForm(&$form, FormStateInterface &$form_state) {
-    if (!$form_state['submitted']) {
+    if (!$form_state->isSubmitted()) {
       return;
     }
 
@@ -63,7 +63,7 @@ class FormSubmitter implements FormSubmitterInterface {
       // Store $form_state information in the batch definition.
       $batch['form_state'] = $form_state;
 
-      $batch['progressive'] = !$form_state['programmed'];
+      $batch['progressive'] = !$form_state->isProgrammed();
       $response = batch_process();
       if ($batch['progressive']) {
         return $response;
@@ -76,15 +76,15 @@ class FormSubmitter implements FormSubmitterInterface {
     }
 
     // Set a flag to indicate the the form has been processed and executed.
-    $form_state['executed'] = TRUE;
+    $form_state->setExecuted();
 
     // If no response has been set, process the form redirect.
-    if (!$form_state->has('response') && $redirect = $this->redirectForm($form_state)) {
+    if (!$form_state->getResponse() && $redirect = $this->redirectForm($form_state)) {
       $form_state->setResponse($redirect);
     }
 
     // If there is a response was set, return it instead of continuing.
-    if (($response = $form_state->get('response')) && $response instanceof Response) {
+    if (($response = $form_state->getResponse()) && $response instanceof Response) {
       return $response;
     }
   }
@@ -94,18 +94,13 @@ class FormSubmitter implements FormSubmitterInterface {
    */
   public function executeSubmitHandlers(&$form, FormStateInterface &$form_state) {
     // If there was a button pressed, use its handlers.
-    if (!empty($form_state['submit_handlers'])) {
-      $handlers = $form_state['submit_handlers'];
-    }
+    $handlers = $form_state->getSubmitHandlers();
     // Otherwise, check for a form-level handler.
-    elseif (!empty($form['#submit'])) {
+    if (!$handlers && !empty($form['#submit'])) {
       $handlers = $form['#submit'];
     }
-    else {
-      $handlers = array();
-    }
 
-    foreach ($handlers as $function) {
+    foreach ($handlers as $callback) {
       // Check if a previous _submit handler has set a batch, but make sure we
       // do not react to a batch that is already being processed (for instance
       // if a batch operation performs a
@@ -114,11 +109,11 @@ class FormSubmitter implements FormSubmitterInterface {
         // Some previous submit handler has set a batch. To ensure correct
         // execution order, store the call in a special 'control' batch set.
         // See _batch_next_set().
-        $batch['sets'][] = array('form_submit' => $function);
+        $batch['sets'][] = array('form_submit' => $callback);
         $batch['has_form_submits'] = TRUE;
       }
       else {
-        call_user_func_array($function, array(&$form, &$form_state));
+        call_user_func_array($form_state->prepareCallback($callback), array(&$form, &$form_state));
       }
     }
   }

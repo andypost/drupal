@@ -9,6 +9,7 @@ namespace Drupal\language\Tests;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Language\Language;
+use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\language\Exception\DeleteDefaultLanguageException;
 
 /**
@@ -39,17 +40,10 @@ class LanguageDependencyInjectionTest extends LanguageTestBase {
    * @see \Drupal\Core\Language\Language
    */
   function testDependencyInjectedNewDefaultLanguage() {
-    $default_language = \Drupal::languageManager()->getDefaultLanguage();
+    $default_language = ConfigurableLanguage::load(\Drupal::languageManager()->getDefaultLanguage()->getId());
     // Change the language default object to different values.
-    $new_language_default = new Language(array(
-      'id' => 'fr',
-      'name' => 'French',
-      'direction' => Language::DIRECTION_LTR,
-      'weight' => 0,
-      'method_id' => 'language-default',
-      'default' => TRUE,
-    ));
-    language_save($new_language_default);
+    ConfigurableLanguage::createFromLangcode('fr')->save();
+    \Drupal::config('system.site')->set('langcode', 'fr')->save();
 
     // The language system creates a Language object which contains the
     // same properties as the new default language object.
@@ -58,7 +52,7 @@ class LanguageDependencyInjectionTest extends LanguageTestBase {
 
     // Delete the language to check that we fallback to the default.
     try {
-      language_delete('fr');
+      entity_delete_multiple('configurable_language', array('fr'));
       $this->fail('Expected DeleteDefaultLanguageException thrown.');
     }
     catch (DeleteDefaultLanguageException $e) {
@@ -66,8 +60,9 @@ class LanguageDependencyInjectionTest extends LanguageTestBase {
     }
 
     // Re-save the previous default language and the delete should work.
-    language_save($default_language);
-    language_delete('fr');
+    \Drupal::config('system.site')->set('langcode', $default_language->getId())->save();
+
+    entity_delete_multiple('configurable_language', array('fr'));
     $result = \Drupal::languageManager()->getCurrentLanguage();
     $this->assertIdentical($result->id, $default_language->id);
   }

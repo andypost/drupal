@@ -7,13 +7,13 @@
 
 namespace Drupal\block_content\Plugin\Block;
 
-use Drupal\block\BlockBase;
-use Drupal\block\BlockManagerInterface;
-use Drupal\Core\Entity\EntityManager;
+use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\Session\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -32,7 +32,7 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
   /**
    * The Plugin Block Manager.
    *
-   * @var \Drupal\block\BlockManagerInterface.
+   * @var \Drupal\Core\Block\BlockManagerInterface.
    */
   protected $blockManager;
 
@@ -66,7 +66,7 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
    *   The plugin ID for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\block\BlockManagerInterface
+   * @param \Drupal\Core\Block\BlockManagerInterface
    *   The Plugin Block Manager.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager service.
@@ -75,13 +75,14 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The account for which view access should be checked.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, BlockManagerInterface $block_manager, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler, AccountInterface $account) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, BlockManagerInterface $block_manager, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler, AccountInterface $account, UrlGeneratorInterface $url_generator) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->blockManager = $block_manager;
     $this->entityManager = $entity_manager;
     $this->moduleHandler = $module_handler;
     $this->account = $account;
+    $this->urlGenerator = $url_generator;
   }
 
   /**
@@ -95,7 +96,8 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
       $container->get('plugin.manager.block'),
       $container->get('entity.manager'),
       $container->get('module_handler'),
-      $container->get('current_user')
+      $container->get('current_user'),
+      $container->get('url_generator')
     );
   }
 
@@ -117,7 +119,7 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
   }
 
   /**
-   * Overrides \Drupal\block\BlockBase::blockForm().
+   * Overrides \Drupal\Core\Block\BlockBase::blockForm().
    *
    * Adds body and description fields to the block configuration form.
    */
@@ -139,7 +141,7 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
   public function blockSubmit($form, FormStateInterface $form_state) {
     // Invalidate the block cache to update custom block-based derivatives.
     if ($this->moduleHandler->moduleExists('block')) {
-      $this->configuration['view_mode'] = $form_state['values']['block_content']['view_mode'];
+      $this->configuration['view_mode'] = $form_state->getValue(array('block_content', 'view_mode'));
       $this->blockManager->clearCachedDefinitions();
     }
   }
@@ -149,14 +151,14 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
    */
   public function build() {
     $uuid = $this->getDerivativeId();
-    if ($block = entity_load_by_uuid('block_content', $uuid)) {
-      return entity_view($block, $this->configuration['view_mode']);
+    if ($block = $this->entityManager->loadEntityByUuid('block_content', $uuid)) {
+      return $this->entityManager->getViewBuilder($block->getEntityTypeId())->view($block, $this->configuration['view_mode']);
     }
     else {
       return array(
         '#markup' => t('Block with uuid %uuid does not exist. <a href="!url">Add custom block</a>.', array(
           '%uuid' => $uuid,
-          '!url' => url('block/add')
+          '!url' => $this->urlGenerator->generate('block_content.add_page')
         )),
         '#access' => $this->account->hasPermission('administer blocks')
       );

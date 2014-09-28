@@ -6,9 +6,10 @@
 
 namespace Drupal\menu_link_content;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Entity\EntityAccessControlHandler;
-use Drupal\Core\Entity\EntityControllerInterface;
+use Drupal\Core\Entity\EntityHandlerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -17,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Defines the access control handler for the user entity type.
  */
-class MenuLinkContentAccessControlHandler extends EntityAccessControlHandler implements EntityControllerInterface {
+class MenuLinkContentAccessControlHandler extends EntityAccessControlHandler implements EntityHandlerInterface {
 
   /**
    * The access manager to check routes by name.
@@ -54,14 +55,25 @@ class MenuLinkContentAccessControlHandler extends EntityAccessControlHandler imp
     switch ($operation) {
       case 'view':
         // There is no direct view.
-        return FALSE;
+        return AccessResult::neutral();
 
       case 'update':
-        // If there is a URL, this is an external link so always accessible.
-        return $account->hasPermission('administer menu') && ($entity->getUrl() || $this->accessManager->checkNamedRoute($entity->getRouteName(), $entity->getRouteParameters(), $account));
+        if (!$account->hasPermission('administer menu')) {
+          return AccessResult::neutral()->cachePerRole();
+        }
+        else {
+          // If there is a URL, this is an external link so always accessible.
+          $access = AccessResult::allowed()->cachePerRole()->cacheUntilEntityChanges($entity);
+          if (!$entity->getUrl()) {
+            // We allow access, but only if the link is accessible as well.
+            $link_access = $this->accessManager->checkNamedRoute($entity->getRouteName(), $entity->getRouteParameters(), $account, TRUE);
+            return $access->andIf($link_access);
+          }
+          return $access;
+        }
 
       case 'delete':
-        return !$entity->isNew() && $account->hasPermission('administer menu');
+        return AccessResult::allowedIf(!$entity->isNew() && $account->hasPermission('administer menu'))->cachePerRole()->cacheUntilEntityChanges($entity);
     }
   }
 

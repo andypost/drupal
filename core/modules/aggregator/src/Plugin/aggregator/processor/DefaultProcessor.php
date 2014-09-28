@@ -17,6 +17,7 @@ use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\Entity\Query\QueryInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Routing\UrlGeneratorTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -31,6 +32,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class DefaultProcessor extends AggregatorPluginSettingsBase implements ProcessorInterface, ContainerFactoryPluginInterface {
+
+  use UrlGeneratorTrait;
 
   /**
    * Contains the configuration object factory.
@@ -141,7 +144,7 @@ class DefaultProcessor extends AggregatorPluginSettingsBase implements Processor
       '#title' => t('Discard items older than'),
       '#default_value' => $this->configuration['items']['expire'],
       '#options' => $period,
-      '#description' => t('Requires a correctly configured <a href="@cron">cron maintenance task</a>.', array('@cron' => url('admin/reports/status'))),
+      '#description' => t('Requires a correctly configured <a href="@cron">cron maintenance task</a>.', array('@cron' => $this->url('system.status'))),
     );
 
     $lengths = array(0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000);
@@ -163,9 +166,9 @@ class DefaultProcessor extends AggregatorPluginSettingsBase implements Processor
    * {@inheritdoc}
    */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
-    $this->configuration['items']['expire'] = $form_state['values']['aggregator_clear'];
-    $this->configuration['items']['teaser_length'] = $form_state['values']['aggregator_teaser_length'];
-    $this->configuration['source']['list_max'] = $form_state['values']['aggregator_summary_items'];
+    $this->configuration['items']['expire'] = $form_state->getValue('aggregator_clear');
+    $this->configuration['items']['teaser_length'] = $form_state->getValue('aggregator_teaser_length');
+    $this->configuration['source']['list_max'] = $form_state->getValue('aggregator_summary_items');
     // @todo Refactor aggregator plugins to ConfigEntity so this is not needed.
     $this->setConfiguration($this->configuration);
   }

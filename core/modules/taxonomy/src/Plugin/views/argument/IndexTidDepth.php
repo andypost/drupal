@@ -36,15 +36,15 @@ class IndexTidDepth extends ArgumentPluginBase {
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     $form['depth'] = array(
       '#type' => 'weight',
-      '#title' => t('Depth'),
+      '#title' => $this->t('Depth'),
       '#default_value' => $this->options['depth'],
-      '#description' => t('The depth will match nodes tagged with terms in the hierarchy. For example, if you have the term "fruit" and a child term "apple", with a depth of 1 (or higher) then filtering for the term "fruit" will get nodes that are tagged with "apple" as well as "fruit". If negative, the reverse is true; searching for "apple" will also pick up nodes tagged with "fruit" if depth is -1 (or lower).'),
+      '#description' => $this->t('The depth will match nodes tagged with terms in the hierarchy. For example, if you have the term "fruit" and a child term "apple", with a depth of 1 (or higher) then filtering for the term "fruit" will get nodes that are tagged with "apple" as well as "fruit". If negative, the reverse is true; searching for "apple" will also pick up nodes tagged with "fruit" if depth is -1 (or lower).'),
     );
 
     $form['break_phrase'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Allow multiple values'),
-      '#description' => t('If selected, users can enter multiple values in the form of 1+2+3. Due to the number of JOINs it would require, AND will be treated as OR with this filter.'),
+      '#title' => $this->t('Allow multiple values'),
+      '#description' => $this->t('If selected, users can enter multiple values in the form of 1+2+3. Due to the number of JOINs it would require, AND will be treated as OR with this filter.'),
       '#default_value' => !empty($this->options['break_phrase']),
     );
 
@@ -73,21 +73,13 @@ class IndexTidDepth extends ArgumentPluginBase {
     $this->ensureMyTable();
 
     if (!empty($this->options['break_phrase'])) {
-      $tids = new \stdClass();
-      $tids->value = $this->argument;
-      $tids = $this->breakPhrase($this->argument, $tids);
-      if ($tids->value == array(-1)) {
+      $break = static::breakString($this->argument);
+      if ($break->value === array(-1)) {
         return FALSE;
       }
 
-      if (count($tids->value) > 1) {
-        $operator = 'IN';
-      }
-      else {
-        $operator = '=';
-      }
-
-      $tids = $tids->value;
+      $operator = (count($break->value) > 1) ? 'IN' : '=';
+      $tids = $break->value;
     }
     else {
       $operator = "=";
@@ -126,7 +118,7 @@ class IndexTidDepth extends ArgumentPluginBase {
       return String::checkPlain($term->getName());
     }
     // TODO review text
-    return t('No name');
+    return $this->t('No name');
   }
 
 }

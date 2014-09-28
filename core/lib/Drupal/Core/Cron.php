@@ -8,6 +8,7 @@
 namespace Drupal\Core;
 
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Queue\QueueWorkerManagerInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Queue\QueueFactory;
@@ -15,6 +16,7 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Session\SessionManagerInterface;
 use Drupal\Core\Queue\SuspendQueueException;
+use Psr\Log\LoggerInterface;
 
 /**
  * The Drupal core Cron service.
@@ -64,6 +66,20 @@ class Cron implements CronInterface {
   protected $sessionManager;
 
   /**
+   * A logger instance.
+   *
+   * @var \Psr\Log\LoggerInterface
+   */
+  protected $logger;
+
+  /**
+   * The queue plugin manager.
+   *
+   * @var \Drupal\Core\Queue\QueueWorkerManagerInterface
+   */
+  protected $queueManager;
+
+  /**
    * Constructs a cron object.
    *
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
@@ -78,14 +94,20 @@ class Cron implements CronInterface {
    *    The current user.
    * @param \Drupal\Core\Session\SessionManagerInterface $session_manager
    *   The session manager.
+   * @param \Psr\Log\LoggerInterface $logger
+   *   A logger instance.
+   * @param \Drupal\Core\Queue\QueueWorkerManagerInterface
+   *   The queue plugin manager.
    */
-  public function __construct(ModuleHandlerInterface $module_handler, LockBackendInterface $lock, QueueFactory $queue_factory, StateInterface $state, AccountProxyInterface $current_user, SessionManagerInterface $session_manager) {
+  public function __construct(ModuleHandlerInterface $module_handler, LockBackendInterface $lock, QueueFactory $queue_factory, StateInterface $state, AccountProxyInterface $current_user, SessionManagerInterface $session_manager, LoggerInterface $logger, QueueWorkerManagerInterface $queue_manager) {
     $this->moduleHandler = $module_handler;
     $this->lock = $lock;
     $this->queueFactory = $queue_factory;
     $this->state = $state;
     $this->currentUser = $current_user;
     $this->sessionManager = $session_manager;
+    $this->logger = $logger;
+    $this->queueManager = $queue_manager;
   }
 
   /**
@@ -110,9 +132,9 @@ class Cron implements CronInterface {
     $return = FALSE;
 
     // Try to acquire cron lock.
-    if (!$this->lock->acquire('cron', 240.0)) {
+    if (!$this->lock->acquire('cron', 900.0)) {
       // Cron is still running normally.
-      watchdog('cron', 'Attempting to re-run cron while it is already running.', array(), WATCHDOG_WARNING);
+      $this->logger->warning('Attempting to re-run cron while it is already running.');
     }
     else {
       $this->invokeCronHandlers();
@@ -143,7 +165,7 @@ class Cron implements CronInterface {
   protected function setCronLastTime() {
     // Record cron time.
     $this->state->set('system.cron_last', REQUEST_TIME);
-    watchdog('cron', 'Cron run completed.', array(), WATCHDOG_NOTICE);
+    $this->logger->notice('Cron run completed.');
   }
 
   /**
@@ -151,21 +173,18 @@ class Cron implements CronInterface {
    */
   protected function processQueues() {
     // Grab the defined cron queues.
-    $queues = $this->moduleHandler->invokeAll('queue_info');
-    $this->moduleHandler->alter('queue_info', $queues);
-
-    foreach ($queues as $queue_name => $info) {
+    foreach ($this->queueManager->getDefinitions() as $queue_name => $info) {
       if (isset($info['cron'])) {
         // Make sure every queue exists. There is no harm in trying to recreate
         // an existing queue.
         $this->queueFactory->get($queue_name)->createQueue();
 
-        $callback = $info['worker callback'];
+        $queue_worker = $this->queueManager->createInstance($queue_name);
         $end = time() + (isset($info['cron']['time']) ? $info['cron']['time'] : 15);
         $queue = $this->queueFactory->get($queue_name);
         while (time() < $end && ($item = $queue->claimItem())) {
           try {
-            call_user_func_array($callback, array($item->data));
+            $queue_worker->processItem($item->data);
             $queue->deleteItem($item);
           }
           catch (SuspendQueueException $e) {

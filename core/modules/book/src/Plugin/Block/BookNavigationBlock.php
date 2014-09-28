@@ -7,7 +7,7 @@
 
 namespace Drupal\book\Plugin\Block;
 
-use Drupal\block\BlockBase;
+use Drupal\Core\Block\BlockBase;
 use Drupal\book\BookManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -105,7 +105,7 @@ class BookNavigationBlock extends BlockBase implements ContainerFactoryPluginInt
    * {@inheritdoc}
    */
   public function blockSubmit($form, FormStateInterface $form_state) {
-    $this->configuration['block_mode'] = $form_state['values']['book_block_mode'];
+    $this->configuration['block_mode'] = $form_state->getValue('book_block_mode');
   }
 
   /**
@@ -149,11 +149,9 @@ class BookNavigationBlock extends BlockBase implements ContainerFactoryPluginInt
     }
     elseif ($current_bid) {
       // Only display this block when the user is browsing a book.
-      $select = db_select('node', 'n')
-        ->fields('n', array('nid'))
-        ->condition('n.nid', $node->book['bid'])
-        ->addTag('node_access');
-      $nid = $select->execute()->fetchField();
+      $query = \Drupal::entityQuery('node');
+      $nid = $query->condition('nid', $node->book['bid'], '=')->execute();
+
       // Only show the block if the user has view access for the top-level node.
       if ($nid) {
         $tree = $this->bookManager->bookTreeAllData($node->book['bid'], $node->book);

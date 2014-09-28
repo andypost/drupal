@@ -20,7 +20,7 @@ use Drupal\options\Plugin\Field\FieldWidget\OptionsWidgetBase;
  *   field_types = {
  *     "list_integer",
  *     "list_float",
- *     "list_text"
+ *     "list_string"
  *   },
  *   multiple_values = TRUE
  * )
@@ -47,7 +47,7 @@ class SelectWidget extends OptionsWidgetBase {
   /**
    * {@inheritdoc}
    */
-  static protected function sanitizeLabel(&$label) {
+  protected function sanitizeLabel(&$label) {
     // Select form inputs allow unencoded HTML entities, but no HTML tags.
     $label = decode_entities(strip_tags($label));
   }

@@ -7,10 +7,10 @@
 
 namespace Drupal\system\Tests\Entity;
 
-use Drupal\Core\Language\Language;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\Core\Entity\EntityAccessControlHandler;
+use Drupal\language\Entity\ConfigurableLanguage;
 
 /**
  * Tests the entity access control handler.
@@ -19,7 +19,7 @@ use Drupal\Core\Entity\EntityAccessControlHandler;
  */
 class EntityAccessControlHandlerTest extends EntityLanguageTestBase  {
 
-  function setUp() {
+  protected function setUp() {
     parent::setUp();
     $this->installSchema('system', 'url_alias');
   }
@@ -97,11 +97,10 @@ class EntityAccessControlHandlerTest extends EntityLanguageTestBase  {
 
     // Create two test languages.
     foreach (array('foo', 'bar') as $langcode) {
-      $language = new Language(array(
+      ConfigurableLanguage::create(array(
         'id' => $langcode,
-        'name' => $this->randomString(),
-      ));
-      language_save($language);
+        'label' => $this->randomString(),
+      ))->save();
     }
 
     $entity = entity_create('entity_test', array(
@@ -119,7 +118,7 @@ class EntityAccessControlHandlerTest extends EntityLanguageTestBase  {
   /**
    * Tests hook invocations.
    */
-  protected function testHooks() {
+  public function testHooks() {
     $state = $this->container->get('state');
     $entity = entity_create('entity_test', array(
       'name' => 'test',

@@ -9,7 +9,7 @@ namespace Drupal\entity_reference\Tests\Views;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\field\Entity\FieldInstanceConfig;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\views\Tests\ViewTestData;
 use Drupal\views\Tests\ViewUnitTestBase;
 use Drupal\views\Views;
@@ -30,7 +30,7 @@ class EntityReferenceRelationshipTest extends ViewUnitTestBase {
   public static $testViews = array('test_entity_reference_view');
 
   /**
-   * Modules to enable.
+   * Modules to install.
    *
    * @var array
    */
@@ -49,6 +49,7 @@ class EntityReferenceRelationshipTest extends ViewUnitTestBase {
   protected function setUp() {
     parent::setUp();
 
+    $this->installEntitySchema('user');
     $this->installEntitySchema('entity_test');
 
     ViewTestData::createTestViews(get_class($this), array('entity_reference_test_views'));
@@ -64,7 +65,7 @@ class EntityReferenceRelationshipTest extends ViewUnitTestBase {
     ));
     $field_storage->save();
 
-    $instance = FieldInstanceConfig::create(array(
+    $field = FieldConfig::create(array(
       'entity_type' => 'entity_test',
       'field_name' => 'field_test',
       'bundle' => 'entity_test',
@@ -73,7 +74,7 @@ class EntityReferenceRelationshipTest extends ViewUnitTestBase {
         'handler_settings' => array(),
       ),
     ));
-    $instance->save();
+    $field->save();
 
     // Create some test entities which link each other.
     $entity_storage= \Drupal::entityManager()->getStorage('entity_test');
@@ -84,11 +85,13 @@ class EntityReferenceRelationshipTest extends ViewUnitTestBase {
     $entity = $entity_storage->create(array());
     $entity->field_test->target_id = $referenced_entity->id();
     $entity->save();
+    $this->assertEqual($entity->field_test[0]->entity->id(), $referenced_entity->id());
     $this->entities[$entity->id()] = $entity;
 
-    $entity = $entity_storage->create(array('field_test' => $entity->id()));
+    $entity = $entity_storage->create(array());
     $entity->field_test->target_id = $referenced_entity->id();
     $entity->save();
+    $this->assertEqual($entity->field_test[0]->entity->id(), $referenced_entity->id());
     $this->entities[$entity->id()] = $entity;
   }
 

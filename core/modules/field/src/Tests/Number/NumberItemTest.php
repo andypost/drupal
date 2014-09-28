@@ -25,17 +25,17 @@ class NumberItemTest extends FieldUnitTestBase {
    */
   public static $modules = array();
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp();
 
-    // Create number fields and instances for validation.
+    // Create number field storages and fields for validation.
     foreach (array('integer', 'float', 'decimal') as $type) {
       entity_create('field_storage_config', array(
         'name' => 'field_' . $type,
         'entity_type' => 'entity_test',
         'type' => $type,
       ))->save();
-      entity_create('field_instance_config', array(
+      entity_create('field_config', array(
         'entity_type' => 'entity_test',
         'field_name' => 'field_' . $type,
         'bundle' => 'entity_test',
@@ -91,6 +91,13 @@ class NumberItemTest extends FieldUnitTestBase {
     $this->assertEqual($entity->field_integer->value, $new_integer);
     $this->assertEqual($entity->field_float->value, $new_float);
     $this->assertEqual($entity->field_decimal->value, $new_decimal);
+
+    /// Test sample item generation.
+    $entity = entity_create('entity_test');
+    $entity->field_integer->generateSampleItems();
+    $entity->field_float->generateSampleItems();
+    $entity->field_decimal->generateSampleItems();
+    $this->entityValidateAndSave($entity);
   }
 
 }
