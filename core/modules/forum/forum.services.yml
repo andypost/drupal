@@ -23,4 +23,4 @@ services:
     class: Drupal\forum\Access\RouteProcessor
     tags:
       - { name: route_processor_outbound }
-    arguments: ['@config.factory']
+    arguments: ['@config.factory', '@entity.manager']
