@@ -12,11 +12,10 @@ use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\Entity\Exception\ConfigEntityIdLengthException;
-use Drupal\Core\Entity\Exception\AmbiguousEntityClassException;
-use Drupal\Core\Entity\Exception\NoCorrespondingEntityClassException;
 use Drupal\Core\Entity\Exception\UndefinedLinkTemplateException;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Link;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 
@@ -24,7 +23,10 @@ use Drupal\Core\Url;
  * Defines a base entity class.
  */
 abstract class Entity implements EntityInterface {
-  use DependencySerializationTrait;
+
+  use DependencySerializationTrait {
+    __sleep as traitSleep;
+  }
 
   /**
    * The entity type.
@@ -39,6 +41,13 @@ abstract class Entity implements EntityInterface {
    * @var bool
    */
   protected $enforceIsNew;
+
+  /**
+   * A typed data object wrapping this entity.
+   *
+   * @var \Drupal\Core\TypedData\ComplexDataInterface
+   */
+  protected $typedData;
 
   /**
    * Constructs an Entity object.
@@ -219,6 +228,19 @@ abstract class Entity implements EntityInterface {
    */
   protected function linkTemplates() {
     return $this->getEntityType()->getLinkTemplates();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function link($text = NULL, $rel = 'canonical', array $options = []) {
+    if (is_null($text)) {
+      $text = $this->label();
+    }
+    $url = $this->urlInfo($rel);
+    $options += $url->getOptions();
+    $url->setOptions($options);
+    return (new Link($text, $url))->toString();
   }
 
   /**
@@ -545,6 +567,25 @@ abstract class Entity implements EntityInterface {
    */
   public function toArray() {
     return array();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTypedData() {
+    if (!isset($this->typedData)) {
+      $class = \Drupal::typedDataManager()->getDefinition('entity')['class'];
+      $this->typedData = $class::createFromEntity($this);
+    }
+    return $this->typedData;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __sleep() {
+    $this->typedData = NULL;
+    return $this->traitSleep();
   }
 
 }

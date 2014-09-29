@@ -60,14 +60,14 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
     // Create an entity.
     $this->entity = $this->createEntity();
 
-    // If this is a fieldable entity, then add a configurable field. We will use
-    // this configurable field in later tests to ensure that modifications to
+    // If this is an entity with field UI enabled, then add a configurable
+    // field. We will use this configurable field in later tests to ensure that
     // field configuration invalidate render cache entries.
-    if ($this->entity->getEntityType()->isFieldable()) {
-      // Add field, so we can modify the Field and Field entities to
+    if ($this->entity->getEntityType()->get('field_ui_base_route')) {
+      // Add field, so we can modify the field storage and field entities to
       // verify that changes to those indeed clear cache tags.
       entity_create('field_storage_config', array(
-        'name' => 'configurable_field',
+        'field_name' => 'configurable_field',
         'entity_type' => $this->entity->getEntityTypeId(),
         'type' => 'test_field',
         'settings' => array(),
@@ -183,7 +183,7 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
     // Add a field of the given type to the given entity type's "foo" bundle.
     $field_name = $referenced_entity->getEntityTypeId() . '_reference';
     entity_create('field_storage_config', array(
-      'name' => $field_name,
+      'field_name' => $field_name,
       'entity_type' => $entity_type,
       'type' => 'entity_reference',
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
@@ -394,7 +394,7 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
     }
 
 
-    if ($this->entity->getEntityType()->isFieldable()) {
+    if ($this->entity->getEntityType()->get('field_ui_base_route')) {
       // Verify that after modifying a configurable field on the entity, there
       // is a cache miss.
       $this->pass("Test modification of referenced entity's configurable field.", 'Debug');

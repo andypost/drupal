@@ -58,7 +58,7 @@ class DefaultViewsTest extends ViewTestBase {
     // Create a field.
     $this->field_name = drupal_strtolower($this->randomMachineName());
     entity_create('field_storage_config', array(
-      'name' => $this->field_name,
+      'field_name' => $this->field_name,
       'entity_type' => 'node',
       'type' => 'taxonomy_term_reference',
       'settings' => array(
@@ -94,7 +94,7 @@ class DefaultViewsTest extends ViewTestBase {
       if ($i % 2) {
         $values['promote'] = TRUE;
       }
-      $values['body'][]['value'] = l('Node ' . 1, 'node/' . 1);
+      $values['body'][]['value'] = \Drupal::l('Node ' . 1, 'entity.node.canonical', ['node' => 1]);
 
       $node = $this->drupalCreateNode($values);
 

@@ -6,6 +6,7 @@
 
 use Drupal\Core\Config\ConfigImporter;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Entity\DynamicallyFieldableEntityStorageInterface;
 use Drupal\Core\Extension\Extension;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -86,7 +87,7 @@ function field_help($route_name, RouteMatchInterface $route_match) {
         if (isset($info[$provider]['name'])) {
           $display = $info[$provider]['name'];
           if (\Drupal::moduleHandler()->implementsHook($provider, 'help')) {
-            $items[] = l($display, 'admin/help/' . $provider);
+            $items[] = \Drupal::l($display, 'help.page', array('name' => $provider));
           }
           else {
             $items[] = $display;
@@ -124,15 +125,15 @@ function field_system_info_alter(&$info, Extension $file, $type) {
   // It is not safe to call entity_load_multiple_by_properties() during
   // maintenance mode.
   if ($type == 'module' && !defined('MAINTENANCE_MODE')) {
-    $fields = entity_load_multiple_by_properties('field_storage_config', array('module' => $file->getName(), 'include_deleted' => TRUE));
-    if ($fields) {
+    $field_storages = entity_load_multiple_by_properties('field_storage_config', array('module' => $file->getName(), 'include_deleted' => TRUE));
+    if ($field_storages) {
       $info['required'] = TRUE;
 
       // Provide an explanation message (only mention pending deletions if there
       // remains no actual, non-deleted fields)
       $non_deleted = FALSE;
-      foreach ($fields as $field) {
-        if (empty($field->deleted)) {
+      foreach ($field_storages as $field_storage) {
+        if (empty($field_storage->deleted)) {
           $non_deleted = TRUE;
           break;
         }
@@ -152,20 +153,19 @@ function field_system_info_alter(&$info, Extension $file, $type) {
  * Implements hook_entity_field_storage_info().
  */
 function field_entity_field_storage_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
-  // Expose storage definitions for all exposed bundle fields.
-  if ($entity_type->isFieldable()) {
+  if (\Drupal::entityManager()->getStorage($entity_type->id()) instanceof DynamicallyFieldableEntityStorageInterface) {
     // Query by filtering on the ID as this is more efficient than filtering
     // on the entity_type property directly.
     $ids = \Drupal::entityQuery('field_storage_config')
       ->condition('id', $entity_type->id() . '.', 'STARTS_WITH')
       ->execute();
-
     // Fetch all fields and key them by field name.
     $field_storages = entity_load_multiple('field_storage_config', $ids);
     $result = array();
     foreach ($field_storages as $field_storage) {
       $result[$field_storage->getName()] = $field_storage;
     }
+
     return $result;
   }
 }
@@ -174,19 +174,19 @@ function field_entity_field_storage_info(\Drupal\Core\Entity\EntityTypeInterface
  * Implements hook_entity_bundle_field_info().
  */
 function field_entity_bundle_field_info(EntityTypeInterface $entity_type, $bundle, array $base_field_definitions) {
-  if ($entity_type->isFieldable()) {
+  if (\Drupal::entityManager()->getStorage($entity_type->id()) instanceof DynamicallyFieldableEntityStorageInterface) {
     // Query by filtering on the ID as this is more efficient than filtering
     // on the entity_type property directly.
     $ids = \Drupal::entityQuery('field_config')
       ->condition('id', $entity_type->id() . '.' . $bundle . '.', 'STARTS_WITH')
       ->execute();
-
     // Fetch all fields and key them by field name.
     $field_configs = entity_load_multiple('field_config', $ids);
     $result = array();
-    foreach ($field_configs as $field) {
-      $result[$field->getName()] = $field;
+    foreach ($field_configs as $field_instance) {
+      $result[$field_instance->getName()] = $field_instance;
     }
+
     return $result;
   }
 }

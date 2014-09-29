@@ -20,7 +20,7 @@ use Drupal\Core\Entity\Sql\SqlContentEntityStorage;
 class FieldDataCountTest extends FieldUnitTestBase {
 
   /**
-   * @var \Drupal\Core\Entity\FieldableEntityStorageInterface
+   * @var \Drupal\Core\Entity\DynamicallyFieldableEntityStorageInterface
    */
   protected $storage;
 
@@ -40,7 +40,7 @@ class FieldDataCountTest extends FieldUnitTestBase {
     // entities and not rows in a table.
     /** @var \Drupal\field\Entity\FieldStorageConfig $field_storage */
     $field_storage = entity_create('field_storage_config', array(
-      'name' => 'field_int',
+      'field_name' => 'field_int',
       'entity_type' => 'entity_test',
       'type' => 'integer',
       'cardinality' => 2,

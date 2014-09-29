@@ -933,6 +933,13 @@ class ViewUI implements ViewStorageInterface {
   /**
    * {@inheritdoc}
    */
+  public function link($text = NULL, $rel = 'edit-form', array $options = []) {
+    return $this->storage->link($text, $rel, $options);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getSystemPath($rel = 'edit-form') {
     return $this->storage->getSystemPath($rel);
   }
@@ -1125,6 +1132,13 @@ class ViewUI implements ViewStorageInterface {
    */
   public function getListCacheTags() {
     $this->storage->getListCacheTags();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTypedData() {
+    $this->storage->getTypedData();
   }
 
 }
