@@ -13,6 +13,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Theme\Registry;
+use Drupal\Core\Url;
 use Drupal\views\Form\ViewsForm;
 use Drupal\views\Plugin\views\area\AreaPluginBase;
 use Drupal\views\ViewExecutable;
@@ -134,6 +135,13 @@ abstract class DisplayPluginBase extends PluginBase {
    *
    * @todo Replace DisplayPluginBase::$display with
    *   DisplayPluginBase::$configuration to standardize with other plugins.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct(array(), $plugin_id, $plugin_definition);
@@ -1034,7 +1042,7 @@ abstract class DisplayPluginBase extends PluginBase {
       $title = $text;
     }
 
-    return \Drupal::l($text, 'views_ui.form_display', ['js' => 'nojs', 'view' => $this->view->storage->id(), 'display_id' => $this->display['id'], 'type' => $section], array('attributes' => array('class' => array('views-ajax-link', $class), 'title' => $title, 'id' => drupal_html_id('views-' . $this->display['id'] . '-' . $section)), 'html' => TRUE));
+    return \Drupal::l($text, new Url('views_ui.form_display', ['js' => 'nojs', 'view' => $this->view->storage->id(), 'display_id' => $this->display['id'], 'type' => $section], array('attributes' => array('class' => array('views-ajax-link', $class), 'title' => $title, 'id' => drupal_html_id('views-' . $this->display['id'] . '-' . $section)), 'html' => TRUE)));
   }
 
   /**
@@ -2107,7 +2115,7 @@ abstract class DisplayPluginBase extends PluginBase {
           $url_options['query'] = $this->view->exposed_raw_input;
         }
         $theme = $this->view->buildThemeFunctions('views_more');
-        $path = check_url(url($path, $url_options));
+        $path = check_url(_url($path, $url_options));
 
         return array(
           '#theme' => $theme,
@@ -2389,6 +2397,12 @@ abstract class DisplayPluginBase extends PluginBase {
    * Reacts on deleting a display.
    */
   public function remove() {
+    $menu_links = $this->getMenuLinks();
+    /** @var \Drupal\Core\Menu\MenuLinkManagerInterface $menu_link_manager */
+    $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+    foreach ($menu_links as $menu_link_id => $menu_link) {
+      $menu_link_manager->removeDefinition("views_view:$menu_link_id");
+    }
   }
 
   /**

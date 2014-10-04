@@ -1,5 +1,6 @@
 name: Bartik
 type: theme
+base theme: classy
 description: 'A flexible, recolorable theme with many regions and a responsive, mobile-first layout.'
 package: Core
 version: VERSION
@@ -10,6 +11,8 @@ ckeditor_stylesheets:
   - css/ckeditor-iframe.css
 regions:
   header: Header
+  primary_menu: 'Primary menu'
+  secondary_menu: 'Secondary menu'
   help: Help
   page_top: 'Page top'
   page_bottom: 'Page bottom'

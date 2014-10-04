@@ -31,6 +31,7 @@ use Drupal\Core\Url;
  *   uri_callback = "Drupal\aggregator\Entity\Item::buildUri",
  *   base_table = "aggregator_item",
  *   render_cache = FALSE,
+ *   list_cache_tags = { "aggregator_feed_list" },
  *   entity_keys = {
  *     "id" = "iid",
  *     "label" = "title",
@@ -232,19 +233,12 @@ class Item extends ContentEntityBase implements ItemInterface {
     return Feed::load($this->getFeedId())->getCacheTag();
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getListCacheTags() {
-    return Feed::load($this->getFeedId())->getListCacheTags();
-  }
-
 
   /**
    * Entity URI callback.
    */
   public static function buildUri(ItemInterface $item) {
-    return Url::createFromPath($item->getLink());
+    return Url::fromUri($item->getLink());
   }
 
 }

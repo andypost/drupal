@@ -6,7 +6,7 @@ label: Image
 description: ''
 required: false
 default_value: {  }
-default_value_function: ''
+default_value_callback: ''
 settings:
   file_directory: field/image
   file_extensions: 'png gif jpg jpeg'
@@ -24,7 +24,7 @@ settings:
     width: null
     height: null
 status: true
-langcode: und
+langcode: en
 field_type: image
 dependencies:
   entity:

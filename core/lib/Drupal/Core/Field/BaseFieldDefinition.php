@@ -7,7 +7,7 @@
 
 namespace Drupal\Core\Field;
 
-use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\Entity\BaseFieldOverride;
 use Drupal\Core\Field\TypedData\FieldItemDataDefinition;
 use Drupal\Core\TypedData\ListDataDefinition;
@@ -379,7 +379,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
   /**
    * {@inheritdoc}
    */
-  public function getDefaultValue(ContentEntityInterface $entity) {
+  public function getDefaultValue(FieldableEntityInterface $entity) {
     // Allow custom default values function.
     if (!empty($this->definition['default_value_callback'])) {
       $value = call_user_func($this->definition['default_value_callback'], $entity, $this);
@@ -397,11 +397,11 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
    *
    * If set, the callback overrides any set default value.
    *
-   * @param callable|null $callback
+   * @param string|null $callback
    *   The callback to invoke for getting the default value (pass NULL to unset
    *   a previously set callback). The callback will be invoked with the
    *   following arguments:
-   *   - \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   - \Drupal\Core\Entity\FieldableEntityInterface $entity
    *     The entity being created.
    *   - \Drupal\Core\Field\FieldDefinitionInterface $definition
    *     The field definition.
@@ -411,6 +411,9 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
    * @return $this
    */
   public function setDefaultValueCallback($callback) {
+    if (isset($callback) && !is_string($callback)) {
+      throw new \InvalidArgumentException('Default value callback must be a string, like "function_name" or "ClassName::methodName"');
+    }
     $this->definition['default_value_callback'] = $callback;
     return $this;
   }
@@ -435,7 +438,7 @@ class BaseFieldDefinition extends ListDataDefinition implements FieldDefinitionI
   /**
    * {@inheritdoc}
    */
-  public function getOptionsProvider($property_name, ContentEntityInterface $entity) {
+  public function getOptionsProvider($property_name, FieldableEntityInterface $entity) {
     // If the field item class implements the interface, proxy it through.
     $item = $entity->get($this->getName())->first();
     if ($item instanceof OptionsProviderInterface) {

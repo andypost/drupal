@@ -18,14 +18,14 @@ class CommonTestController {
   /**
    * Returns links to the current page, with and without query strings.
    *
-   * Using #type 'link' causes these links to be rendered with l().
+   * Using #type 'link' causes these links to be rendered with _l().
    */
   public function typeLinkActiveClass() {
     return array(
       'no_query' => array(
         '#type' => 'link',
         '#title' => t('Link with no query string'),
-        '#href' => current_path(),
+        '#route_name' => '<current>',
         '#options' => array(
           'set_active_class' => TRUE,
         ),
@@ -33,7 +33,7 @@ class CommonTestController {
       'with_query' => array(
         '#type' => 'link',
         '#title' => t('Link with a query string'),
-        '#href' => current_path(),
+        '#route_name' => '<current>',
         '#options' => array(
           'query' => array(
             'foo' => 'bar',
@@ -45,7 +45,7 @@ class CommonTestController {
       'with_query_reversed' => array(
         '#type' => 'link',
         '#title' => t('Link with the same query string in reverse order'),
-        '#href' => current_path(),
+        '#route_name' => '<current>',
         '#options' => array(
           'query' => array(
             'one' => 'two',

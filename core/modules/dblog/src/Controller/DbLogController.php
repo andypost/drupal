@@ -15,6 +15,7 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormBuilderInterface;
+use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -139,7 +140,7 @@ class DbLogController extends ControllerBase {
       $this->t('Message'),
       array(
         'data' => $this->t('User'),
-        'field' => 'u.name',
+        'field' => 'ufd.name',
         'class' => array(RESPONSIVE_PRIORITY_MEDIUM)),
       array(
         'data' => $this->t('Operations'),
@@ -159,6 +160,7 @@ class DbLogController extends ControllerBase {
       'variables',
       'link',
     ));
+    $query->leftJoin('users_field_data', 'ufd', 'w.uid = ufd.uid');
 
     if (!empty($filter['where'])) {
       $query->where($filter['where'], $filter['args']);
@@ -173,13 +175,13 @@ class DbLogController extends ControllerBase {
       if ($message && isset($dblog->wid)) {
         // Truncate link_text to 56 chars of message.
         $log_text = Unicode::truncate(Xss::filter($message, array()), 56, TRUE, TRUE);
-        $message = $this->l($log_text, 'dblog.event',  array('event_id' => $dblog->wid), array(
+        $message = $this->l($log_text, new Url('dblog.event', array('event_id' => $dblog->wid), array(
           'attributes' => array(
             // Provide a title for the link for useful hover hints.
             'title' => Unicode::truncate(strip_tags($message), 256, TRUE, TRUE),
           ),
           'html' => TRUE,
-        ));
+        )));
       }
       $username = array(
         '#theme' => 'username',
@@ -251,11 +253,11 @@ class DbLogController extends ControllerBase {
         ),
         array(
           array('data' => $this->t('Location'), 'header' => TRUE),
-          l($dblog->location, $dblog->location),
+          _l($dblog->location, $dblog->location),
         ),
         array(
           array('data' => $this->t('Referrer'), 'header' => TRUE),
-          l($dblog->referer, $dblog->referer),
+          _l($dblog->referer, $dblog->referer),
         ),
         array(
           array('data' => $this->t('Message'), 'header' => TRUE),

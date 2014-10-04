@@ -61,20 +61,20 @@ class EntityReferenceItem extends FieldItemBase {
     $settings = $field_definition->getSettings();
     $target_type_info = \Drupal::entityManager()->getDefinition($settings['target_type']);
 
-    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\ContentEntityInterface')) {
+    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')) {
       // @todo: Lookup the entity type's ID data type and use it here.
       // https://drupal.org/node/2107249
       $target_id_definition = DataDefinition::create('integer')
-        ->setLabel(t('Entity ID'))
+        ->setLabel(t('@label ID', array($target_type_info->getLabel())))
         ->setSetting('unsigned', TRUE);
     }
     else {
       $target_id_definition = DataDefinition::create('string')
-        ->setLabel(t('Entity ID'));
+        ->setLabel(t('@label ID', array($target_type_info->getLabel())));
     }
     $properties['target_id'] = $target_id_definition;
     $properties['entity'] = DataReferenceDefinition::create('entity')
-      ->setLabel(t('Entity'))
+      ->setLabel($target_type_info->getLabel())
       ->setDescription(t('The referenced entity'))
       // The entity object is computed out of the entity ID.
       ->setComputed(TRUE)
@@ -102,7 +102,7 @@ class EntityReferenceItem extends FieldItemBase {
     $target_type = $field_definition->getSetting('target_type');
     $target_type_info = \Drupal::entityManager()->getDefinition($target_type);
 
-    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\ContentEntityInterface')) {
+    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')) {
       $columns = array(
         'target_id' => array(
           'description' => 'The ID of the target entity.',

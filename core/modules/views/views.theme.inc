@@ -10,6 +10,7 @@ use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\String;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Template\Attribute;
+use Drupal\Core\Url;
 
 /**
  * Prepares variables for view templates.
@@ -306,8 +307,12 @@ function template_preprocess_views_view_summary(&$variables) {
   }
 
   $active_urls = array(
-    url(current_path(), array('alias' => TRUE)), // force system path
-    url(current_path()), // could be an alias
+    // Force system path.
+    \Drupal::url('<current>', [], ['alias' => TRUE]),
+    _url(current_path(), array('alias' => TRUE)), // force system path
+    // Could be an alias.
+    \Drupal::url('<current>'),
+    _url(current_path()), // could be an alias
   );
   $active_urls = array_combine($active_urls, $active_urls);
 
@@ -331,7 +336,7 @@ function template_preprocess_views_view_summary(&$variables) {
     if (!empty($argument->options['summary_options']['base_path'])) {
       $base_path = $argument->options['summary_options']['base_path'];
     }
-    $variables['rows'][$id]->url = url($view->getUrl($args, $base_path), $url_options);
+    $variables['rows'][$id]->url = _url($view->getUrl($args, $base_path), $url_options);
     $variables['rows'][$id]->count = intval($row->{$argument->count_alias});
     if (isset($active_urls[$variables['rows'][$id]->url])) {
       $variables['rows'][$id]->attributes['class'][] = 'active';
@@ -366,9 +371,9 @@ function template_preprocess_views_view_summary_unformatted(&$variables) {
   $count = 0;
   $active_urls = array(
     // Force system path.
-    url(current_path(), array('alias' => TRUE)),
+    \Drupal::url('<current>', [], ['alias' => TRUE]),
     // Could be an alias.
-    url(current_path()),
+    \Drupal::url('<current>'),
   );
   $active_urls = array_combine($active_urls, $active_urls);
 
@@ -395,7 +400,7 @@ function template_preprocess_views_view_summary_unformatted(&$variables) {
     if (!empty($argument->options['summary_options']['base_path'])) {
       $base_path = $argument->options['summary_options']['base_path'];
     }
-    $variables['rows'][$id]->url = url($view->getUrl($args, $base_path), $url_options);
+    $variables['rows'][$id]->url = _url($view->getUrl($args, $base_path), $url_options);
     $variables['rows'][$id]->count = intval($row->{$argument->count_alias});
     if (isset($active_urls[$variables['rows'][$id]->url])) {
       $variables['rows'][$id]->attributes['class'][] = 'active';
@@ -484,7 +489,7 @@ function template_preprocess_views_view_table(&$variables) {
           'attributes' => array('title' => $title),
           'query' => $query,
         );
-        $variables['header'][$field]['content'] = l($label, current_path(), $link_options);
+        $variables['header'][$field]['content'] = \Drupal::l($label, new Url('<current>', [], $link_options));
       }
 
       // Set up the header label class.
@@ -901,7 +906,7 @@ function template_preprocess_views_view_rss(&$variables) {
       $path = '';
     }
 
-    $variables['link'] = check_url(url($path, $url_options));
+    $variables['link'] = check_url(_url($path, $url_options));
   }
 
   $variables['langcode'] = String::checkPlain(\Drupal::languageManager()->getCurrentLanguage()->id);
@@ -1038,14 +1043,13 @@ function template_preprocess_views_mini_pager(&$variables) {
 
   // Current is the page we are currently paged to.
   $pager_current = $pager_page_array[$element] + 1;
-  $current_path = current_path();
 
   $li_previous = array();
   if ($pager_total[$element] > 1 && $pager_page_array[$element] > 0) {
     $li_previous = array(
       '#type' => 'link',
       '#title' => $tags[1],
-      '#href' => $current_path,
+      '#route_name' => '<current>',
       '#options' => array(
         'query' => pager_query_add_page($parameters, $element, $pager_page_array[$element] - 1),
         'attributes' => array(
@@ -1068,7 +1072,7 @@ function template_preprocess_views_mini_pager(&$variables) {
     $li_next = array(
       '#type' => 'link',
       '#title' => $tags[3],
-      '#href' => $current_path,
+      '#route_name' => '<current>',
       '#options' => array(
         'query' => pager_query_add_page($parameters, $element, $pager_page_array[$element] + 1),
         'attributes' => array(

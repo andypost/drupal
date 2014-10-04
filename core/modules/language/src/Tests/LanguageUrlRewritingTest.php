@@ -101,6 +101,7 @@ class LanguageUrlRewritingTest extends WebTestBase {
     $language_domain = 'example.fr';
     $edit = array(
       'language_negotiation_url_part' => LanguageNegotiationUrl::CONFIG_DOMAIN,
+      'domain[en]' => gethostname(),
       'domain[fr]' => $language_domain
     );
     $this->drupalPostForm('admin/config/regional/language/detection/url', $edit, t('Save configuration'));
@@ -126,7 +127,7 @@ class LanguageUrlRewritingTest extends WebTestBase {
 
     // Create an absolute French link.
     $language = \Drupal::languageManager()->getLanguage('fr');
-    $url = url('', array(
+    $url = _url('', array(
       'absolute' => TRUE,
       'language' => $language,
     ));
@@ -135,8 +136,8 @@ class LanguageUrlRewritingTest extends WebTestBase {
 
     $this->assertEqual($url, $expected, 'The right port is used.');
 
-    // If we set the port explicitly in url(), it should not be overriden.
-    $url = url('', array(
+    // If we set the port explicitly in _url(), it should not be overriden.
+    $url = _url('', array(
       'absolute' => TRUE,
       'language' => $language,
       'base_url' => $request->getBaseUrl() . ':90',

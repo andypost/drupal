@@ -96,6 +96,21 @@ class BookTest extends WebTestBase {
   }
 
   /**
+   * Tests saving the book outline on an empty book.
+   */
+  function testEmptyBook() {
+    // Create a new empty book.
+    $this->drupalLogin($this->book_author);
+    $book = $this->createBookNode('new');
+    $this->drupalLogout();
+
+    // Log in as a user with access to the book outline and save the form.
+    $this->drupalLogin($this->admin_user);
+    $this->drupalPostForm('admin/structure/book/' . $book->id(), array(), t('Save book pages'));
+    $this->assertText(t('Updated book @book.', array('@book' => $book->label())));
+  }
+
+  /**
    * Tests book functionality through node interfaces.
    */
   function testBook() {
@@ -190,21 +205,21 @@ class BookTest extends WebTestBase {
       /** @var \Drupal\Core\Url $url */
       $url = $previous->urlInfo();
       $url->setOptions(array('html' => TRUE, 'attributes' => array('rel' => array('prev'), 'title' => t('Go to previous page'))));
-      $this->assertRaw(\Drupal::linkGenerator()->generateFromUrl('<b>‹</b> ' . $previous->label(), $url), 'Previous page link found.');
+      $this->assertRaw(\Drupal::l('<b>‹</b> ' . $previous->label(), $url), 'Previous page link found.');
     }
 
     if ($up) {
       /** @var \Drupal\Core\Url $url */
       $url = $up->urlInfo();
       $url->setOptions(array('html'=> TRUE, 'attributes' => array('title' => t('Go to parent page'))));
-      $this->assertRaw(\Drupal::linkGenerator()->generateFromUrl('Up', $url), 'Up page link found.');
+      $this->assertRaw(\Drupal::l('Up', $url), 'Up page link found.');
     }
 
     if ($next) {
       /** @var \Drupal\Core\Url $url */
       $url = $next->urlInfo();
       $url->setOptions(array('html'=> TRUE, 'attributes' => array('rel' => array('next'), 'title' => t('Go to next page'))));
-      $this->assertRaw(\Drupal::linkGenerator()->generateFromUrl($next->label() . ' <b>›</b>', $url), 'Next page link found.');
+      $this->assertRaw(\Drupal::l($next->label() . ' <b>›</b>', $url), 'Next page link found.');
     }
 
     // Compute the expected breadcrumb.
@@ -623,4 +638,18 @@ class BookTest extends WebTestBase {
 
     $this->assertText($this->book->label(), 'The book title is displayed on the book listing page.');
   }
+
+  /**
+   * Tests the administrative listing of all books.
+   */
+  public function testAdminBookListing() {
+    // Create a new book.
+    $this->createBook();
+
+    // Load the book page and assert the created book title is displayed.
+    $this->drupalLogin($this->admin_user);
+    $this->drupalGet('admin/structure/book');
+    $this->assertText($this->book->label(), 'The book title is displayed on the administrative book listing page.');
+  }
+
 }

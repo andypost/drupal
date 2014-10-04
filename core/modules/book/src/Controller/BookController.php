@@ -10,6 +10,7 @@ namespace Drupal\book\Controller;
 use Drupal\book\BookExport;
 use Drupal\book\BookManagerInterface;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -72,12 +73,12 @@ class BookController extends ControllerBase {
     // Add any recognized books to the table list.
     foreach ($this->bookManager->getAllBooks() as $book) {
       /** @var \Drupal\Core\Url $url */
-      $url = $book->urlInfo();
+      $url = $book['url'];
       if (isset($book['options'])) {
         $url->setOptions($book['options']);
       }
       $row = array(
-        $this->getLinkGenerator()->generateFromUrl($book['title'], $url),
+        $this->l($book['title'], $url),
       );
       $links = array();
       $links['edit'] = array(
@@ -110,11 +111,14 @@ class BookController extends ControllerBase {
   public function bookRender() {
     $book_list = array();
     foreach ($this->bookManager->getAllBooks() as $book) {
-      $book_list[] = $this->getLinkGenerator()->generateFromUrl($book['title'], $book['url']);
+      $book_list[] = $this->l($book['title'], $book['url']);
     }
     return array(
       '#theme' => 'item_list',
       '#items' => $book_list,
+      '#cache' => [
+        'tags' => \Drupal::entityManager()->getDefinition('node')->getListCacheTags(),
+      ],
     );
   }
 

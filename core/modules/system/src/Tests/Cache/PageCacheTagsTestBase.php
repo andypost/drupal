@@ -17,6 +17,13 @@ abstract class PageCacheTagsTestBase extends WebTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * Always enable header dumping in page cache tags tests, this aids debugging.
+   */
+  protected $dumpHeaders = TRUE;
+
+  /**
+   * {@inheritdoc}
    */
   protected function setUp() {
     parent::setUp();
@@ -46,10 +53,11 @@ abstract class PageCacheTagsTestBase extends WebTestBase {
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), $hit_or_miss, $message);
 
     if ($hit_or_miss === 'HIT' && is_array($tags)) {
-      $cid_parts = array(url($path, array('absolute' => TRUE)), 'html');
+      $cid_parts = array(_url($path, array('absolute' => TRUE)), 'html');
       $cid = sha1(implode(':', $cid_parts));
       $cache_entry = \Drupal::cache('render')->get($cid);
       sort($cache_entry->tags);
+      $tags = array_unique($tags);
       sort($tags);
       $this->assertIdentical($cache_entry->tags, $tags);
     }

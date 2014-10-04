@@ -388,7 +388,7 @@ class LanguageUILanguageNegotiationTest extends WebTestBase {
   }
 
   /**
-   * Tests url() when separate domains are used for multiple languages.
+   * Tests _url() when separate domains are used for multiple languages.
    */
   function testLanguageDomain() {
     // Add the Italian language.
@@ -403,12 +403,23 @@ class LanguageUILanguageNegotiationTest extends WebTestBase {
     );
     $this->drupalPostForm('admin/config/regional/language/detection', $edit, t('Save settings'));
 
+    // Do not allow blank domain.
+    $edit = array(
+      'language_negotiation_url_part' => LanguageNegotiationUrl::CONFIG_DOMAIN,
+      'domain[en]' => '',
+    );
+    $this->drupalPostForm('admin/config/regional/language/detection/url', $edit, t('Save configuration'));
+    $this->assertText('The domain may not be left blank for English', 'The form does not allow blank domains.');
+    $this->rebuildContainer();
+
     // Change the domain for the Italian language.
     $edit = array(
       'language_negotiation_url_part' => LanguageNegotiationUrl::CONFIG_DOMAIN,
+      'domain[en]' => gethostname(),
       'domain[it]' => 'it.example.com',
     );
     $this->drupalPostForm('admin/config/regional/language/detection/url', $edit, t('Save configuration'));
+    $this->assertText('The configuration options have been saved', 'Domain configuration is saved.');
     $this->rebuildContainer();
 
     // Build the link we're going to test.
@@ -417,26 +428,26 @@ class LanguageUILanguageNegotiationTest extends WebTestBase {
     // Test URL in another language: http://it.example.com/admin.
     // Base path gives problems on the testbot, so $correct_link is hard-coded.
     // @see UrlAlterFunctionalTest::assertUrlOutboundAlter (path.test).
-    $italian_url = url('admin', array('language' => $languages['it'], 'script' => ''));
+    $italian_url = _url('admin', array('language' => $languages['it'], 'script' => ''));
     $url_scheme = \Drupal::request()->isSecure() ? 'https://' : 'http://';
     $correct_link = $url_scheme . $link;
-    $this->assertEqual($italian_url, $correct_link, format_string('The url() function returns the right URL (@url) in accordance with the chosen language', array('@url' => $italian_url)));
+    $this->assertEqual($italian_url, $correct_link, format_string('The _url() function returns the right URL (@url) in accordance with the chosen language', array('@url' => $italian_url)));
 
     // Test HTTPS via options.
     $this->settingsSet('mixed_mode_sessions', TRUE);
     $this->rebuildContainer();
 
-    $italian_url = url('admin', array('https' => TRUE, 'language' => $languages['it'], 'script' => ''));
+    $italian_url = _url('admin', array('https' => TRUE, 'language' => $languages['it'], 'script' => ''));
     $correct_link = 'https://' . $link;
-    $this->assertTrue($italian_url == $correct_link, format_string('The url() function returns the right HTTPS URL (via options) (@url) in accordance with the chosen language', array('@url' => $italian_url)));
+    $this->assertTrue($italian_url == $correct_link, format_string('The _url() function returns the right HTTPS URL (via options) (@url) in accordance with the chosen language', array('@url' => $italian_url)));
     $this->settingsSet('mixed_mode_sessions', FALSE);
 
     // Test HTTPS via current URL scheme.
     $request = Request::create('', 'GET', array(), array(), array(), array('HTTPS' => 'on'));
     $this->container->get('request_stack')->push($request);
     $generator = $this->container->get('url_generator');
-    $italian_url = url('admin', array('language' => $languages['it'], 'script' => ''));
+    $italian_url = _url('admin', array('language' => $languages['it'], 'script' => ''));
     $correct_link = 'https://' . $link;
-    $this->assertTrue($italian_url == $correct_link, format_string('The url() function returns the right URL (via current URL scheme) (@url) in accordance with the chosen language', array('@url' => $italian_url)));
+    $this->assertTrue($italian_url == $correct_link, format_string('The _url() function returns the right URL (via current URL scheme) (@url) in accordance with the chosen language', array('@url' => $italian_url)));
   }
 }
