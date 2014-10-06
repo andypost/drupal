@@ -20,7 +20,7 @@ class RouteProcessor implements OutboundRouteProcessorInterface {
   /**
    * The config factory.
    *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
 
@@ -47,10 +47,9 @@ class RouteProcessor implements OutboundRouteProcessorInterface {
   /**
    * {@inheritdoc}
    */
-  public function processOutbound(Route $route, array &$parameters) {
-    // @todo Check the route machine name here https://drupal.org/node/2283851
-    if ($route->getPath() == '/taxonomy/term/{taxonomy_term}' && !empty($parameters['taxonomy_term'])) {
-      // Take over URI construction for taxonomy terms that are forums.
+  public function processOutbound($route_name, Route $route, array &$parameters) {
+    if ($route_name == 'entity.taxonomy_term.canonical' && !empty($parameters['taxonomy_term'])) {
+      // Take over URI construction for taxonomy terms that belongs to forum.
       if ($vid = $this->configFactory->get('forum.settings')->get('vocabulary')) {
         if ($this->entityManager->getStorage('taxonomy_term')->load($parameters['taxonomy_term'])->getVocabularyId() == $vid) {
           $route->setPath('/forum/{taxonomy_term}');
