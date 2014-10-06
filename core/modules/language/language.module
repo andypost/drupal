@@ -170,22 +170,6 @@ function language_process_language_select($element) {
 }
 
 /**
- * Implements hook_element_info().
- *
- * @todo Remove once https://www.drupal.org/node/2326409 is in.
- */
-function language_element_info() {
-  $types['language_configuration'] = array(
-    '#input' => TRUE,
-    '#tree' => TRUE,
-    '#process' => array(
-      '\Drupal\language\Element\LanguageConfiguration::processLanguageConfiguration',
-    ),
-  );
-  return $types;
-}
-
-/**
  * Submit handler for the forms that have a language_configuration element.
  */
 function language_configuration_element_submit(&$form, FormStateInterface $form_state) {
@@ -232,7 +216,7 @@ function language_get_default_configuration($entity_type, $bundle) {
   if (is_null($configuration)) {
     $configuration = array();
   }
-  $configuration += array('langcode' => 'site_default', 'language_show' => FALSE);
+  $configuration += array('langcode' => LanguageInterface::LANGCODE_SITE_DEFAULT, 'language_show' => FALSE);
   return $configuration;
 }
 
@@ -294,13 +278,13 @@ function language_get_default_langcode($entity_type, $bundle) {
   $configuration = language_get_default_configuration($entity_type, $bundle);
 
   if (!isset($configuration['langcode'])) {
-    $configuration['langcode'] = 'site_default';
+    $configuration['langcode'] = LanguageInterface::LANGCODE_SITE_DEFAULT;
   }
 
   $default_value = NULL;
   $language_interface = \Drupal::languageManager()->getCurrentLanguage();
   switch ($configuration['langcode']) {
-    case 'site_default':
+    case LanguageInterface::LANGCODE_SITE_DEFAULT:
       $default_value = \Drupal::languageManager()->getDefaultLanguage()->id;
       break;
 

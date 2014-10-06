@@ -769,7 +769,7 @@ function install_tasks($install_state) {
  * Returns a list of tasks that should be displayed to the end user.
  *
  * The output of this function is a list suitable for sending to
- * theme_task_list().
+ * maintenance-task-list.html.twig.
  *
  * @param $install_state
  *   An array of information about the current installation state.
@@ -778,7 +778,7 @@ function install_tasks($install_state) {
  *   A list of tasks, with keys equal to the machine-readable task name and
  *   values equal to the name that should be displayed.
  *
- * @see theme_task_list()
+ * @see maintenance-task-list.html.twig
  */
 function install_tasks_to_display($install_state) {
   $displayed_tasks = array();
@@ -915,7 +915,7 @@ function install_display_output($output, $install_state) {
     // been completed.
     $active_task = $install_state['installation_finished'] ? NULL : $install_state['active_task'];
     $task_list = array(
-      '#theme' => 'task_list',
+      '#theme' => 'maintenance_task_list',
       '#items' => install_tasks_to_display($install_state),
       '#active' => $active_task,
     );
@@ -1566,7 +1566,9 @@ function install_download_additional_translations_operations(&$install_state) {
   if ($langcode != 'en') {
     \Drupal::config('system.site')->set('langcode', $langcode)->save();
     \Drupal::service('language.default')->set($language);
-    entity_delete_multiple('configurable_language', array('en'));
+    if (empty($install_state['profile_info']['keep_english'])) {
+      entity_delete_multiple('configurable_language', array('en'));
+    }
   }
 
   // If there is more than one language or the single one is not English, we

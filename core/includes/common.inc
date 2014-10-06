@@ -3358,8 +3358,9 @@ function element_set_attributes(array &$element, array $map) {
  *   Array of the possible severity levels for log messages.
  *
  * @see http://www.ietf.org/rfc/rfc3164.txt
- * @see watchdog()
  * @ingroup logging_severity_levels
+ *
+ * @todo Move this in https://www.drupal.org/node/2267545 in \Drupal\Core\Log.
  */
 function watchdog_severity_levels() {
   return array(
@@ -3446,9 +3447,6 @@ function drupal_flush_all_caches() {
   // Reset all static caches.
   drupal_static_reset();
 
-  // Clear all non-drupal_static() static caches.
-  \Drupal::entityManager()->clearCachedDefinitions();
-
   // Wipe the PHP Storage caches.
   PhpStorageFactory::get('service_container')->deleteAll();
   PhpStorageFactory::get('twig')->deleteAll();
@@ -3497,6 +3495,9 @@ function drupal_flush_all_caches() {
 
   // Rebuild all information based on new module data.
   $module_handler->invokeAll('rebuild');
+
+  // Clear all plugin caches.
+  \Drupal::service('plugin.cache_clearer')->clearCachedDefinitions();
 
   // Rebuild the menu router based on all rebuilt data.
   // Important: This rebuild must happen last, so the menu router is guaranteed
