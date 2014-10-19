@@ -14,6 +14,7 @@ use Drupal\Component\Datetime\DateTimePlus;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\String;
 use Drupal\user\Entity\Role;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_help().
@@ -40,22 +41,18 @@ function toolbar_help($route_name, RouteMatchInterface $route_match) {
 function toolbar_theme($existing, $type, $theme, $path) {
   $items['toolbar'] = array(
     'render element' => 'element',
-    'template' => 'toolbar',
-  );
-  $items['toolbar_item'] = array(
-    'render element' => 'element',
   );
 
   return $items;
 }
 
 /**
- * Implements hook_page_build().
+ * Implements hook_page_top().
  *
- * Add admin toolbar to the page_top region automatically.
+ * Add admin toolbar to the top of the page automatically.
  */
-function toolbar_page_build(&$page) {
-  $page['page_top']['toolbar'] = array(
+function toolbar_page_top(array &$page_top) {
+  $page_top['toolbar'] = array(
     '#type' => 'toolbar',
     '#access' => \Drupal::currentUser()->hasPermission('access toolbar'),
   );
@@ -128,7 +125,7 @@ function toolbar_toolbar() {
     'tab' => array(
       '#type' => 'link',
       '#title' => t('Back to site'),
-      '#href' => '<front>',
+      '#url' => Url::fromRoute('<front>'),
       '#attributes' => array(
         'title' => t('Return to site content'),
         'class' => array('toolbar-icon', 'toolbar-icon-escape-admin'),
@@ -151,7 +148,7 @@ function toolbar_toolbar() {
   // toolbar_subtrees route. We provide the JavaScript requesting that JSONP
   // script here with the hash parameter that is needed for that route.
   // @see toolbar_subtrees_jsonp()
-  $langcode = \Drupal::languageManager()->getCurrentLanguage()->id;
+  $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
   $subtrees_attached['js'][] = array(
     'type' => 'setting',
     'data' => array('toolbar' => array(
@@ -167,7 +164,7 @@ function toolbar_toolbar() {
     'tab' => array(
       '#type' => 'link',
       '#title' => t('Manage'),
-      '#href' => 'admin',
+      '#url' => Url::fromRoute('system.admin'),
       '#attributes' => array(
         'title' => t('Admin menu'),
         'class' => array('toolbar-icon', 'toolbar-icon-menu'),

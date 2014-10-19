@@ -132,6 +132,18 @@ interface ImageStyleInterface extends ConfigEntityInterface, ThirdPartySettingsI
   public function transformDimensions(array &$dimensions);
 
   /**
+   * Determines the extension of the derivative without generating it.
+   *
+   * @param string $extension
+   *   The file extension of the original image.
+   *
+   * @return string
+   *   The extension the derivative image will have, given the extension of the
+   *   original.
+   */
+  public function getDerivativeExtension($extension);
+
+  /**
    * Returns a specific image effect.
    *
    * @param string $effect
@@ -145,8 +157,8 @@ interface ImageStyleInterface extends ConfigEntityInterface, ThirdPartySettingsI
   /**
    * Returns the image effects for this style.
    *
-   * @return \Drupal\image\ImageEffectBag|\Drupal\image\ImageEffectInterface[]
-   *   The image effect plugin bag.
+   * @return \Drupal\image\ImageEffectPluginCollection|\Drupal\image\ImageEffectInterface[]
+   *   The image effect plugin collection.
    */
   public function getEffects();
 

@@ -78,7 +78,7 @@ class LanguageConfigurationElementTest extends WebTestBase {
     language_save_default_configuration('custom_type', 'custom_bundle', array('langcode' => 'current_interface', 'language_show' => TRUE));
     $langcode = language_get_default_langcode('custom_type', 'custom_bundle');
     $language_interface = \Drupal::languageManager()->getCurrentLanguage();
-    $this->assertEqual($langcode, $language_interface->id);
+    $this->assertEqual($langcode, $language_interface->getId());
 
     // Site's default.
     $old_default = \Drupal::languageManager()->getDefaultLanguage();
@@ -96,7 +96,7 @@ class LanguageConfigurationElementTest extends WebTestBase {
     $this->assertFalse($configurable_language->isDefault(), 'The en language entity is not flagged as the default language.');
     $configurable_language = entity_load('configurable_language', 'cc');
     // Check calling the
-    // \Drupal\language\Entity\ConfigurableLanguage::isDefault() method
+    // \Drupal\language\ConfigurableLanguageInterface::isDefault() method
     // directly.
     $this->assertTrue($configurable_language->isDefault(), 'The cc language entity is flagged as the default language.');
 

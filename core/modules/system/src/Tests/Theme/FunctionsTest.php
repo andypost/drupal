@@ -10,6 +10,7 @@ namespace Drupal\system\Tests\Theme;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Session\UserSession;
+use Drupal\Core\Url;
 use Drupal\simpletest\WebTestBase;
 
 /**
@@ -44,21 +45,21 @@ class FunctionsTest extends WebTestBase {
     // Verify that empty items produce the empty string.
     $variables = array();
     $variables['empty'] = 'No items found.';
-    $expected = 'No items found.';
+    $expected = '<div class="item-list">No items found.</div>';
     $this->assertThemeOutput('item_list', $variables, $expected, 'Empty %callback generates empty string.');
 
     // Verify that empty items produce the empty string with title.
     $variables = array();
     $variables['title'] = 'Some title';
     $variables['empty'] = 'No items found.';
-    $expected = '<h3>Some title</h3>No items found.';
+    $expected = '<div class="item-list"><h3>Some title</h3>No items found.</div>';
     $this->assertThemeOutput('item_list', $variables, $expected, 'Empty %callback generates empty string with title.');
 
     // Verify that title set to 0 is output.
     $variables = array();
     $variables['title'] = 0;
     $variables['empty'] = 'No items found.';
-    $expected = '<h3>0</h3>No items found.';
+    $expected = '<div class="item-list"><h3>0</h3>No items found.</div>';
     $this->assertThemeOutput('item_list', $variables, $expected, '%callback with title set to 0 generates a title.');
 
     // Verify that title set to a render array is output.
@@ -67,7 +68,7 @@ class FunctionsTest extends WebTestBase {
       '#markup' => '<span>Render array</span>',
     );
     $variables['empty'] = 'No items found.';
-    $expected = '<h3><span>Render array</span></h3>No items found.';
+    $expected = '<div class="item-list"><h3><span>Render array</span></h3>No items found.</div>';
     $this->assertThemeOutput('item_list', $variables, $expected, '%callback with title set to a render array generates a title.');
 
     // Verify that empty text is not displayed when there are list items.
@@ -75,7 +76,7 @@ class FunctionsTest extends WebTestBase {
     $variables['title'] = 'Some title';
     $variables['empty'] = 'No items found.';
     $variables['items'] = array('Un', 'Deux', 'Trois');
-    $expected = '<h3>Some title</h3><ul><li>Un</li><li>Deux</li><li>Trois</li></ul>';
+    $expected = '<div class="item-list"><h3>Some title</h3><ul><li>Un</li><li>Deux</li><li>Trois</li></ul></div>';
     $this->assertThemeOutput('item_list', $variables, $expected, '%callback does not print empty text when there are list items.');
 
     // Verify nested item lists.
@@ -136,23 +137,24 @@ class FunctionsTest extends WebTestBase {
       'f',
     );
 
-    $inner_b = '<ol id="blist">';
+    $inner_b = '<div class="item-list"><ol id="blist">';
     $inner_b .= '<li>ba</li>';
     $inner_b .= '<li class="item-class-bb">bb</li>';
-    $inner_b .= '</ol>';
+    $inner_b .= '</ol></div>';
 
-    $inner_cb = '<ul>';
+    $inner_cb = '<div class="item-list"><ul>';
     $inner_cb .= '<li>cba</li>';
     $inner_cb .= '<li>cbb</li>';
-    $inner_cb .= '</ul>';
+    $inner_cb .= '</ul></div>';
 
-    $inner_c = '<ul id="clist">';
+    $inner_c = '<div class="item-list"><ul id="clist">';
     $inner_c .= '<li>ca</li>';
     $inner_c .= '<li class="item-class-cb">cb' . $inner_cb . '</li>';
     $inner_c .= '<li>cc</li>';
-    $inner_c .= '</ul>';
+    $inner_c .= '</ul></div>';
 
-    $expected = '<h3>Some title</h3>';
+    $expected = '<div class="item-list">';
+    $expected .= '<h3>Some title</h3>';
     $expected .= '<ul id="parentlist">';
     $expected .= '<li>a</li>';
     $expected .= '<li id="item-id-b">b' . $inner_b . '</li>';
@@ -160,7 +162,7 @@ class FunctionsTest extends WebTestBase {
     $expected .= '<li id="item-id-d">d</li>';
     $expected .= '<li id="item-id-e"></li>';
     $expected .= '<li>f</li>';
-    $expected .= '</ul>';
+    $expected .= '</ul></div>';
 
     $this->assertThemeOutput('item_list', $variables, $expected);
   }
@@ -189,24 +191,22 @@ class FunctionsTest extends WebTestBase {
     $variables['links'] = array(
       'a link' => array(
         'title' => 'A <link>',
-        'href' => 'a/link',
+        'url' => Url::fromUri('base://a/link'),
       ),
       'plain text' => array(
         'title' => 'Plain "text"',
       ),
       'front page' => array(
         'title' => 'Front page',
-        'href' => '<front>',
+        'url' => Url::fromRoute('<front>'),
       ),
       'router-test' => array(
         'title' => 'Test route',
-        'route_name' => 'router_test.1',
-        'route_parameters' => array(),
+        'url' => Url::fromRoute('router_test.1'),
       ),
       'query-test' => array(
         'title' => 'Query test route',
-        'route_name' => 'router_test.1',
-        'route_parameters' => array(),
+        'url' => Url::fromRoute('router_test.1'),
         'query' => array(
           'key' => 'value',
         )
@@ -215,7 +215,7 @@ class FunctionsTest extends WebTestBase {
 
     $expected_links = '';
     $expected_links .= '<ul id="somelinks">';
-    $expected_links .= '<li class="a-link"><a href="' . _url('a/link') . '">' . String::checkPlain('A <link>') . '</a></li>';
+    $expected_links .= '<li class="a-link"><a href="' . Url::fromUri('base://a/link')->toString() . '">' . String::checkPlain('A <link>') . '</a></li>';
     $expected_links .= '<li class="plain-text">' . String::checkPlain('Plain "text"') . '</li>';
     $expected_links .= '<li class="front-page"><a href="' . _url('<front>') . '">' . String::checkPlain('Front page') . '</a></li>';
     $expected_links .= '<li class="router-test"><a href="' . \Drupal::urlGenerator()->generate('router_test.1') . '">' . String::checkPlain('Test route') . '</a></li>';
@@ -249,15 +249,12 @@ class FunctionsTest extends WebTestBase {
     $this->assertThemeOutput('links', $variables, $expected);
 
     // Verify that passing attributes for the links work.
-    $variables['links']['a link']['attributes'] = array(
-      'class' => array('a/class'),
-    );
     $variables['links']['plain text']['attributes'] = array(
       'class' => array('a/class'),
     );
     $expected_links = '';
     $expected_links .= '<ul id="somelinks">';
-    $expected_links .= '<li class="a-link"><a href="' . _url('a/link') . '" class="a/class">' . String::checkPlain('A <link>') . '</a></li>';
+    $expected_links .= '<li class="a-link"><a href="' . Url::fromUri('base://a/link')->toString() . '">' . String::checkPlain('A <link>') . '</a></li>';
     $expected_links .= '<li class="plain-text"><span class="a/class">' . String::checkPlain('Plain "text"') . '</span></li>';
     $expected_links .= '<li class="front-page"><a href="' . _url('<front>') . '">' . String::checkPlain('Front page') . '</a></li>';
     $expected_links .= '<li class="router-test"><a href="' . \Drupal::urlGenerator()->generate('router_test.1') . '">' . String::checkPlain('Test route') . '</a></li>';
@@ -272,7 +269,7 @@ class FunctionsTest extends WebTestBase {
     $variables['set_active_class'] = TRUE;
     $expected_links = '';
     $expected_links .= '<ul id="somelinks">';
-    $expected_links .= '<li class="a-link" data-drupal-link-system-path="a/link"><a href="' . _url('a/link') . '" class="a/class" data-drupal-link-system-path="a/link">' . String::checkPlain('A <link>') . '</a></li>';
+    $expected_links .= '<li class="a-link"><a href="' . Url::fromUri('base://a/link')->toString() . '">' . String::checkPlain('A <link>') . '</a></li>';
     $expected_links .= '<li class="plain-text"><span class="a/class">' . String::checkPlain('Plain "text"') . '</span></li>';
     $expected_links .= '<li class="front-page" data-drupal-link-system-path="&lt;front&gt;"><a href="' . _url('<front>') . '" data-drupal-link-system-path="&lt;front&gt;">' . String::checkPlain('Front page') . '</a></li>';
     $expected_links .= '<li class="router-test" data-drupal-link-system-path="router_test/test1"><a href="' . \Drupal::urlGenerator()->generate('router_test.1') . '" data-drupal-link-system-path="router_test/test1">' . String::checkPlain('Test route') . '</a></li>';
@@ -296,7 +293,7 @@ class FunctionsTest extends WebTestBase {
       '#links' => array(
         'parent_link' => array(
           'title' => 'Parent link original',
-          'href' => 'parent-link-original',
+          'url' => Url::fromRoute('router_test.1'),
         ),
       ),
       'first_child' => array(
@@ -307,12 +304,12 @@ class FunctionsTest extends WebTestBase {
           // one of the parent's links).
           'parent_link' => array(
             'title' => 'Parent link copy',
-            'href' => 'parent-link-copy',
+            'url' => Url::fromRoute('router_test.6'),
           ),
           // This should always be rendered.
           'first_child_link' => array(
             'title' => 'First child link',
-            'href' => 'first-child-link',
+            'url' => Url::fromRoute('router_test.7'),
           ),
         ),
       ),
@@ -322,7 +319,7 @@ class FunctionsTest extends WebTestBase {
         '#links' => array(
           'second_child_link' => array(
             'title' => 'Second child link',
-            'href' => 'second-child-link',
+            'url' => Url::fromRoute('router_test.8'),
           ),
         ),
       ),
@@ -333,7 +330,7 @@ class FunctionsTest extends WebTestBase {
         '#links' => array(
           'third_child_link' => array(
             'title' => 'Third child link',
-            'href' => 'third-child-link',
+            'url' => Url::fromRoute('router_test.9'),
           ),
         ),
         '#access' => FALSE,

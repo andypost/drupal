@@ -269,7 +269,7 @@ function content_translation_form_language_content_settings_validate(array $form
         $values = $bundle_settings['settings']['language'];
         if (empty($values['language_show']) && \Drupal::languageManager()->isLanguageLocked($values['langcode'])) {
           foreach (\Drupal::languageManager()->getLanguages(LanguageInterface::STATE_LOCKED) as $language) {
-            $locked_languages[] = $language->name;
+            $locked_languages[] = $language->getName();
           }
           $form_state->setErrorByName($name, t('Translation is not supported if language is always one of: @locked_languages', array('@locked_languages' => implode(', ', $locked_languages))));
         }
@@ -337,7 +337,5 @@ function content_translation_form_language_content_settings_submit(array $form, 
 
   // Ensure entity and menu router information are correctly rebuilt.
   \Drupal::entityManager()->clearCachedDefinitions();
-  \Drupal::service('router.builder')->setRebuildNeeded();
-
-  drupal_set_message(t('Settings successfully updated.'));
+  \Drupal::service('router.builder_indicator')->setRebuildNeeded();
 }

@@ -145,49 +145,6 @@ const JS_THEME = 100;
 const LOCALE_PLURAL_DELIMITER = "\03";
 
 /**
- * Adds content to a specified region.
- *
- * @param $region
- *   Page region the content is added to.
- * @param $data
- *   Content to be added.
- */
-function drupal_add_region_content($region = NULL, $data = NULL) {
-  static $content = array();
-
-  if (isset($region) && isset($data)) {
-    $content[$region][] = $data;
-  }
-  return $content;
-}
-
-/**
- * Gets assigned content for a given region.
- *
- * @param $region
- *   A specified region to fetch content for. If NULL, all regions will be
- *   returned.
- * @param $delimiter
- *   Content to be inserted between imploded array elements.
- */
-function drupal_get_region_content($region = NULL, $delimiter = ' ') {
-  $content = drupal_add_region_content();
-  if (isset($region)) {
-    if (isset($content[$region]) && is_array($content[$region])) {
-      return implode($delimiter, $content[$region]);
-    }
-  }
-  else {
-    foreach (array_keys($content) as $region) {
-      if (is_array($content[$region])) {
-        $content[$region] = implode($delimiter, $content[$region]);
-      }
-    }
-    return $content;
-  }
-}
-
-/**
  * Gets the name of the currently active installation profile.
  *
  * When this function is called during Drupal's initial installation process,
@@ -237,8 +194,11 @@ function drupal_get_profile() {
  *   An array of all stored HEAD elements.
  *
  * @see \Drupal\Core\Render\Element\HtmlTag::preRenderHtmlTag()
+ *
+ * @deprecated in Drupal 8.0.x, will be removed before Drupal 8.0.0
+ *   Use #attached on render arrays.
  */
-function drupal_add_html_head($data = NULL, $key = NULL) {
+function _drupal_add_html_head($data = NULL, $key = NULL) {
   $stored_head = &drupal_static(__FUNCTION__, array());
 
   if (isset($data) && isset($key)) {
@@ -258,9 +218,12 @@ function drupal_add_html_head($data = NULL, $key = NULL) {
  *
  * @return string|array
  *   Return the rendered HTML head or the elements itself.
+ *
+ * @deprecated in Drupal 8.0.x, will be removed before Drupal 8.0.0
+ *   Use #attached on render arrays.
  */
 function drupal_get_html_head($render = TRUE) {
-  $elements = drupal_add_html_head();
+  $elements = _drupal_add_html_head();
   \Drupal::moduleHandler()->alter('html_head', $elements);
   if ($render) {
     return drupal_render($elements);
@@ -279,8 +242,11 @@ function drupal_get_html_head($render = TRUE) {
  *   An internal system path or a fully qualified external URL of the feed.
  * @param $title
  *   The title of the feed.
+ *
+ * @deprecated in Drupal 8.0.x, will be removed before Drupal 8.0.0
+ *   Use #attached on render arrays.
  */
-function drupal_add_feed($url = NULL, $title = '') {
+function _drupal_add_feed($url = NULL, $title = '') {
   $stored_feed_links = &drupal_static(__FUNCTION__, array());
 
   if (isset($url)) {
@@ -291,9 +257,12 @@ function drupal_add_feed($url = NULL, $title = '') {
 
 /**
  * Gets the feed URLs for the current page.
+ *
+ * @deprecated in Drupal 8.0.x, will be removed before Drupal 8.0.0
+ *   Use #attached on render arrays.
  */
 function drupal_get_feeds() {
-  $feeds = drupal_add_feed();
+  $feeds = _drupal_add_feed();
   return $feeds;
 }
 
@@ -668,8 +637,6 @@ function _url($path = NULL, array $options = array()) {
  * @return
  *   A ; separated string ready for insertion in a HTTP header. No escaping is
  *   performed for HTML entities, so this string is not safe to be printed.
- *
- * @see drupal_add_http_header()
  */
 function drupal_http_header_attributes(array $attributes = array()) {
   foreach ($attributes as $attribute => &$data) {
@@ -739,14 +706,14 @@ function drupal_http_header_attributes(array $attributes = array()) {
  *     For authenticated users, the "active" class will be calculated on the
  *     client (through JavaScript), only data- attributes are added to links to
  *     prevent breaking the render cache. The JavaScript is added in
- *     system_page_build().
+ *     system_page_attachments().
  *   - Additional $options elements used by the url() function.
  *
  * @return string
  *   An HTML string containing a link to the given path.
  *
  * @see _url()
- * @see system_page_build()
+ * @see system_page_attachments()
  * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.0.
  *   Use \Drupal::l($text, $url) where $url is an instance of
  *   \Drupal\Core\Url. To build a \Drupal\Core\Url object for internal paths
@@ -785,7 +752,7 @@ function _l($text, $path, array $options = array()) {
   // Add a hreflang attribute if we know the language of this link's url and
   // hreflang has not already been set.
   if (!empty($variables['options']['language']) && !isset($variables['options']['attributes']['hreflang'])) {
-    $variables['options']['attributes']['hreflang'] = $variables['options']['language']->id;
+    $variables['options']['attributes']['hreflang'] = $variables['options']['language']->getId();
   }
 
   // Set the "active" class if the 'set_active_class' option is not empty.
@@ -908,8 +875,11 @@ function base_path() {
  *   Associative array of element attributes including 'href' and 'rel'.
  * @param $header
  *   Optional flag to determine if a HTTP 'Link:' header should be sent.
+ *
+ * @deprecated in Drupal 8.0.x, will be removed before Drupal 8.0.0
+ *   Use #attached on render arrays.
  */
-function drupal_add_html_head_link($attributes, $header = FALSE) {
+function _drupal_add_html_head_link($attributes, $header = FALSE) {
   $element = array(
     '#tag' => 'link',
     '#attributes' => $attributes,
@@ -920,10 +890,10 @@ function drupal_add_html_head_link($attributes, $header = FALSE) {
     // Also add a HTTP header "Link:".
     $href = '<' . String::checkPlain($attributes['href']) . '>;';
     unset($attributes['href']);
-    $element['#attached']['drupal_add_http_header'][] = array('Link',  $href . drupal_http_header_attributes($attributes), TRUE);
+    $element['#attached']['http_header'][] = array('Link',  $href . drupal_http_header_attributes($attributes), TRUE);
   }
 
-  drupal_add_html_head($element, 'drupal_add_html_head_link:' . $attributes['rel'] . ':' . $href);
+  _drupal_add_html_head($element, 'html_head_link:' . $attributes['rel'] . ':' . $href);
 }
 
 /**
@@ -947,8 +917,7 @@ function drupal_add_html_head_link($attributes, $header = FALSE) {
  * $options['preprocess'] should be only set to TRUE when a file is required for
  * all typical visitors and most pages of a site. It is critical that all
  * preprocessed files are added unconditionally on every page, even if the
- * files do not happen to be needed on a page. This is normally done by calling
- * _drupal_add_css() in a hook_page_build() implementation.
+ * files do not happen to be needed on a page.
  *
  * Non-preprocessed files should only be added to the page when they are
  * actually needed.
@@ -996,8 +965,8 @@ function drupal_add_html_head_link($attributes, $header = FALSE) {
  *     page of the website for users for whom it is present at all. This
  *     defaults to FALSE. It is set to TRUE for stylesheets added via module and
  *     theme .info.yml files. Modules that add stylesheets within
- *     hook_page_build() implementations, or from other code that ensures that
- *     the stylesheet is added to all website pages, should also set this flag
+ *     hook_page_attachments() implementations, or from other code that ensures
+ *     that the stylesheet is added to all website pages, should also set this flag
  *     to TRUE. All stylesheets within the same group that have the 'every_page'
  *     flag set to TRUE and do not have 'preprocess' set to FALSE are aggregated
  *     together into a single aggregate file, and that aggregate file can be
@@ -1397,8 +1366,7 @@ function drupal_clean_id_identifier($id) {
  * $options['preprocess'] should be only set to TRUE when a file is required for
  * all typical visitors and most pages of a site. It is critical that all
  * preprocessed files are added unconditionally on every page, even if the
- * files are not needed on a page. This is normally done by calling
- * _drupal_add_js() in a hook_page_build() implementation.
+ * files are not needed on a page.
  *
  * Non-preprocessed files should only be added to the page when they are
  * actually needed.
@@ -1441,9 +1409,9 @@ function drupal_clean_id_identifier($id) {
  *     page of the website for users for whom it is present at all. This
  *     defaults to FALSE. It is set to TRUE for JavaScript files that are added
  *     via module and theme .info.yml files. Modules that add JavaScript within
- *     hook_page_build() implementations, or from other code that ensures that
- *     the JavaScript is added to all website pages, should also set this flag
- *     to TRUE. All JavaScript files within the same group and that have the
+ *     hook_page_attachments() implementations, or from other code that ensures
+ *     that the JavaScript is added to all website pages, should also set this
+ *     flag to TRUE. All JavaScript files within the same group and that have the
  *     'every_page' flag set to TRUE and do not have 'preprocess' set to FALSE
  *     are aggregated together into a single aggregate file, and that aggregate
  *     file can be reused across a user's entire site visit, leading to faster
@@ -1555,7 +1523,7 @@ function _drupal_add_js($data = NULL, $options = NULL) {
             'currentPath' => $current_path,
             'currentPathIsAdmin' => $current_path_is_admin,
             'isFront' => drupal_is_front_page(),
-            'currentLanguage' => \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_URL)->id,
+            'currentLanguage' => \Drupal::languageManager()->getCurrentLanguage(LanguageInterface::TYPE_URL)->getId(),
           );
           if (!empty($current_query)) {
             ksort($current_query);
@@ -1742,13 +1710,13 @@ function drupal_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALS
  *
  * Example:
  * @code
- * function module1_page_build(&$page) {
+ * function module1_page_attachments(&$page) {
  *   $page['#attached']['js'][] = array(
  *     'type' => 'setting',
  *     'data' => array('foo' => array('a', 'b', 'c')),
  *   );
  * }
- * function module2_page_build(&$page) {
+ * function module2_page_attachments(&$page) {
  *   $page['#attached']['js'][] = array(
  *     'type' => 'setting',
  *     'data' => array('foo' => array('d')),
@@ -1818,7 +1786,7 @@ function drupal_merge_attached(array $a, array $b) {
  * other kind of attached data, the array key must be the full name of the
  * callback function and each value an array of arguments. For example:
  * @code
- * $build['#attached']['drupal_add_http_header'] = array(
+ * $build['#attached']['http_header'] = array(
  *   array('Content-Type', 'application/rss+xml; charset=utf-8'),
  * );
  * @endcode
@@ -1896,7 +1864,23 @@ function drupal_process_attached($elements, $dependency_check = FALSE) {
   // special handling.
   foreach ($elements['#attached'] as $callback => $options) {
     foreach ($elements['#attached'][$callback] as $args) {
-      call_user_func_array($callback, $args);
+      // Limit the amount allowed entries.
+      switch ($callback) {
+        case 'html_head':
+          call_user_func_array('_drupal_add_html_head', $args);
+          break;
+        case 'feed':
+          call_user_func_array('_drupal_add_feed', $args);
+          break;
+        case 'html_head_link':
+          call_user_func_array('_drupal_add_html_head_link', $args);
+          break;
+        case 'http_header':
+          call_user_func_array('_drupal_add_http_header', $args);
+          break;
+        default:
+          throw new \LogicException(sprintf('You are not allowed to use %s in #attached', $callback));
+      }
     }
   }
 
@@ -2057,6 +2041,9 @@ function drupal_process_states(&$elements) {
  *
  * @see \Drupal\Core\Asset\LibraryDiscovery
  * @see hook_library_info_alter()
+ *
+ * @deprecated in Drupal 8.0.x, will be removed before Drupal 8.0.0
+ *   Use #attached on render arrays.
  */
 function _drupal_add_library($library_name, $every_page = NULL) {
   $added = &drupal_static(__FUNCTION__, array());
@@ -2454,7 +2441,10 @@ function drupal_pre_render_links($element) {
  * @return array
  *   The processed render array for the page.
  *
- * @see hook_page_alter()
+ * @see hook_page_attachments()
+ * @see hook_page_attachments_alter()
+ * @see hook_page_top()
+ * @see hook_page_bottom()
  * @see element_info()
  */
 function drupal_prepare_page($page) {
@@ -2473,15 +2463,59 @@ function drupal_prepare_page($page) {
     $page = element_info('page');
   }
 
-  // Modules can add elements to $page as needed in hook_page_build().
-  foreach (\Drupal::moduleHandler()->getImplementations('page_build') as $module) {
-    $function = $module . '_page_build';
-    $function($page);
+  // Modules can add attachments.
+  $attachments = [];
+  foreach (\Drupal::moduleHandler()->getImplementations('page_attachments') as $module) {
+    $function = $module . '_page_attachments';
+    $function($attachments);
   }
-  // Modules alter the $page as needed. Blocks are populated into regions like
-  // 'sidebar_first', 'footer', etc.
-  \Drupal::moduleHandler()->alter('page', $page);
-  \Drupal::theme()->alter('page', $page);
+  if (array_diff(array_keys($attachments), ['#attached', '#post_render_cache']) !== []) {
+    throw new \LogicException('Only #attached and #post_render_cache may be set in hook_page_attachments().');
+  }
+  // Modules and themes can alter page attachments.
+  \Drupal::moduleHandler()->alter('page_attachments', $attachments);
+  \Drupal::theme()->alter('page_attachments', $attachments);
+  if (array_diff(array_keys($attachments), ['#attached', '#post_render_cache']) !== []) {
+    throw new \LogicException('Only #attached and #post_render_cache may be set in hook_page_attachments_alter().');
+  }
+  if (isset($attachments['#attached'])) {
+    $page['#attached'] = $attachments['#attached'];
+  }
+  if (isset($attachments['#post_render_cache'])) {
+    $page['#post_render_cache'] = $attachments['#post_render_cache'];
+  }
+
+  // Modules can add renderable arrays to the top and bottom of the page.
+  $pseudo_page_top = [];
+  $pseudo_page_bottom = [];
+  foreach (\Drupal::moduleHandler()->getImplementations('page_top') as $module) {
+    $function = $module . '_page_top';
+    $function($pseudo_page_top);
+  }
+  foreach (\Drupal::moduleHandler()->getImplementations('page_bottom') as $module) {
+    $function = $module . '_page_bottom';
+    $function($pseudo_page_bottom);
+  }
+  if (!empty($pseudo_page_top)) {
+    $page['page_top'] = $pseudo_page_top;
+  }
+  if (!empty($pseudo_page_bottom)) {
+    $page['page_bottom'] = $pseudo_page_bottom;
+  }
+
+  // @todo Clean this up as part of https://www.drupal.org/node/2352155.
+  if (\Drupal::moduleHandler()->moduleExists('block')) {
+    _block_page_build($page);
+    // Find all non-empty page regions, and add a theme wrapper function that
+    // allows them to be consistently themed.
+    $regions = system_region_list(\Drupal::theme()->getActiveTheme()->getName());
+    foreach (array_keys($regions) as $region) {
+      if (!empty($page[$region])) {
+        $page[$region]['#theme_wrappers'][] = 'region';
+        $page[$region]['#region'] = $region;
+      }
+    }
+  }
 
   // If no module has taken care of the main content, add it to the page now.
   // This allows the site to still be usable even if no modules that
@@ -2552,7 +2586,8 @@ function drupal_prepare_page($page) {
  *     the defaults for this type of element, defined in hook_element_info(),
  *     are merged into the array. #defaults_loaded is set by functions that
  *     process render arrays and call element_info() before passing the array to
- *     drupal_render(), such as form_builder() in the Form API.
+ *     drupal_render(), such as \Drupal::formBuilder()->doBuildForm() in the
+ *     Form API.
  *   - If this element has an array of #pre_render functions defined, they are
  *     called sequentially to modify the element before rendering. After all the
  *     #pre_render functions have been called, #printed is checked a second time
@@ -3349,30 +3384,6 @@ function element_get_visible_children(array $elements) {
  */
 function element_set_attributes(array &$element, array $map) {
   Element::setAttributes($element, $map);
-}
-
-/**
- * Returns a list of severity levels, as defined in RFC 3164.
- *
- * @return
- *   Array of the possible severity levels for log messages.
- *
- * @see http://www.ietf.org/rfc/rfc3164.txt
- * @ingroup logging_severity_levels
- *
- * @todo Move this in https://www.drupal.org/node/2267545 in \Drupal\Core\Log.
- */
-function watchdog_severity_levels() {
-  return array(
-    WATCHDOG_EMERGENCY   => t('Emergency'),
-    WATCHDOG_ALERT   => t('Alert'),
-    WATCHDOG_CRITICAL    => t('Critical'),
-    WATCHDOG_ERROR     => t('Error'),
-    WATCHDOG_WARNING => t('Warning'),
-    WATCHDOG_NOTICE  => t('Notice'),
-    WATCHDOG_INFO    => t('Info'),
-    WATCHDOG_DEBUG   => t('Debug'),
-  );
 }
 
 /**

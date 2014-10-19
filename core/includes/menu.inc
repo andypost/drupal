@@ -122,6 +122,11 @@ use Drupal\Core\Template\Attribute;
  * As a note, if your module registers multiple simple routes, it is usual
  * (and usually easiest) to put all of their methods on one controller class.
  *
+ * If the route has placeholders (see @ref sec_placeholders above) the
+ * placeholders will be passed to the method (using reflection) by name.
+ * For example, the placeholder '{myvar}' in a route will become the $myvar
+ * parameter to the method.
+ *
  * Most controllers will need to display some information stored in the Drupal
  * database, which will involve using one or more Drupal services (see the
  * @link container Services and container topic @endlink). In order to properly
@@ -344,19 +349,9 @@ function template_preprocess_menu_local_task(&$variables) {
   $variables['link'] = array(
     '#type' => 'link',
     '#title' => $link_text,
+    '#url' => $link['url'],
     '#options' => $link['localized_options'],
   );
-
-  if (!empty($link['href'])) {
-    // @todo - Remove this once all pages are converted to routes.
-    $variables['link']['#href'] = $link['href'];
-  }
-  else {
-    $variables['link'] += array(
-      '#route_name' => $link['route_name'],
-      '#route_parameters' => $link['route_parameters'],
-    );
-  }
 }
 
 /**
@@ -373,9 +368,7 @@ function template_preprocess_menu_local_task(&$variables) {
 function template_preprocess_menu_local_action(&$variables) {
   $link = $variables['element']['#link'];
   $link += array(
-    'href' => '',
     'localized_options' => array(),
-    'route_parameters' => array(),
   );
   $link['localized_options']['attributes']['class'][] = 'button';
   $link['localized_options']['attributes']['class'][] = 'button-action';
@@ -385,19 +378,8 @@ function template_preprocess_menu_local_action(&$variables) {
     '#type' => 'link',
     '#title' => $link['title'],
     '#options' => $link['localized_options'],
+    '#url' => $link['url'],
   );
-
-  // @todo Figure out how to support local actions without a href properly.
-  if ($link['href'] === '' && !empty($link['route_name'])) {
-    $variables['link'] += array(
-      '#route_name' => $link['route_name'],
-      '#route_parameters' => $link['route_parameters'],
-    );
-  }
-  else {
-    // @todo - Remove this once all pages are converted to routes.
-    $variables['link']['#href'] = $link['href'];
-  }
 }
 
 /**

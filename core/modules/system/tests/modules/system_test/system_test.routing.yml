@@ -13,18 +13,18 @@ system_test.main_content_handling:
   requirements:
     _access: 'TRUE'
 
+system_test.drupal_set_message:
+  path: '/system-test/drupal-set-message'
+  defaults:
+    _title: 'Set messages with drupal_set_message()'
+    _content: '\Drupal\system_test\Controller\SystemTestController::drupalSetMessageTest'
+  requirements:
+    _access: 'TRUE'
+
 system_test.main_content_fallback:
   path: '/system-test/main-content-fallback'
   defaults:
     _title: 'Test main content fallback'
-    _content: '\Drupal\system_test\Controller\SystemTestController::mainContentFallback'
-  requirements:
-    _access: 'TRUE'
-
-system_test.main_content_duplication:
-  path: '/system-test/main-content-duplication'
-  defaults:
-    _title: 'Test main content duplication'
     _content: '\Drupal\system_test\Controller\SystemTestController::mainContentFallback'
   requirements:
     _access: 'TRUE'
@@ -42,6 +42,14 @@ system_test.lock_exit:
   defaults:
     _title: 'Lock acquire then exit'
     _content: '\Drupal\system_test\Controller\SystemTestController::lockExit'
+  requirements:
+    _access: 'TRUE'
+
+system_test.lock_persist:
+  path: '/system-test/lock-persist/{lock_name}'
+  defaults:
+    _title: 'Persistent lock acquire'
+    _content: '\Drupal\system_test\Controller\SystemTestController::lockPersist'
   requirements:
     _access: 'TRUE'
 

@@ -9,6 +9,7 @@ namespace Drupal\toolbar\Element;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Render\Element\RenderElement;
+use Drupal\Core\Url;
 
 /**
  * Provides a toolbar item that is wrapped in markup for common styling.
@@ -28,11 +29,10 @@ class ToolbarItem extends RenderElement {
       '#pre_render' => array(
         array($class, 'preRenderToolbarItem'),
       ),
-      '#theme' => 'toolbar_item',
       'tab' => array(
         '#type' => 'link',
         '#title' => NULL,
-        '#href' => '',
+        '#url' => Url::fromRoute('<front>'),
       ),
     );
   }

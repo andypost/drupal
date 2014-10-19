@@ -49,7 +49,6 @@
  *       'plugin_id' => NULL,
  *     ),
  *    'file' => 'search.pages.inc',
- *    'template' => 'search-result',
  *   ),
  * );
  * @endcode
@@ -158,6 +157,31 @@
  * hook_theme_suggestions_alter(). These hooks get the current list of
  * suggestions as input, and can change this array (adding suggestions and
  * removing them).
+ *
+ * @section Assets
+ *
+ * We can distinguish between three types of assets:
+ * 1. unconditional page-level assets (loaded on all pages where the theme is in
+ *    use): these are defined in the theme's *.info.yml file.
+ * 2. conditional page-level assets (loaded on all pages where the theme is in
+ *    use and a certain condition is met): these are attached in
+ *    hook_page_attachments_alter(), e.g.:
+ *    @code
+ *    function THEME_page_attachments_alter(array &$page) {
+ *      if ($some_condition) {
+ *        $page['#attached']['library'][] = 'mytheme/something';
+ *      }
+ *    }
+ *    @endcode
+ * 3. template-specific assets (loaded on all pages where a specific template is
+ *    in use): these can be added by in preprocessing functions, using @code
+ *    $variables['#attached'] @endcode, e.g.:
+ *    @code
+ *    function THEME_preprocess_menu_local_action(array &$variables) {
+ *      // We require Modernizr's touch test for button styling.
+ *      $variables['#attached']['library'][] = 'core/modernizr';
+ *    }
+ *    @endcode
  *
  * @see hooks
  * @see callbacks
@@ -434,7 +458,7 @@ function hook_theme_suggestions_HOOK(array $variables) {
  */
 function hook_theme_suggestions_alter(array &$suggestions, array $variables, $hook) {
   // Add an interface-language specific suggestion to all theme hooks.
-  $suggestions[] = $hook . '__' . \Drupal::languageManager()->getCurrentLanguage()->id;
+  $suggestions[] = $hook . '__' . \Drupal::languageManager()->getCurrentLanguage()->getId();
 }
 
 /**

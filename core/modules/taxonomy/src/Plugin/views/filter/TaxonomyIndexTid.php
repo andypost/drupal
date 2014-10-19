@@ -46,10 +46,10 @@ class TaxonomyIndexTid extends ManyToOne {
     $options = parent::defineOptions();
 
     $options['type'] = array('default' => 'textfield');
-    $options['limit'] = array('default' => TRUE, 'bool' => TRUE);
+    $options['limit'] = array('default' => TRUE);
     $options['vid'] = array('default' => '');
     $options['hierarchy'] = array('default' => 0);
-    $options['error_message'] = array('default' => TRUE, 'bool' => TRUE);
+    $options['error_message'] = array('default' => TRUE);
 
     return $options;
   }
@@ -359,6 +359,19 @@ class TaxonomyIndexTid extends ManyToOne {
       }
     }
     return parent::adminSummary();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheContexts() {
+    $contexts = parent::getCacheContexts();
+    // The result potentially depends on term access and so is just cacheable
+    // per user.
+    // @todo https://www.drupal.org/node/2352175
+    $contexts[] = 'cache.context.user';
+
+    return $contexts;
   }
 
 }

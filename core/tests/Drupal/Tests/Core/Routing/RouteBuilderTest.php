@@ -74,9 +74,14 @@ class RouteBuilderTest extends UnitTestCase {
   /**
    * The key value store.
    *
-   * @var \Drupal\Core\State\StateInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Routing\RouteBuilderIndicatorInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  protected $state;
+  protected $routeBuilderIndicator;
+
+  /**
+   * @var \Drupal\Core\Access\CheckProviderInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $checkProvider;
 
   protected function setUp() {
     $this->dumper = $this->getMock('Drupal\Core\Routing\MatcherDumperInterface');
@@ -87,9 +92,10 @@ class RouteBuilderTest extends UnitTestCase {
     $this->yamlDiscovery = $this->getMockBuilder('\Drupal\Component\Discovery\YamlDiscovery')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->state = $this->getMock('\Drupal\Core\State\StateInterface');
+    $this->routeBuilderIndicator = $this->getMock('\Drupal\Core\Routing\RouteBuilderIndicatorInterface');
+    $this->checkProvider = $this->getMock('\Drupal\Core\Access\CheckProviderInterface');
 
-    $this->routeBuilder = new TestRouteBuilder($this->dumper, $this->lock, $this->dispatcher, $this->moduleHandler, $this->controllerResolver, $this->state);
+    $this->routeBuilder = new TestRouteBuilder($this->dumper, $this->lock, $this->dispatcher, $this->moduleHandler, $this->controllerResolver, $this->checkProvider, $this->routeBuilderIndicator);
     $this->routeBuilder->setYamlDiscovery($this->yamlDiscovery);
   }
 
@@ -106,9 +112,8 @@ class RouteBuilderTest extends UnitTestCase {
       ->method('release')
       ->with('router_rebuild');
 
-    $this->state->expects($this->once())
-       ->method('delete')
-       ->with('router_rebuild_needed');
+    $this->routeBuilderIndicator->expects($this->once())
+       ->method('setRebuildDone');
 
     $this->yamlDiscovery->expects($this->any())
       ->method('findAll')
@@ -168,6 +173,11 @@ class RouteBuilderTest extends UnitTestCase {
     $this->dispatcher->expects($this->at(1))
       ->method('dispatch')
       ->with(RoutingEvents::ALTER, $route_build_event);
+
+    // Ensure that access checks are set.
+    $this->checkProvider->expects($this->once())
+      ->method('setChecks')
+      ->with($route_collection);
 
     // Ensure that the routes are set to the dumper and dumped.
     $this->dumper->expects($this->at(0))
@@ -234,6 +244,11 @@ class RouteBuilderTest extends UnitTestCase {
       ->method('dispatch')
       ->with(RoutingEvents::ALTER, $route_build_event);
 
+    // Ensure that access checks are set.
+    $this->checkProvider->expects($this->once())
+      ->method('setChecks')
+      ->with($route_collection_filled);
+
     // Ensure that the routes are set to the dumper and dumped.
     $this->dumper->expects($this->at(0))
       ->method('addRoutes')
@@ -257,17 +272,14 @@ class RouteBuilderTest extends UnitTestCase {
                ->method('release')
                ->with('router_rebuild');
 
-    $this->state->expects($this->once())
-                ->method('set')
-                ->with('router_rebuild_needed');
+    $this->routeBuilderIndicator->expects($this->once())
+                ->method('setRebuildNeeded');
 
-    $this->state->expects($this->once())
-                ->method('delete')
-                ->with('router_rebuild_needed');
+    $this->routeBuilderIndicator->expects($this->once())
+                ->method('setRebuildDone');
 
-    $this->state->expects($this->exactly(2))
-                ->method('get')
-                ->with('router_rebuild_needed')
+    $this->routeBuilderIndicator->expects($this->exactly(2))
+                ->method('isRebuildNeeded')
                 ->will($this->onConsecutiveCalls(TRUE, FALSE));
 
     $this->yamlDiscovery->expects($this->any())

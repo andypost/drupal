@@ -60,7 +60,6 @@ function filter_theme() {
   return array(
     'filter_tips' => array(
       'variables' => array('tips' => NULL, 'long' => FALSE),
-      'template' => 'filter-tips',
     ),
     'text_format_wrapper' => array(
       'variables' => array(
@@ -68,11 +67,9 @@ function filter_theme() {
         'description' => NULL,
         'attributes' => array(),
       ),
-      'template' => 'text-format-wrapper',
     ),
     'filter_guidelines' => array(
       'variables' => array('format' => NULL),
-      'template' => 'filter-guidelines',
     ),
     'filter_caption' => array(
       'variables' => array(
@@ -81,7 +78,6 @@ function filter_theme() {
         'caption' => NULL,
         'classes' => NULL,
       ),
-      'template' => 'filter-caption',
     )
   );
 }
@@ -106,13 +102,13 @@ function filter_formats(AccountInterface $account = NULL) {
   // All available formats are cached for performance.
   if (!isset($formats['all'])) {
     $language_interface = \Drupal::languageManager()->getCurrentLanguage();
-    if ($cache = \Drupal::cache()->get("filter_formats:{$language_interface->id}")) {
+    if ($cache = \Drupal::cache()->get("filter_formats:{$language_interface->getId()}")) {
       $formats['all'] = $cache->data;
     }
     else {
       $formats['all'] = \Drupal::entityManager()->getStorage('filter_format')->loadByProperties(array('status' => TRUE));
       uasort($formats['all'], 'Drupal\Core\Config\Entity\ConfigEntityBase::sort');
-      \Drupal::cache()->set("filter_formats:{$language_interface->id}", $formats['all'], Cache::PERMANENT, \Drupal::entityManager()->getDefinition('filter_format')->getListCacheTags());
+      \Drupal::cache()->set("filter_formats:{$language_interface->getId()}", $formats['all'], Cache::PERMANENT, \Drupal::entityManager()->getDefinition('filter_format')->getListCacheTags());
     }
   }
 

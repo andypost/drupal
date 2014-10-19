@@ -101,6 +101,13 @@ class EntityManagerTest extends UnitTestCase {
   protected $installedDefinitions;
 
   /**
+   * The event dispatcher.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
@@ -114,11 +121,15 @@ class EntityManagerTest extends UnitTestCase {
 
     $this->cache = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
 
+    $language = $this->getMock('Drupal\Core\Language\LanguageInterface');
+    $language->expects($this->any())
+      ->method('getId')
+      ->will($this->returnValue('en'));
     $this->languageManager = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
 
     $this->languageManager->expects($this->any())
       ->method('getCurrentLanguage')
-      ->will($this->returnValue((object) array('id' => 'en')));
+      ->will($this->returnValue($language));
     $this->languageManager->expects($this->any())
       ->method('getLanguages')
       ->will($this->returnValue(array('en' => (object) array('id' => 'en'))));
@@ -135,6 +146,8 @@ class EntityManagerTest extends UnitTestCase {
     $this->typedDataManager = $this->getMockBuilder('\Drupal\Core\TypedData\TypedDataManager')
       ->disableOriginalConstructor()
       ->getMock();
+
+    $this->eventDispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
 
     $this->installedDefinitions = $this->getMock('Drupal\Core\KeyValueStore\KeyValueStoreInterface');
   }
@@ -167,7 +180,7 @@ class EntityManagerTest extends UnitTestCase {
       ->method('getDefinitions')
       ->will($this->returnValue($definitions));
 
-    $this->entityManager = new TestEntityManager(new \ArrayObject(), $this->moduleHandler, $this->cache, $this->languageManager, $this->translationManager, $this->getClassResolverStub(), $this->typedDataManager, $this->installedDefinitions);
+    $this->entityManager = new TestEntityManager(new \ArrayObject(), $this->moduleHandler, $this->cache, $this->languageManager, $this->translationManager, $this->getClassResolverStub(), $this->typedDataManager, $this->installedDefinitions, $this->eventDispatcher);
     $this->entityManager->setContainer($this->container);
     $this->entityManager->setDiscovery($this->discovery);
   }
@@ -946,9 +959,13 @@ class EntityManagerTest extends UnitTestCase {
     $entity->expects($this->exactly(2))
       ->method('getUntranslated')
       ->will($this->returnValue($entity));
+    $language = $this->getMock('\Drupal\Core\Language\LanguageInterface');
+    $language->expects($this->any())
+      ->method('getId')
+      ->will($this->returnValue('en'));
     $entity->expects($this->exactly(2))
       ->method('language')
-      ->will($this->returnValue((object) array('id' => 'en')));
+      ->will($this->returnValue($language));
     $entity->expects($this->exactly(2))
       ->method('hasTranslation')
       ->will($this->returnValueMap(array(
@@ -992,8 +1009,7 @@ class EntityManagerTest extends UnitTestCase {
     );
     $cache_id = 'entity_bundle_extra_fields:' . $entity_type_id . ':' . $bundle . ':' . $language_code;
 
-    $language = new Language();
-    $language->id = $language_code;
+    $language = new Language(array('id' => $language_code));
 
     $this->languageManager->expects($this->once())
       ->method('getCurrentLanguage')

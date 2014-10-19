@@ -9,6 +9,7 @@ use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Template\Attribute;
+use Drupal\Core\Url;
 
 /**
  * Prepares variables for Views UI display tab setting templates.
@@ -27,21 +28,10 @@ use Drupal\Core\Template\Attribute;
  *     appended to the setting's description.
  */
 function template_preprocess_views_ui_display_tab_setting(&$variables) {
-
-  // Add default class attributes.
-  $variables['attributes']['class'][] = 'views-display-setting';
-  $variables['attributes']['class'][] = 'clearfix';
-
   // Put the primary link to the left side.
   array_unshift($variables['settings_links'], $variables['link']);
 
-  $variables['attributes']['class'][] = 'views-ui-display-tab-setting';
-
-  if (!empty($variables['defaulted'])) {
-    $variables['attributes']['class'][] = 'defaulted';
-  }
   if (!empty($variables['overridden'])) {
-    $variables['attributes']['class'][] = 'overridden';
     $variables['attributes']['title'][] = t('Overridden');
   }
 
@@ -64,16 +54,12 @@ function template_preprocess_views_ui_display_tab_setting(&$variables) {
 function template_preprocess_views_ui_display_tab_bucket(&$variables) {
   $element = $variables['element'];
 
-  $variables['attributes']['class'][] = 'views-ui-display-tab-bucket';
-
-  if (!empty($element['#name'])) {
-    $variables['attributes']['class'][] = drupal_html_class($element['#name']);
-  }
   if (!empty($element['#overridden'])) {
-    $variables['attributes']['class'][] = 'overridden';
     $variables['attributes']['title'][] = t('Overridden');
   }
 
+  $variables['name'] = isset($element['#name']) ? $element['#name'] : NULL;
+  $variables['overridden'] = isset($element['#overridden']) ? $element['#overridden'] : NULL;
   $variables['content'] = $element['#children'];
   $variables['title'] = $element['#title'];
   $variables['actions'] = !empty($element['#actions']) ? $element['#actions'] : array();
@@ -283,7 +269,7 @@ function template_preprocess_views_ui_rearrange_filter_form(&$variables) {
 
         $remove_link = array(
           '#type' => 'link',
-          '#href' => '',
+          '#url' => Url::fromRoute('<none>'),
           '#title' => '<span>' . t('Remove') . '</span>',
           '#weight' => '1',
           '#options' => array(

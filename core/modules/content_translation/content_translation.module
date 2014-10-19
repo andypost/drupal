@@ -169,7 +169,8 @@ function content_translation_entity_operation_alter(array &$operations, \Drupal\
   if ($entity instanceof NodeInterface && $entity->isTranslatable()) {
     $operations['translate'] = array(
       'title' => t('Translate'),
-    ) + $entity->urlInfo('drupal:content-translation-overview')->toArray();
+      'url' => $entity->urlInfo('drupal:content-translation-overview'),
+    );
   }
 }
 
@@ -592,7 +593,7 @@ function content_translation_entity_presave(EntityInterface $entity) {
     // @todo Avoid using request attributes once translation metadata become
     //   regular fields.
     $attributes = \Drupal::request()->attributes;
-    \Drupal::service('content_translation.synchronizer')->synchronizeFields($entity, $entity->language()->id, $attributes->get('source_langcode'));
+    \Drupal::service('content_translation.synchronizer')->synchronizeFields($entity, $entity->language()->getId(), $attributes->get('source_langcode'));
   }
 }
 
@@ -676,7 +677,7 @@ function content_translation_language_configuration_element_validate($element, F
   $values = $form_state->getValue($key);
   if (!$values['language_show'] && $values['content_translation'] && \Drupal::languageManager()->isLanguageLocked($values['langcode'])) {
     foreach (\Drupal::languageManager()->getLanguages(LanguageInterface::STATE_LOCKED) as $language) {
-      $locked_languages[] = $language->name;
+      $locked_languages[] = $language->getName();
     }
     // @todo Set the correct form element name as soon as the element parents
     //   are correctly set. We should be using NestedArray::getValue() but for
@@ -700,7 +701,7 @@ function content_translation_language_configuration_element_submit(array $form, 
   if (content_translation_enabled($context['entity_type'], $context['bundle']) != $enabled) {
     content_translation_set_config($context['entity_type'], $context['bundle'], 'enabled', $enabled);
     \Drupal::entityManager()->clearCachedDefinitions();
-    \Drupal::service('router.builder')->setRebuildNeeded();
+    \Drupal::service('router.builder_indicator')->setRebuildNeeded();
   }
 }
 
@@ -721,9 +722,9 @@ function content_translation_preprocess_language_content_settings_table(&$variab
 }
 
 /**
- * Implements hook_page_alter().
+ * Implements hook_page_attachments().
  */
-function content_translation_page_alter(&$page) {
+function content_translation_page_attachments(&$page) {
   $route_match = \Drupal::routeMatch();
 
   // If the current route has no parameters, return.
@@ -745,10 +746,10 @@ function content_translation_page_alter(&$page) {
           ->setOption('language', $language)
           ->setAbsolute()
           ->toString();
-        $page['#attached']['drupal_add_html_head_link'][] = array(
+        $page['#attached']['html_head_link'][] = array(
           array(
             'rel' => 'alternate',
-            'hreflang' => $language->id,
+            'hreflang' => $language->getId(),
             'href' => $url,
           ),
           TRUE,
