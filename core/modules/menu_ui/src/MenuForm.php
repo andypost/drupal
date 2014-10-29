@@ -128,7 +128,7 @@ class MenuForm extends EntityForm {
       '#type' => 'textfield',
       '#title' => t('Administrative summary'),
       '#maxlength' => 512,
-      '#default_value' => $menu->description,
+      '#default_value' => $menu->getDescription(),
     );
 
     $form['langcode'] = array(
@@ -220,7 +220,7 @@ class MenuForm extends EntityForm {
       $form_state->set('menu_overview_form_parents', []);
     }
 
-    $form['#attached']['css'] = array(drupal_get_path('module', 'menu') . '/css/menu.admin.css');
+    $form['#attached']['library'][] = 'menu_ui/drupal.menu_ui.adminforms';
 
     $tree = $this->menuTree->load($this->entity->id(), new MenuTreeParameters());
 

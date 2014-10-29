@@ -144,6 +144,14 @@ class ConfigEntityBaseUnitTest extends UnitTestCase {
     // Calculating dependencies will reset the dependencies array.
     $this->entity->set('dependencies', array('module' => array('node')));
     $this->assertEmpty($this->entity->calculateDependencies());
+
+    // Calculating dependencies will reset the dependencies array using enforced
+    // dependencies.
+    $this->entity->set('dependencies', array('module' => array('node'), 'enforced' => array('module' => 'views')));
+    $dependencies = $this->entity->calculateDependencies();
+    $this->assertContains('views', $dependencies['module']);
+    $this->assertNotContains('node', $dependencies['module']);
+    $this->assertContains('views', $dependencies['enforced']['module']);
   }
 
   /**
@@ -267,12 +275,12 @@ class ConfigEntityBaseUnitTest extends UnitTestCase {
         array(
           'provider' => 'test',
           'config_dependencies' => array(
-            'entity' => array($instance_dependency_1),
+            'config' => array($instance_dependency_1),
             'module' => array($instance_dependency_2),
           )
         ),
         array(
-          'entity' => array($instance_dependency_1),
+          'config' => array($instance_dependency_1),
           'module' => array($instance_dependency_2, 'test')
         )
       )

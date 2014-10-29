@@ -43,7 +43,7 @@ abstract class ConfigEntityBase extends Entity implements ConfigEntityInterface 
   /**
    * The name of the property that is used to store plugin configuration.
    *
-   * This is needed when the entity utilizes a LazyPluginCollection, to dictate
+   * This is needed when the entity uses a LazyPluginCollection, to dictate
    * where the plugin configuration should be stored.
    *
    * @var string
@@ -163,7 +163,7 @@ abstract class ConfigEntityBase extends Entity implements ConfigEntityInterface 
    */
   public function disable() {
     // An entity was disabled, invalidate its own cache tag.
-    Cache::invalidateTags($this->getCacheTag());
+    Cache::invalidateTags($this->getCacheTags());
     return $this->setStatus(FALSE);
   }
 
@@ -316,7 +316,14 @@ abstract class ConfigEntityBase extends Entity implements ConfigEntityInterface 
   public function calculateDependencies() {
     // Dependencies should be recalculated on every save. This ensures stale
     // dependencies are never saved.
-    $this->dependencies = array();
+    if (isset($this->dependencies['enforced'])) {
+      $dependencies = $this->dependencies['enforced'];
+      $this->dependencies = $dependencies;
+      $this->dependencies['enforced'] = $dependencies;
+    }
+    else {
+      $this->dependencies = array();
+    }
     if ($this instanceof EntityWithPluginCollectionInterface) {
       // Configuration entities need to depend on the providers of any plugins
       // that they store the configuration for.
