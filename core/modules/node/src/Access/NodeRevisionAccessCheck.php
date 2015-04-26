@@ -10,7 +10,7 @@ namespace Drupal\node\Access;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\node\NodeInterface;
 use Symfony\Component\Routing\Route;
 
@@ -58,7 +58,7 @@ class NodeRevisionAccessCheck implements AccessInterface {
    *
    * @param \Symfony\Component\Routing\Route $route
    *   The route to check against.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    * @param int $node_revision
    *   (optional) The node revision ID. If not specified, but $node is, access
@@ -85,7 +85,7 @@ class NodeRevisionAccessCheck implements AccessInterface {
    *
    * @param \Drupal\node\NodeInterface $node
    *   The node to check.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   A user object representing the user for whom the operation is to be
    *   performed.
    * @param string $op

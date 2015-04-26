@@ -66,7 +66,7 @@ class ControllerResolverTest extends UnitTestCase {
     $mock_entity = $this->getMockBuilder('Drupal\Core\Entity\Entity')
       ->disableOriginalConstructor()
       ->getMock();
-    $mock_account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $mock_account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $request = new Request(array(), array(), array(
       'entity' => $mock_entity,
       'user' => $mock_account,

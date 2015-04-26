@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\Core\Session;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * An implementation of AccountSwitcherInterface.
@@ -19,7 +20,7 @@ class AccountSwitcher implements AccountSwitcherInterface {
   /**
    * A stack of previous overridden accounts.
    *
-   * @var \Drupal\Core\Session\AccountInterface[]
+   * @var \Drupal\Core\Authentication\AccountInterface[]
    */
   protected $accountStack = array();
 

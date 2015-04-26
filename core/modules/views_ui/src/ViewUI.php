@@ -19,7 +19,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\views\ViewExecutable;
 use Drupal\Core\Database\Database;
 use Drupal\Core\TypedData\TypedDataInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\views\Plugin\views\query\Sql;
 use Drupal\views\Entity\View;
 use Drupal\views\ViewEntityInterface;

@@ -14,7 +14,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\views\ViewExecutableFactory;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Base class for Views block plugins.
@@ -45,7 +45,7 @@ abstract class ViewsBlockBase extends BlockBase implements ContainerFactoryPlugi
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $user;
 
@@ -62,7 +62,7 @@ abstract class ViewsBlockBase extends BlockBase implements ContainerFactoryPlugi
    *   The view executable factory.
    * @param \Drupal\Core\Entity\EntityStorageInterface $storage
    *   The views storage.
-   * @param \Drupal\Core\Session\AccountInterface $user
+   * @param \Drupal\Core\Authentication\AccountInterface $user
    *   The current user.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, ViewExecutableFactory $executable_factory, EntityStorageInterface $storage, AccountInterface $user) {

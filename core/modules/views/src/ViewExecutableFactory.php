@@ -8,7 +8,7 @@
 namespace Drupal\views;
 
 use Drupal\Core\Routing\RouteProviderInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\views\ViewEntityInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -20,7 +20,7 @@ class ViewExecutableFactory {
   /**
    * Stores the current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $user;
 
@@ -48,7 +48,7 @@ class ViewExecutableFactory {
   /**
    * Constructs a new ViewExecutableFactory
    *
-   * @param \Drupal\Core\Session\AccountInterface $user
+   * @param \Drupal\Core\Authentication\AccountInterface $user
    *   The current user.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.

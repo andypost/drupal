@@ -8,7 +8,7 @@
 namespace Drupal\Core\Access;
 
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -21,7 +21,7 @@ interface AccessArgumentsResolverFactoryInterface {
    *
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The route match object to be checked.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account being checked.
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   Optional, the request object.

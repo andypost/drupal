@@ -8,7 +8,7 @@
 namespace Drupal\user\Form;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Form\FormBase;
 use Psr\Log\LoggerInterface;
@@ -59,7 +59,7 @@ class UserPasswordResetForm extends FormBase {
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
-   * @param \Drupal\Core\Session\AccountInterface $user
+   * @param \Drupal\Core\Authentication\AccountInterface $user
    *   User requesting reset.
    * @param string $expiration_date
    *   Formatted expiration date for the login link, or NULL if the link does

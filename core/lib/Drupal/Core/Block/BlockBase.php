@@ -16,7 +16,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Cache\Cache;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Component\Transliteration\TransliterationInterface;
 
 /**
@@ -132,7 +132,7 @@ abstract class BlockBase extends ContextAwarePluginBase implements BlockPluginIn
    * than access(), in order to avoid repeating the handling of the
    * $return_as_object argument.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user session for which to check access.
    *
    * @return \Drupal\Core\Access\AccessResult

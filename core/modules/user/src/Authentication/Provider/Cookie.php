@@ -9,7 +9,7 @@ namespace Drupal\user\Authentication\Provider;
 
 use Drupal\Core\Authentication\AuthenticationProviderInterface;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Session\SessionConfigurationInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -67,7 +67,7 @@ class Cookie implements AuthenticationProviderInterface {
    * @param \Symfony\Component\HttpFoundation\Session\SessionInterface $session
    *   The session.
    *
-   * @return \Drupal\Core\Session\AccountInterface|NULL
+   * @return \Drupal\Core\Authentication\AccountInterface|NULL
    *   The UserSession object for the current user, or NULL if this is an
    *   anonymous session.
    */

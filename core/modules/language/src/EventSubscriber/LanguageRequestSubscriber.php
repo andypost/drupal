@@ -7,7 +7,7 @@
 
 namespace Drupal\language\EventSubscriber;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\StringTranslation\Translator\TranslatorInterface;
 use Drupal\language\ConfigurableLanguageManagerInterface;
 use Drupal\language\LanguageNegotiatorInterface;
@@ -45,7 +45,7 @@ class LanguageRequestSubscriber implements EventSubscriberInterface {
   /**
    * The current active user.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -58,7 +58,7 @@ class LanguageRequestSubscriber implements EventSubscriberInterface {
    *   The language negotiator.
    * @param \Drupal\Core\StringTranslation\Translator\TranslatorInterface $translation;
    *   The translation service.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current active user.
    */
   public function __construct(ConfigurableLanguageManagerInterface $language_manager, LanguageNegotiatorInterface $negotiator, TranslatorInterface $translation, AccountInterface $current_user) {

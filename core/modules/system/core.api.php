@@ -608,7 +608,7 @@
  *   account object by calling \Drupal::currentUser(). Once you have a user
  *   object for the current user (implementing \Drupal\user\UserInterface), you
  *   can call inherited method
- *   \Drupal\Core\Session\AccountInterface::hasPermission() to check
+ *   \Drupal\Core\Authentication\AccountInterface::hasPermission() to check
  *   permissions, or pass this object into other functions/methods.
  * - Forms: Each element of a form array can have a Boolean '#access' property,
  *   which determines whether that element is visible and/or usable. This is a
@@ -632,7 +632,7 @@
  * @endcode
  *
  * Other important interfaces:
- * - \Drupal\Core\Session\AccountInterface: The part of UserInterface that
+ * - \Drupal\Core\Authentication\AccountInterface: The part of UserInterface that
  *   deals with access checking. In writing code that checks access, your
  *   method parameters should use this interface, not UserInterface.
  * - \Drupal\Core\Session\AccountProxyInterface: The interface for the

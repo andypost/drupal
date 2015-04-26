@@ -10,7 +10,7 @@ namespace Drupal\Core\Access;
 use Drupal\Core\Controller\ControllerResolverInterface;
 use Drupal\Core\Routing\Access\AccessInterface as RoutingAccessInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -57,7 +57,7 @@ class CustomAccessCheck implements RoutingAccessInterface {
    *
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The route match object to be checked.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account being checked.
    *
    * @return \Drupal\Core\Access\AccessResultInterface

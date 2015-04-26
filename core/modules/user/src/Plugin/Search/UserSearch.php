@@ -11,7 +11,7 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\search\Plugin\SearchPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -50,7 +50,7 @@ class UserSearch extends SearchPluginBase implements AccessibleInterface {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -78,7 +78,7 @@ class UserSearch extends SearchPluginBase implements AccessibleInterface {
    *   The entity manager.
    * @param ModuleHandlerInterface $module_handler
    *   The module handler.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current user.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.

@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\Core\Session\AccountInterface.
+ * Contains \Drupal\Core\Authentication\AccountInterface.
  */
 
-namespace Drupal\Core\Session;
+namespace Drupal\Core\Authentication;
 
 /**
  * Defines an account interface which represents the current user.

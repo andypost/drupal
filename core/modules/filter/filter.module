@@ -13,7 +13,7 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\Extension\Extension;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\filter\Entity\FilterFormat;
 use Drupal\filter\FilterFormatInterface;
@@ -124,7 +124,7 @@ function filter_system_info_alter(&$info, Extension $file, $type) {
 /**
  * Retrieves a list of enabled text formats, ordered by weight.
  *
- * @param \Drupal\Core\Session\AccountInterface|null $account
+ * @param \Drupal\Core\Authentication\AccountInterface|null $account
  *   (optional) If provided, only those formats that are allowed for this user
  *   account will be returned. All enabled formats will be returned otherwise.
  *   Defaults to NULL.
@@ -235,7 +235,7 @@ function filter_get_formats_by_role($rid) {
  * returned by filter_fallback_format() should be used, since that is intended
  * to be a safe, consistent format that is always available to all users.
  *
- * @param \Drupal\Core\Session\AccountInterface|null $account
+ * @param \Drupal\Core\Authentication\AccountInterface|null $account
  *   (optional) The user account to check. Defaults to the currently logged-in
  *   user. Defaults to NULL.
  *

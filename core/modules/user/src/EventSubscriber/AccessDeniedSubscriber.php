@@ -7,7 +7,7 @@
 
 namespace Drupal\user\EventSubscriber;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\UrlGeneratorTrait;
 use Drupal\Core\Routing\UrlGeneratorInterface;
@@ -31,14 +31,14 @@ class AccessDeniedSubscriber implements EventSubscriberInterface {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
   /**
    * Constructs a new redirect subscriber.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
    *   The URL generator.

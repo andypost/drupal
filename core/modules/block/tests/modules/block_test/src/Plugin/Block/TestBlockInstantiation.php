@@ -10,7 +10,7 @@ namespace Drupal\block_test\Plugin\Block;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides a basic block for testing block instantiation and configuration.

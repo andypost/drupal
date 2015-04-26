@@ -11,7 +11,7 @@ use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\config_translation\ConfigMapperManagerInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -56,7 +56,7 @@ class ConfigTranslationOverviewAccess implements AccessInterface {
    *
    * @param \Symfony\Component\Routing\Route $route
    *   The route to check against.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    *
    * @return \Drupal\Core\Access\AccessResultInterface

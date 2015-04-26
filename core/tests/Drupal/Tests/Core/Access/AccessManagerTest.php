@@ -66,7 +66,7 @@ class AccessManagerTest extends UnitTestCase {
   /**
    * The mocked account.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -78,7 +78,7 @@ class AccessManagerTest extends UnitTestCase {
   protected $argumentsResolverFactory;
 
   /**
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $currentUser;
 
@@ -119,8 +119,8 @@ class AccessManagerTest extends UnitTestCase {
 
     $this->paramConverter = $this->getMock('Drupal\Core\ParamConverter\ParamConverterManagerInterface');
 
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
-    $this->currentUser = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
+    $this->currentUser = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->argumentsResolverFactory = $this->getMock('Drupal\Core\Access\AccessArgumentsResolverFactoryInterface');
     $this->checkProvider = new CheckProvider();
     $this->checkProvider->setContainer($this->container);

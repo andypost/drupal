@@ -7,7 +7,7 @@
 
 namespace Drupal\language;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Common interface for language negotiation services.
@@ -117,7 +117,7 @@ interface LanguageNegotiatorInterface {
   /**
    * Sets the current active user and resets all language types.
    *
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current active user.
    */
   public function setCurrentUser(AccountInterface $current_user);

@@ -11,7 +11,7 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\ParamConverter\ParamNotConvertedException;
 use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
 use Drupal\Core\Routing\AccessAwareRouterInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,7 +41,7 @@ class PathValidator implements PathValidatorInterface {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -59,7 +59,7 @@ class PathValidator implements PathValidatorInterface {
    *   The access aware router.
    * @param \Symfony\Component\Routing\Matcher\UrlMatcherInterface $access_unaware_router
    *   A router implementation which does not check access.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    * @param \Drupal\Core\PathProcessor\InboundPathProcessorInterface $path_processor
    *   The path processor;

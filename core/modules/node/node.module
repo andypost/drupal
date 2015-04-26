@@ -19,7 +19,7 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\field\Entity\FieldConfig;
@@ -973,7 +973,7 @@ function node_node_access(NodeInterface $node, $op, $account) {
  *
  * @param string $op
  *   The operation that the user is trying to perform.
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *   The account object for the user performing the operation.
  *
  * @return array

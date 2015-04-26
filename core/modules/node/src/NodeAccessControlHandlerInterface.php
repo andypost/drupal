@@ -6,7 +6,7 @@
 
 namespace Drupal\node;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Node specific entity access control methods.
@@ -78,7 +78,7 @@ interface NodeAccessControlHandlerInterface {
   /**
    * Checks all grants for a given account.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   A user object representing the user for whom the operation is to be
    *   performed.
    *

@@ -10,7 +10,7 @@ namespace Drupal\comment;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\Url;
@@ -27,7 +27,7 @@ class CommentLinkBuilder implements CommentLinkBuilderInterface {
   /**
    * Current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -48,7 +48,7 @@ class CommentLinkBuilder implements CommentLinkBuilderInterface {
   /**
    * Constructs a new CommentLinkBuilder object.
    *
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   Current user.
    * @param \Drupal\comment\CommentManagerInterface $comment_manager
    *   Comment manager service.

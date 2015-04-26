@@ -8,7 +8,7 @@
 namespace Drupal\Core\Site;
 
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines the interface for the maintenance mode service.
@@ -29,7 +29,7 @@ interface MaintenanceModeInterface {
   /**
    * Determines whether a user has access to the site in maintenance mode.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The logged in user.
    *
    * @return bool

@@ -8,7 +8,7 @@
 namespace Drupal\views_test_data\Plugin\views\area;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\views\Plugin\views\area\AreaPluginBase;
 
 /**

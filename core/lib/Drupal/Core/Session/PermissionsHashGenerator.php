@@ -7,6 +7,7 @@
 
 namespace Drupal\Core\Session;
 
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\PrivateKey;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;

@@ -8,7 +8,7 @@
 namespace Drupal\Core\Field;
 
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines a item list class for changed fields.

@@ -11,7 +11,7 @@ use Drupal\block\Event\BlockContextEvent;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Plugin\Context\Context;
 use Drupal\Core\Plugin\Context\ContextDefinition;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
@@ -24,7 +24,7 @@ class CurrentUserContext extends BlockContextSubscriberBase {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -38,7 +38,7 @@ class CurrentUserContext extends BlockContextSubscriberBase {
   /**
    * Constructs a new CurrentUserContext.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.

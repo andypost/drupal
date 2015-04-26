@@ -12,7 +12,7 @@ use Drupal\Core\Entity\EntityFormBuilderInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Render\Renderer;
 
@@ -45,7 +45,7 @@ class CommentPostRenderCache {
   /**
    * Current logged in user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -70,7 +70,7 @@ class CommentPostRenderCache {
    *   The entity manager service.
    * @param \Drupal\Core\Entity\EntityFormBuilderInterface $entity_form_builder
    *   The entity form builder service.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current logged in user.
    * @param \Drupal\comment\CommentManagerInterface $comment_manager
    *   The comment manager service.

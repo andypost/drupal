@@ -9,7 +9,7 @@ namespace Drupal\Tests\system\Unit\Breadcrumbs;
 
 use Drupal\Core\Link;
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\LinkGeneratorInterface;
@@ -65,7 +65,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
   /**
    * The mocked current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $currentUser;
 
@@ -100,7 +100,7 @@ class PathBasedBreadcrumbBuilderTest extends UnitTestCase {
 
     $this->accessManager = $this->getMock('\Drupal\Core\Access\AccessManagerInterface');
     $this->titleResolver = $this->getMock('\Drupal\Core\Controller\TitleResolverInterface');
-    $this->currentUser = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->currentUser = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->currentPath = $this->getMockBuilder('Drupal\Core\Path\CurrentPathStack')
       ->disableOriginalConstructor()
       ->getMock();

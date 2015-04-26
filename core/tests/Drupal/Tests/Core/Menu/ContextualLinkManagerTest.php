@@ -70,7 +70,7 @@ class ContextualLinkManagerTest extends UnitTestCase {
   /**
    * The mocked account.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -87,7 +87,7 @@ class ContextualLinkManagerTest extends UnitTestCase {
     $this->cacheBackend = $this->getMock('Drupal\Core\Cache\CacheBackendInterface');
     $this->moduleHandler = $this->getMock('\Drupal\Core\Extension\ModuleHandlerInterface');
     $this->accessManager = $this->getMock('Drupal\Core\Access\AccessManagerInterface');
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
 
     $property = new \ReflectionProperty('Drupal\Core\Menu\ContextualLinkManager', 'controllerResolver');
     $property->setAccessible(TRUE);

@@ -13,7 +13,7 @@ use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Component\Plugin\ConfigurablePluginInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines the required interface for all block plugins.
@@ -44,7 +44,7 @@ interface BlockPluginInterface extends ConfigurablePluginInterface, PluginFormIn
    * This method allows base implementations to add general access restrictions
    * that should apply to all extending block plugins.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user session for which to check access.
    * @param bool $return_as_object
    *   (optional) Defaults to FALSE.

@@ -7,7 +7,7 @@
 
 namespace Drupal\forum;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\node\NodeInterface;
 
 /**
@@ -20,7 +20,7 @@ interface ForumManagerInterface {
    *
    * @param int $tid
    *   Term ID.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   Account to fetch topics for.
    *
    * @return array

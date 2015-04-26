@@ -7,7 +7,7 @@
 
 namespace Drupal\system\Tests\Entity;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\Core\Entity\EntityAccessControlHandler;
 use Drupal\language\Entity\ConfigurableLanguage;

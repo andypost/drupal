@@ -42,7 +42,7 @@ class ResultTest extends UnitTestCase {
       ->method('label')
       ->will($this->returnValue('ResultTest'));
 
-    $user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $user = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $views_data = $this->getMockBuilder('Drupal\views\ViewsData')
       ->disableOriginalConstructor()
       ->getMock();

@@ -8,7 +8,7 @@
 namespace Drupal\Tests\Core\Logger;
 
 use Drupal\Core\Logger\LoggerChannel;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -27,7 +27,7 @@ class LoggerChannelTest extends UnitTestCase {
    *   The function should check the $context array for expected values.
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   Will be passed to the channel under test if present.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   Will be passed to the channel under test if present.
    *
    * @dataProvider providerTestLog
@@ -84,7 +84,7 @@ class LoggerChannelTest extends UnitTestCase {
    * Data provider for self::testLog().
    */
   public function providerTestLog() {
-    $account_mock = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account_mock = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $account_mock->expects($this->exactly(2))
       ->method('id')
       ->will($this->returnValue(1));

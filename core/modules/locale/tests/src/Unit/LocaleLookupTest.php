@@ -43,7 +43,7 @@ class LocaleLookupTest extends UnitTestCase {
   /**
    * A mocked user object built from AccountInterface.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $user;
 
@@ -78,7 +78,7 @@ class LocaleLookupTest extends UnitTestCase {
     $this->lock->expects($this->never())
       ->method($this->anything());
 
-    $this->user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->user = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->user->expects($this->any())
       ->method('getRoles')
       ->will($this->returnValue(array('anonymous')));

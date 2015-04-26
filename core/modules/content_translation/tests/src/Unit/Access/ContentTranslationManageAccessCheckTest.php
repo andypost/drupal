@@ -85,7 +85,7 @@ class ContentTranslationManageAccessCheckTest extends UnitTestCase {
       ->will($this->returnValue($entity));
 
     // Set the mock account.
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
 
     // The access check under test.
     $check = new ContentTranslationManageAccessCheck($entity_manager, $language_manager);

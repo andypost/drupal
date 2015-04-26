@@ -10,7 +10,7 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableDependencyInterface;
 use Drupal\Core\Config\ConfigBase;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Value object for passing an access result with cacheability metadata.
@@ -127,7 +127,7 @@ abstract class AccessResult implements AccessResultInterface, CacheableDependenc
    *
    * Checks the permission and adds a 'user.permissions' cache context.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account for which to check a permission.
    * @param string $permission
    *   The permission to check for.
@@ -145,7 +145,7 @@ abstract class AccessResult implements AccessResultInterface, CacheableDependenc
    *
    * Checks the permission and adds a 'user.permissions' cache contexts.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account for which to check permissions.
    * @param array $permissions
    *   The permissions to check.

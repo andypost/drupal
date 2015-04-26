@@ -9,7 +9,7 @@ namespace Drupal\Core\Action;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Executable\ExecutableInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides an interface for an Action plugin.
@@ -48,7 +48,7 @@ interface ActionInterface extends ExecutableInterface, PluginInspectionInterface
    *
    * @param mixed $object
    *   The object to execute the action on.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) The user for which to check access, or NULL to check access
    *   for the current user. Defaults to NULL.
    * @param bool $return_as_object

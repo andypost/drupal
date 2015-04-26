@@ -9,7 +9,7 @@ namespace Drupal\quickedit\Access;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Entity\EntityInterface;
 
 /**
@@ -26,7 +26,7 @@ class EditEntityFieldAccessCheck implements AccessInterface, EditEntityFieldAcce
    *   The field name.
    * @param string $langcode
    *   The langcode.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    *
    * @return \Drupal\Core\Access\AccessResultInterface

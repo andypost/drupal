@@ -9,7 +9,7 @@ namespace Drupal\language;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Base class for language negotiation methods.
@@ -33,7 +33,7 @@ abstract class LanguageNegotiationMethodBase implements LanguageNegotiationMetho
   /**
    * The current active user.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 

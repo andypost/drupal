@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\Core\Session;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * A proxied implementation of AccountInterface.
@@ -23,7 +24,7 @@ class AccountProxy implements AccountProxyInterface {
   /**
    * The instantiated account.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -170,7 +171,7 @@ class AccountProxy implements AccountProxyInterface {
    * @param int $account_id
    *   The id of an account to load.
    *
-   * @return \Drupal\Core\Session\AccountInterface|NULL
+   * @return \Drupal\Core\Authentication\AccountInterface|NULL
    *   An account or NULL if none is found.
    */
   protected function loadUserEntity($account_id) {

@@ -8,7 +8,7 @@
 namespace Drupal\contact\Tests;
 
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\simpletest\WebTestBase;
 use Drupal\user\RoleInterface;
 
@@ -298,7 +298,7 @@ class ContactPersonalTest extends WebTestBase {
   /**
    * Fills out a user's personal contact form and submits it.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   A user object of the user being contacted.
    * @param array $message
    *   (optional) An array with the form fields being used. Defaults to an empty

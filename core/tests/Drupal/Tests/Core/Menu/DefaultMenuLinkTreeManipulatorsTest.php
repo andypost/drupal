@@ -30,7 +30,7 @@ class DefaultMenuLinkTreeManipulatorsTest extends UnitTestCase {
   /**
    * The mocked current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $currentUser;
 
@@ -69,7 +69,7 @@ class DefaultMenuLinkTreeManipulatorsTest extends UnitTestCase {
     parent::setUp();
 
     $this->accessManager = $this->getMock('\Drupal\Core\Access\AccessManagerInterface');
-    $this->currentUser = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->currentUser = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->queryFactory = $this->getMockBuilder('Drupal\Core\Entity\Query\QueryFactory')
       ->disableOriginalConstructor()
       ->getMock();

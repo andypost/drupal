@@ -12,7 +12,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Extension\ExtensionDiscovery;
 use Drupal\Core\Logger\RfcLogLevel;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Utility\Error;
 use Symfony\Component\ClassLoader\ApcClassLoader;
@@ -57,7 +57,7 @@ const ERROR_REPORTING_DISPLAY_VERBOSE = 'verbose';
  * Role ID for anonymous users; should match what's in the "role" table.
  *
  * @deprecated in Drupal 8.0.0, will be removed before Drupal 9.0.0.
- *   Use Drupal\Core\Session\AccountInterface::ANONYMOUS_ROLE or
+ *   Use Drupal\Core\Authentication\AccountInterface::ANONYMOUS_ROLE or
  *   \Drupal\user\RoleInterface::ANONYMOUS_ID instead.
  */
 const DRUPAL_ANONYMOUS_RID = AccountInterface::ANONYMOUS_ROLE;
@@ -66,7 +66,7 @@ const DRUPAL_ANONYMOUS_RID = AccountInterface::ANONYMOUS_ROLE;
  * Role ID for authenticated users; should match what's in the "role" table.
  *
  * @deprecated in Drupal 8.0.0, will be removed before Drupal 9.0.0.
- *   Use Drupal\Core\Session\AccountInterface::AUTHENTICATED_ROLE or
+ *   Use Drupal\Core\Authentication\AccountInterface::AUTHENTICATED_ROLE or
  *   \Drupal\user\RoleInterface::AUTHENTICATED_ID instead.
  */
 const DRUPAL_AUTHENTICATED_RID = AccountInterface::AUTHENTICATED_ROLE;

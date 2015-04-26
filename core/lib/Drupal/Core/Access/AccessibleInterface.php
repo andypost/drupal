@@ -7,7 +7,7 @@
 
 namespace Drupal\Core\Access;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Interface for checking access.
@@ -21,7 +21,7 @@ interface AccessibleInterface {
    *
    * @param string $operation
    *   The operation to be performed.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) The user for which to check access, or NULL to check access
    *   for the current user. Defaults to NULL.
    * @param bool $return_as_object

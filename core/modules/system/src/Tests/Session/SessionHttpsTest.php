@@ -10,7 +10,7 @@ namespace Drupal\system\Tests\Session;
 use Drupal\simpletest\WebTestBase;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\Component\Utility\Crypt;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Ensure that when running under HTTPS two session cookies are generated.
@@ -115,7 +115,7 @@ class SessionHttpsTest extends WebTestBase {
    *
    * Note that the parents $session_id and $loggedInUser is not updated.
    */
-  protected function loginHttp(AccountInterface $account) {
+  protected function loginHttp(\Drupal\Core\Authentication\AccountInterface $account) {
     $this->drupalGet('user/login');
 
     // Alter the form action to submit the login form through http.php, which

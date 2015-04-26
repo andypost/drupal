@@ -21,7 +21,7 @@ use Drupal\Core\Database\ConnectionNotDefinedException;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Site\Settings;
@@ -90,14 +90,14 @@ abstract class WebTestBase extends TestBase {
   /**
    * The current user logged in using the internal browser.
    *
-   * @var \Drupal\Core\Session\AccountInterface|bool
+   * @var \Drupal\Core\Authentication\AccountInterface|bool
    */
   protected $loggedInUser = FALSE;
 
   /**
    * The "#1" admin user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $rootUser;
 
@@ -676,7 +676,7 @@ abstract class WebTestBase extends TestBase {
    *   $account->pass_raw = $pass_raw;
    * @endcode
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   User object representing the user to log in.
    *
    * @see drupalCreateUser()

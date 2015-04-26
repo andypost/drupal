@@ -55,7 +55,7 @@ class CommentManagerTest extends UnitTestCase {
       $this->getMock('Drupal\Core\StringTranslation\TranslationInterface'),
       $this->getMock('Drupal\Core\Routing\UrlGeneratorInterface'),
       $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface'),
-      $this->getMock('Drupal\Core\Session\AccountInterface')
+      $this->getMock('Drupal\Core\Authentication\AccountInterface')
     );
     $comment_fields = $comment_manager->getFields('node');
     $this->assertArrayHasKey('field_foobar', $comment_fields);

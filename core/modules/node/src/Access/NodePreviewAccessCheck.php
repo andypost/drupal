@@ -9,7 +9,7 @@ namespace Drupal\node\Access;
 
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\node\NodeInterface;
 
 /**
@@ -37,7 +37,7 @@ class NodePreviewAccessCheck implements AccessInterface {
   /**
    * Checks access to the node preview page.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    * @param \Drupal\node\NodeInterface $node_preview
    *   The node that is being previewed.

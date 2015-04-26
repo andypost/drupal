@@ -7,7 +7,7 @@
 
 namespace Drupal\Core\Logger;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -27,7 +27,7 @@ interface LoggerChannelInterface extends LoggerInterface {
   /**
    * Sets the current user.
    *
-   * @param \Drupal\Core\Session\AccountInterface|null $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface|null $current_user
    *   The current user object.
    */
   public function setCurrentUser(AccountInterface $current_user = NULL);

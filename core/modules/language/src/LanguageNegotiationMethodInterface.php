@@ -9,7 +9,7 @@ namespace Drupal\language;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -37,7 +37,7 @@ interface LanguageNegotiationMethodInterface {
   /**
    * Injects the current user.
    *
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current active user.
    */
   public function setCurrentUser(AccountInterface $current_user);

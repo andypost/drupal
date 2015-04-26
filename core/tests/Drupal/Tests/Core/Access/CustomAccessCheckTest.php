@@ -96,7 +96,7 @@ class CustomAccessCheckTest extends UnitTestCase {
       ->will($this->returnValue($resolver2));
 
     $route = new Route('/test-route', array(), array('_custom_access' => '\Drupal\Tests\Core\Access\TestController::accessDeny'));
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->assertEquals(AccessResult::neutral(), $this->accessChecker->access($route, $route_match, $account));
 
     $route = new Route('/test-route', array(), array('_custom_access' => '\Drupal\Tests\Core\Access\TestController::accessAllow'));

@@ -8,7 +8,7 @@
 namespace Drupal\Core\Access;
 
 use Symfony\Component\HttpFoundation\Request;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
@@ -25,7 +25,7 @@ interface AccessManagerInterface {
    *   The route to check access to.
    * @param array $parameters
    *   Optional array of values to substitute into the route path pattern.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) Run access checks for this account. Defaults to the current
    *   user.
    * @param bool $return_as_object
@@ -45,7 +45,7 @@ interface AccessManagerInterface {
    *
    * @param Request $request
    *   The incoming request.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) Run access checks for this account. Defaults to the current
    *   user.
    * @param bool $return_as_object
@@ -67,7 +67,7 @@ interface AccessManagerInterface {
    *
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The route match.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) Run access checks for this account. Defaults to the current
    *   user.
    * @param \Symfony\Component\HttpFoundation\Request $request

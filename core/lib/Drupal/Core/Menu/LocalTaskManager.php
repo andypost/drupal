@@ -22,7 +22,7 @@ use Drupal\Core\Plugin\Factory\ContainerFactory;
 use Drupal\Core\Routing\RouteBuilderInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -107,7 +107,7 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -132,7 +132,7 @@ class LocalTaskManager extends DefaultPluginManager implements LocalTaskManagerI
    *   The language manager.
    * @param \Drupal\Core\Access\AccessManagerInterface $access_manager
    *   The access manager.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    */
   public function __construct(ControllerResolverInterface $controller_resolver, RequestStack $request_stack, RouteMatchInterface $route_match, RouteProviderInterface $route_provider, RouteBuilderInterface $route_builder, ModuleHandlerInterface $module_handler, CacheBackendInterface $cache, LanguageManagerInterface $language_manager, AccessManagerInterface $access_manager, AccountInterface $account) {

@@ -16,7 +16,7 @@ use Drupal\Core\Language\Language;
 use Drupal\Core\Menu\LocalActionManager;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,7 +74,7 @@ class LocalActionManagerTest extends UnitTestCase {
   /**
    * The mocked account.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -113,7 +113,7 @@ class LocalActionManagerTest extends UnitTestCase {
     $this->accessManager->expects($this->any())
       ->method('checkNamedRoute')
       ->will($this->returnValue(FALSE));
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->discovery = $this->getMock('Drupal\Component\Plugin\Discovery\DiscoveryInterface');
     $this->factory = $this->getMock('Drupal\Component\Plugin\Factory\FactoryInterface');
     $route_match = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');

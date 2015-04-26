@@ -28,7 +28,7 @@ class ViewsTest extends UnitTestCase {
     parent::setUp();
 
     $container = new ContainerBuilder();
-    $user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $user = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $request_stack = new RequestStack();
     $request_stack->push(new Request());
     $views_data = $this->getMockBuilder('Drupal\views\ViewsData')

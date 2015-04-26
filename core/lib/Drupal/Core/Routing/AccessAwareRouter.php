@@ -8,7 +8,7 @@
 namespace Drupal\Core\Routing;
 
 use Drupal\Core\Access\AccessManagerInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Cmf\Component\Routing\ChainRouter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -36,7 +36,7 @@ class AccessAwareRouter implements AccessAwareRouterInterface {
   /**
    * The account to use in access checks.
    *
-   * @var \Drupal\Core\Session\AccountInterface;
+   * @var \Drupal\Core\Authentication\AccountInterface;
    */
   protected $account;
 
@@ -47,7 +47,7 @@ class AccessAwareRouter implements AccessAwareRouterInterface {
    *   The chain router doing the actual routing.
    * @param \Drupal\Core\Access\AccessManagerInterface $access_manager
    *   The access manager.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account to use in access checks.
    */
   public function __construct(ChainRouter $chain_router, AccessManagerInterface $access_manager, AccountInterface $account) {

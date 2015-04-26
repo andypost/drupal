@@ -8,7 +8,7 @@
 namespace Drupal\comment;
 
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 
 /**

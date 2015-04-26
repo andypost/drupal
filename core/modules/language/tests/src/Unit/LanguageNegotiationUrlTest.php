@@ -52,7 +52,7 @@ class LanguageNegotiationUrlTest extends UnitTestCase {
     $this->languageManager = $language_manager;
 
     // Create a user stub.
-    $this->user = $this->getMockBuilder('Drupal\Core\Session\AccountInterface')
+    $this->user = $this->getMockBuilder('Drupal\Core\Authentication\AccountInterface')
       ->getMock();
   }
 

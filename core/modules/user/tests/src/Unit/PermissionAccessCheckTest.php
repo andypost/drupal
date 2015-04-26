@@ -60,7 +60,7 @@ class PermissionAccessCheckTest extends UnitTestCase {
    * @covers ::access
    */
   public function testAccess($requirements, $access) {
-    $user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $user = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $user->expects($this->any())
       ->method('hasPermission')
       ->will($this->returnValueMap([

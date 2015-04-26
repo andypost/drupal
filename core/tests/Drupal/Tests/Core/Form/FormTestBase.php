@@ -12,7 +12,7 @@ use Drupal\Core\Form\FormBuilder;
 use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -73,7 +73,7 @@ abstract class FormTestBase extends UnitTestCase {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -171,7 +171,7 @@ abstract class FormTestBase extends UnitTestCase {
     $this->kernel = $this->getMockBuilder('\Drupal\Core\DrupalKernel')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->themeManager = $this->getMock('Drupal\Core\Theme\ThemeManagerInterface');
     $this->request = new Request();
     $this->eventDispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');

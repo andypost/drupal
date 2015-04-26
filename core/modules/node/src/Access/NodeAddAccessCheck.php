@@ -10,7 +10,7 @@ namespace Drupal\node\Access;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\node\NodeTypeInterface;
 
 /**
@@ -38,7 +38,7 @@ class NodeAddAccessCheck implements AccessInterface {
   /**
    * Checks access to the node add page for the node type.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    * @param \Drupal\node\NodeTypeInterface $node_type
    *   (optional) The node type. If not specified, access is allowed if there

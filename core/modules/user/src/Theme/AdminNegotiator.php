@@ -11,7 +11,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Routing\AdminContext;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Theme\ThemeNegotiatorInterface;
 
 /**
@@ -22,7 +22,7 @@ class AdminNegotiator implements ThemeNegotiatorInterface {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $user;
 
@@ -50,7 +50,7 @@ class AdminNegotiator implements ThemeNegotiatorInterface {
   /**
    * Creates a new AdminNegotiator instance.
    *
-   * @param \Drupal\Core\Session\AccountInterface $user
+   * @param \Drupal\Core\Authentication\AccountInterface $user
    *   The current user.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.

@@ -13,7 +13,7 @@ use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Routing\RouteProviderInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\views\Plugin\views\display\DisplayRouterInterface;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
@@ -412,7 +412,7 @@ class ViewExecutable implements \Serializable {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $user;
 
@@ -442,7 +442,7 @@ class ViewExecutable implements \Serializable {
    *
    * @param \Drupal\views\ViewEntityInterface $storage
    *   The view config entity the actual information is stored on.
-   * @param \Drupal\Core\Session\AccountInterface $user
+   * @param \Drupal\Core\Authentication\AccountInterface $user
    *   The current user.
    * @param \Drupal\views\ViewsData $views_data
    *   The views data.
@@ -1899,7 +1899,7 @@ class ViewExecutable implements \Serializable {
    * Views plugins can receive the current user in order to not need dependency
    * injection.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    */
   public function getUser() {
     return $this->user;

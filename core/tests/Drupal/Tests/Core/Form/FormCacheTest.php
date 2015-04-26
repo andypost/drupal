@@ -35,7 +35,7 @@ class FormCacheTest extends UnitTestCase {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -111,7 +111,7 @@ class FormCacheTest extends UnitTestCase {
     $this->csrfToken = $this->getMockBuilder('Drupal\Core\Access\CsrfTokenGenerator')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
 
     $this->logger = $this->getMock('Psr\Log\LoggerInterface');
     $this->requestStack = $this->getMock('\Symfony\Component\HttpFoundation\RequestStack');

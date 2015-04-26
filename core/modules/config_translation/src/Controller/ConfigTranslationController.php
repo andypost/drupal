@@ -14,7 +14,7 @@ use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -56,7 +56,7 @@ class ConfigTranslationController extends ControllerBase {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -78,7 +78,7 @@ class ConfigTranslationController extends ControllerBase {
    *   The dynamic router service.
    * @param \Drupal\Core\PathProcessor\InboundPathProcessorInterface $path_processor
    *   The inbound path processor.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager.

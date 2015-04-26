@@ -9,7 +9,7 @@ namespace Drupal\views\Plugin\views\display;
 
 use Drupal\views\ViewExecutable;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * @defgroup views_display_plugins Views display plugins

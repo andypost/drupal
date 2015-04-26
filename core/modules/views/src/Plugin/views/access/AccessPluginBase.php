@@ -7,7 +7,7 @@
 
 namespace Drupal\views\Plugin\views\access;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\views\Plugin\views\PluginBase;
 use Symfony\Component\Routing\Route;
 
@@ -42,7 +42,7 @@ abstract class AccessPluginBase extends PluginBase {
   /**
    * Determine if the current user has access or not.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user who wants to access this view.
    *
    * @return TRUE

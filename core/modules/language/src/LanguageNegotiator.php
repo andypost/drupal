@@ -9,7 +9,7 @@ namespace Drupal\language;
 
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\language\Plugin\LanguageNegotiation\LanguageNegotiationUI;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -57,7 +57,7 @@ class LanguageNegotiator implements LanguageNegotiatorInterface {
   /**
    * The current active user.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 

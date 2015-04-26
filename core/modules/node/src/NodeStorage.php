@@ -8,7 +8,7 @@
 namespace Drupal\node;
 
 use Drupal\Core\Entity\Sql\SqlContentEntityStorage;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Language\LanguageInterface;
 
 /**

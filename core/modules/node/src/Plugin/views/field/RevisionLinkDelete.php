@@ -7,7 +7,7 @@
 
 namespace Drupal\node\Plugin\views\field;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\node\Plugin\views\field\RevisionLink;
 use Drupal\views\ResultRow;

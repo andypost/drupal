@@ -25,7 +25,7 @@ class CommentLockTest extends UnitTestCase {
   public function testLocks() {
     $container = new ContainerBuilder();
     $container->set('module_handler', $this->getMock('Drupal\Core\Extension\ModuleHandlerInterface'));
-    $container->set('current_user', $this->getMock('Drupal\Core\Session\AccountInterface'));
+    $container->set('current_user', $this->getMock('Drupal\Core\Authentication\AccountInterface'));
     $container->set('cache.test', $this->getMock('Drupal\Core\Cache\CacheBackendInterface'));
     $container->set('comment.statistics', $this->getMock('Drupal\comment\CommentStatisticsInterface'));
     $request_stack = new RequestStack();

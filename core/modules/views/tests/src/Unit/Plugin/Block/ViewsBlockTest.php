@@ -53,7 +53,7 @@ class ViewsBlockTest extends UnitTestCase {
   /**
    * The mocked user account.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -104,7 +104,7 @@ class ViewsBlockTest extends UnitTestCase {
       ->method('load')
       ->with('test_view')
       ->will($this->returnValue($this->view));
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
   }
 
   /**

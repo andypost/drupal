@@ -516,7 +516,7 @@ use Drupal\node\Entity\NodeType;
  *   The entity to check access to.
  * @param string $operation
  *   The operation that is to be performed on $entity.
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *    The account trying to access the entity.
  * @param string $langcode
  *    The code of the language $entity is accessed in.
@@ -530,7 +530,7 @@ use Drupal\node\Entity\NodeType;
  *
  * @ingroup entity_api
  */
-function hook_entity_access(\Drupal\Core\Entity\EntityInterface $entity, $operation, \Drupal\Core\Session\AccountInterface $account, $langcode) {
+function hook_entity_access(\Drupal\Core\Entity\EntityInterface $entity, $operation, \Drupal\Core\Authentication\AccountInterface $account, $langcode) {
   // No opinion.
   return AccessResult::neutral();
 }
@@ -542,7 +542,7 @@ function hook_entity_access(\Drupal\Core\Entity\EntityInterface $entity, $operat
  *   The entity to check access to.
  * @param string $operation
  *   The operation that is to be performed on $entity.
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *    The account trying to access the entity.
  * @param string $langcode
  *    The code of the language $entity is accessed in.
@@ -556,7 +556,7 @@ function hook_entity_access(\Drupal\Core\Entity\EntityInterface $entity, $operat
  *
  * @ingroup entity_api
  */
-function hook_ENTITY_TYPE_access(\Drupal\Core\Entity\EntityInterface $entity, $operation, \Drupal\Core\Session\AccountInterface $account, $langcode) {
+function hook_ENTITY_TYPE_access(\Drupal\Core\Entity\EntityInterface $entity, $operation, \Drupal\Core\Authentication\AccountInterface $account, $langcode) {
   // No opinion.
   return AccessResult::neutral();
 }
@@ -564,7 +564,7 @@ function hook_ENTITY_TYPE_access(\Drupal\Core\Entity\EntityInterface $entity, $o
 /**
  * Control entity create access.
  *
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *    The account trying to access the entity.
  * @param array $context
  *    An associative array of additional context values. By default it contains
@@ -582,7 +582,7 @@ function hook_ENTITY_TYPE_access(\Drupal\Core\Entity\EntityInterface $entity, $o
  *
  * @ingroup entity_api
  */
-function hook_entity_create_access(\Drupal\Core\Session\AccountInterface $account, array $context, $entity_bundle) {
+function hook_entity_create_access(\Drupal\Core\Authentication\AccountInterface $account, array $context, $entity_bundle) {
   // No opinion.
   return AccessResult::neutral();
 }
@@ -590,7 +590,7 @@ function hook_entity_create_access(\Drupal\Core\Session\AccountInterface $accoun
 /**
  * Control entity create access for a specific entity type.
  *
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *    The account trying to access the entity.
  * @param array $context
  *    An associative array of additional context values. By default it contains
@@ -608,7 +608,7 @@ function hook_entity_create_access(\Drupal\Core\Session\AccountInterface $accoun
  *
  * @ingroup entity_api
  */
-function hook_ENTITY_TYPE_create_access(\Drupal\Core\Session\AccountInterface $account, array $context, $entity_bundle) {
+function hook_ENTITY_TYPE_create_access(\Drupal\Core\Authentication\AccountInterface $account, array $context, $entity_bundle) {
   // No opinion.
   return AccessResult::neutral();
 }
@@ -1831,7 +1831,7 @@ function hook_entity_operation_alter(array &$operations, \Drupal\Core\Entity\Ent
  *   \Drupal\Core\Access\AccessibleInterface::access() for possible values.
  * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
  *   The field definition.
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *   The user account to check.
  * @param \Drupal\Core\Field\FieldItemListInterface $items
  *   (optional) The entity field object on which the operation is to be
@@ -1840,7 +1840,7 @@ function hook_entity_operation_alter(array &$operations, \Drupal\Core\Entity\Ent
  * @return \Drupal\Core\Access\AccessResultInterface
  *   The access result.
  */
-function hook_entity_field_access($operation, \Drupal\Core\Field\FieldDefinitionInterface $field_definition, \Drupal\Core\Session\AccountInterface $account, \Drupal\Core\Field\FieldItemListInterface $items = NULL) {
+function hook_entity_field_access($operation, \Drupal\Core\Field\FieldDefinitionInterface $field_definition, \Drupal\Core\Authentication\AccountInterface $account, \Drupal\Core\Field\FieldItemListInterface $items = NULL) {
   if ($field_definition->getName() == 'field_of_interest' && $operation == 'edit') {
     return AccessResult::allowedIfHasPermission($account, 'update field of interest');
   }

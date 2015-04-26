@@ -9,7 +9,7 @@ namespace Drupal\user\EventSubscriber;
 
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\UrlGeneratorTrait;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Site\MaintenanceModeInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -32,7 +32,7 @@ class MaintenanceModeSubscriber implements EventSubscriberInterface {
   /**
    * The current account.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -41,7 +41,7 @@ class MaintenanceModeSubscriber implements EventSubscriberInterface {
    *
    * @param \Drupal\Core\Site\MaintenanceModeInterface $maintenance_mode
    *   The maintenance mode.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    */
   public function __construct(MaintenanceModeInterface $maintenance_mode, AccountInterface $account) {

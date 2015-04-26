@@ -37,7 +37,7 @@ class AccessAwareRouterTest extends UnitTestCase {
   protected $accessManager;
 
   /**
-   * @var \Drupal\Core\Session\AccountInterface||\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface||\PHPUnit_Framework_MockObject_MockObject
    */
   protected $currentUser;
 
@@ -53,7 +53,7 @@ class AccessAwareRouterTest extends UnitTestCase {
     parent::setUp();
     $this->route = new Route('test');
     $this->accessManager = $this->getMock('Drupal\Core\Access\AccessManagerInterface');
-    $this->currentUser = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->currentUser = $this->getMock('Drupal\Core\Authentication\AccountInterface');
   }
 
   /**

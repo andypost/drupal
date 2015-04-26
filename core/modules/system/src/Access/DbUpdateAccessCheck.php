@@ -9,7 +9,7 @@ namespace Drupal\system\Access;
 
 use Drupal\Core\Routing\Access\AccessInterface;
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Site\Settings;
 
 /**
@@ -20,7 +20,7 @@ class DbUpdateAccessCheck implements AccessInterface {
   /**
    * Checks access for update routes.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    *
    * @return string

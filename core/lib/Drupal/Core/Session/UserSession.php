@@ -6,6 +6,10 @@
  */
 
 namespace Drupal\Core\Session;
+use Drupal\Core\Authentication\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * An implementation of the user account interface for the global user.

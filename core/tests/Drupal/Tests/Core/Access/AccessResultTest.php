@@ -367,7 +367,7 @@ class AccessResultTest extends UnitTestCase {
     $this->assertEquals($a, $c);
 
     // ::allowIfHasPermission and ::allowedIfHasPermission convenience methods.
-    $account = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $account->expects($this->any())
       ->method('hasPermission')
       ->with('may herd llamas')
@@ -835,7 +835,7 @@ class AccessResultTest extends UnitTestCase {
    * @dataProvider providerTestAllowedIfHasPermissions
    */
   public function testAllowedIfHasPermissions($permissions, $conjunction, $expected_access) {
-    $account = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $account->expects($this->any())
       ->method('hasPermission')
       ->willReturnMap([

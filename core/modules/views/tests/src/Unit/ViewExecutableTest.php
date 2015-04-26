@@ -51,7 +51,7 @@ class ViewExecutableTest extends UnitTestCase {
   /**
    * The mocked user.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $user;
 
@@ -83,7 +83,7 @@ class ViewExecutableTest extends UnitTestCase {
     parent::setUp();
 
     $this->view = $this->getMock('Drupal\views\ViewEntityInterface');
-    $this->user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->user = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->viewsData = $this->getMockBuilder('Drupal\views\ViewsData')
       ->disableOriginalConstructor()
       ->getMock();

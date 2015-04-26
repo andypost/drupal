@@ -23,7 +23,7 @@ class CommentTypeTest extends CommentTestBase {
   /**
    * Admin user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $adminUser;
 

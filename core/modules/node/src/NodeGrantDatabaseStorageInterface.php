@@ -7,7 +7,7 @@
 
 namespace Drupal\node;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides an interface for node access grant storage.
@@ -17,7 +17,7 @@ interface NodeGrantDatabaseStorageInterface {
   /**
    * Checks all grants for a given account.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   A user object representing the user for whom the operation is to be
    *   performed.
    *
@@ -39,7 +39,7 @@ interface NodeGrantDatabaseStorageInterface {
    *    - "update"
    *    - "delete"
    *    - "create"
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   A user object representing the user for whom the operation is to be
    *   performed.
    * @param string $base_table
@@ -102,7 +102,7 @@ interface NodeGrantDatabaseStorageInterface {
    *   'delete'.
    * @param string $langcode
    *   The language code for which to check access.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user for which to check access.
    *
    * @return \Drupal\Core\Access\AccessResultInterface

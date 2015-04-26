@@ -9,7 +9,7 @@ namespace Drupal\Core\Menu;
 
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Entity\Query\QueryFactory;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides a couple of menu link tree manipulators.
@@ -33,7 +33,7 @@ class DefaultMenuLinkTreeManipulators {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -49,7 +49,7 @@ class DefaultMenuLinkTreeManipulators {
    *
    * @param \Drupal\Core\Access\AccessManagerInterface $access_manager
    *   The access manager.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    * @param \Drupal\Core\Entity\Query\QueryFactory $query_factory
    *   The entity query factory.

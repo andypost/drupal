@@ -19,7 +19,7 @@ use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
 use Drupal\Core\Routing\RequestContext;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\Request;
@@ -79,7 +79,7 @@ class PathBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
   /**
    * The current user object.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -98,7 +98,7 @@ class PathBasedBreadcrumbBuilder implements BreadcrumbBuilderInterface {
    *   The config factory service.
    * @param \Drupal\Core\Controller\TitleResolverInterface $title_resolver
    *   The title resolver service.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current user object.
    * @param \Drupal\Core\Path\CurrentPathStack $current_path
    *   The current path.

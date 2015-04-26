@@ -97,7 +97,7 @@ class EditEntityFieldAccessCheckTest extends UnitTestCase {
       ->with(LanguageInterface::LANGCODE_NOT_SPECIFIED)
       ->will($this->returnValue(TRUE));
 
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $access = $this->editAccessCheck->access($entity_with_field, $field_name, LanguageInterface::LANGCODE_NOT_SPECIFIED, $account);
     $this->assertEquals($expected_result, $access);
   }
@@ -108,7 +108,7 @@ class EditEntityFieldAccessCheckTest extends UnitTestCase {
    * @dataProvider providerTestAccessForbidden
    */
   public function testAccessForbidden($field_name, $langcode) {
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $entity = $this->createMockEntity();
     $this->assertEquals(AccessResult::forbidden(), $this->editAccessCheck->access($entity, $field_name, $langcode, $account));
   }

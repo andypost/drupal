@@ -37,7 +37,7 @@ class PathValidatorTest extends UnitTestCase {
   /**
    * The mocked account.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $account;
 
@@ -63,7 +63,7 @@ class PathValidatorTest extends UnitTestCase {
 
     $this->accessAwareRouter = $this->getMock('Drupal\Core\Routing\AccessAwareRouterInterface');
     $this->accessUnawareRouter = $this->getMock('Symfony\Component\Routing\Matcher\UrlMatcherInterface');
-    $this->account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->pathProcessor = $this->getMock('Drupal\Core\PathProcessor\InboundPathProcessorInterface');
     $this->pathValidator = new PathValidator($this->accessAwareRouter, $this->accessUnawareRouter, $this->account, $this->pathProcessor);
   }

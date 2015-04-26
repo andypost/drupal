@@ -13,7 +13,7 @@ use Drupal\Core\Entity\EntityChangedInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\State\StateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\user\EntityOwnerInterface;
 
 class CommentStatistics implements CommentStatisticsInterface {
@@ -28,7 +28,7 @@ class CommentStatistics implements CommentStatisticsInterface {
   /**
    * The current logged in user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -51,7 +51,7 @@ class CommentStatistics implements CommentStatisticsInterface {
    *
    * @param \Drupal\Core\Database\Connection $database
    *   The active database connection.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current logged in user.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager service.

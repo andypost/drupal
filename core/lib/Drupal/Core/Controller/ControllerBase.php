@@ -80,7 +80,7 @@ abstract class ControllerBase implements ContainerInjectionInterface {
   /**
    * The current user service.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -235,7 +235,7 @@ abstract class ControllerBase implements ContainerInjectionInterface {
   /**
    * Returns the current user.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    *   The current user.
    */
   protected function currentUser() {

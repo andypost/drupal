@@ -17,7 +17,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Executable\ExecutableManagerInterface;
 use Drupal\Core\Plugin\Context\ContextHandlerInterface;
 use Drupal\Core\Plugin\ContextAwarePluginInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**

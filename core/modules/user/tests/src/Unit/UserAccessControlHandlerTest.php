@@ -32,21 +32,21 @@ class UserAccessControlHandlerTest extends UnitTestCase {
   /**
    * The mock user account with view access.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $viewer;
 
   /**
    * The mock user account that is able to change their own account name.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $owner;
 
   /**
    * The mock administrative test user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $admin;
 
@@ -62,7 +62,7 @@ class UserAccessControlHandlerTest extends UnitTestCase {
    */
   public function setUp() {
     parent::setUp();
-    $this->viewer = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $this->viewer = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $this->viewer
       ->expects($this->any())
       ->method('hasPermission')
@@ -72,7 +72,7 @@ class UserAccessControlHandlerTest extends UnitTestCase {
       ->method('id')
       ->will($this->returnValue(1));
 
-    $this->owner = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $this->owner = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $this->owner
       ->expects($this->any())
       ->method('hasPermission')
@@ -86,7 +86,7 @@ class UserAccessControlHandlerTest extends UnitTestCase {
       ->method('id')
       ->will($this->returnValue(2));
 
-    $this->admin = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $this->admin = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $this->admin
       ->expects($this->any())
       ->method('hasPermission')

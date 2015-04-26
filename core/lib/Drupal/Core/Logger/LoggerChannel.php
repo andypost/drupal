@@ -7,7 +7,7 @@
 
 namespace Drupal\Core\Logger;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerTrait;
 use Psr\Log\LogLevel;
@@ -59,7 +59,7 @@ class LoggerChannel implements LoggerChannelInterface {
   /**
    * The current user object.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 

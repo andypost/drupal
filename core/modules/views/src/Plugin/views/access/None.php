@@ -7,7 +7,7 @@
 
 namespace Drupal\views\Plugin\views\access;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\Routing\Route;
 
 /**

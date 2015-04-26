@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\Core\Session;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines an interface for a service for safe account switching.
@@ -21,7 +22,7 @@ interface AccountSwitcherInterface {
    * matched by a corresponding invocation of
    * AccountSwitcherInterface::switchBack() in the same function.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account to switch to.
    *
    * @return \Drupal\Core\Session\AccountSwitcherInterface

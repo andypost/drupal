@@ -13,7 +13,7 @@ use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\Plugin\EntityReferenceSelection\SelectionBase;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\user\RoleInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -50,7 +50,7 @@ class UserSelection extends SelectionBase {
    *   The entity manager service.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler service.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current user.
    * @param \Drupal\Core\Database\Connection $connection
    *   The database connection.

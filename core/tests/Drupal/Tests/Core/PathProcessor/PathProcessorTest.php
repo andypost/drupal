@@ -143,7 +143,7 @@ class PathProcessorTest extends UnitTestCase {
       ->will($this->returnValue($method));
 
     // Create a user stub.
-    $current_user = $this->getMockBuilder('Drupal\Core\Session\AccountInterface')
+    $current_user = $this->getMockBuilder('Drupal\Core\Authentication\AccountInterface')
       ->getMock();
 
     // Create the processors.

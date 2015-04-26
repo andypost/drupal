@@ -8,7 +8,7 @@
 namespace Drupal\Core\Site;
 
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\State\StateInterface;
 
 /**

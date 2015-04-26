@@ -21,7 +21,7 @@ class UserSessionTest extends UnitTestCase {
   /**
    * The user sessions used in the test
    *
-   * @var \Drupal\Core\Session\AccountInterface[]
+   * @var \Drupal\Core\Authentication\AccountInterface[]
    */
   protected $users = array();
 
@@ -47,7 +47,7 @@ class UserSessionTest extends UnitTestCase {
    * @param bool $authenticated
    *   TRUE if it is an authenticated user.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    *   The created user session.
    */
   protected function createUserSession(array $rids = array(), $authenticated = FALSE) {
@@ -133,9 +133,9 @@ class UserSessionTest extends UnitTestCase {
    *
    * @param string $permission
    *   The permission to check.
-   * @param \Drupal\Core\Session\AccountInterface[] $sessions_with_access
+   * @param \Drupal\Core\Authentication\AccountInterface[] $sessions_with_access
    *   The users with access.
-   * @param \Drupal\Core\Session\AccountInterface[] $sessions_without_access
+   * @param \Drupal\Core\Authentication\AccountInterface[] $sessions_without_access
    *   The users without access.
    *
    * @dataProvider providerTestHasPermission

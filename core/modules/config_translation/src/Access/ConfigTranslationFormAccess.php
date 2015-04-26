@@ -8,7 +8,7 @@
 namespace Drupal\config_translation\Access;
 
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\Routing\Route;
 
 /**

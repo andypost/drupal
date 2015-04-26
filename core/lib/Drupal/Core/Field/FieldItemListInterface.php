@@ -9,7 +9,7 @@ namespace Drupal\Core\Field;
 
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\Core\TypedData\ListInterface;
 

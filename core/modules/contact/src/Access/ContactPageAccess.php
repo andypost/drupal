@@ -10,7 +10,7 @@ namespace Drupal\contact\Access;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\user\UserDataInterface;
 use Drupal\user\UserInterface;
 
@@ -51,7 +51,7 @@ class ContactPageAccess implements AccessInterface {
    *
    * @param \Drupal\user\UserInterface $user
    *   The user being contacted.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    *
    * @return \Drupal\Core\Access\AccessResultInterface

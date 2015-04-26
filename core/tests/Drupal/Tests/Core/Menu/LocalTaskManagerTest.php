@@ -260,7 +260,7 @@ class LocalTaskManagerTest extends UnitTestCase {
       ->method('getCurrentLanguage')
       ->will($this->returnValue(new Language(array('id' => 'en'))));
 
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->manager = new LocalTaskManager($this->controllerResolver, $request_stack, $this->routeMatch, $this->routeProvider, $this->routeBuilder, $module_handler, $this->cacheBackend, $language_manager, $this->accessManager, $account);
 
     $property = new \ReflectionProperty('Drupal\Core\Menu\LocalTaskManager', 'discovery');

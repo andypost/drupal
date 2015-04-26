@@ -21,7 +21,7 @@ class ViewExecutableFactoryTest extends UnitTestCase {
   /**
    * The mock user object.
    *
-   * @var \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $user;
 
@@ -66,7 +66,7 @@ class ViewExecutableFactoryTest extends UnitTestCase {
   protected function setUp() {
     parent::setUp();
 
-    $this->user = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $this->user = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->requestStack = new RequestStack();
     $this->view = $this->getMock('Drupal\views\ViewEntityInterface');
     $this->viewsData = $this->getMockBuilder('Drupal\views\ViewsData')

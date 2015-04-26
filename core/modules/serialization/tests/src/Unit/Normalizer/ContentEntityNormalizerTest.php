@@ -90,7 +90,7 @@ class ContentEntityNormalizerTest extends UnitTestCase {
    * @covers ::normalize
    */
   public function testNormalizeWithAccountContext() {
-    $mock_account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $mock_account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
 
     $context = [
       'account' => $mock_account,

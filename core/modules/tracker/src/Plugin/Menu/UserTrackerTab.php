@@ -18,7 +18,7 @@ class UserTrackerTab extends LocalTaskDefault {
   /**
    * Current user object.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -28,7 +28,7 @@ class UserTrackerTab extends LocalTaskDefault {
    * @todo: https://drupal.org/node/2105123 put this method in
    *   \Drupal\Core\Plugin\PluginBase instead.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    */
   protected function currentUser() {
     if (!$this->currentUser) {

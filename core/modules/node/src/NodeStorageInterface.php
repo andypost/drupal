@@ -9,7 +9,7 @@ namespace Drupal\node;
 
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines an interface for node entity storage classes.
@@ -30,7 +30,7 @@ interface NodeStorageInterface extends EntityStorageInterface {
   /**
    * Returns a list of revision IDs having a given user as node author.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user entity.
    *
    * @return int[]

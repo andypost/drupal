@@ -7,7 +7,7 @@
 
 namespace Drupal\rest\Tests;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\node\NodeInterface;
 use Drupal\simpletest\WebTestBase;

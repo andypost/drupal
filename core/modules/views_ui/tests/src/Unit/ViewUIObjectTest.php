@@ -83,7 +83,7 @@ class ViewUIObjectTest extends UnitTestCase {
       ->setConstructorArgs(array($storage))
       ->getMock();
     $storage->set('executable', $executable);
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $account->expects($this->exactly(2))
       ->method('id')
       ->will($this->returnValue(1));

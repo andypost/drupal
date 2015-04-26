@@ -100,7 +100,7 @@ class EntityCreateAccessCheckTest extends UnitTestCase {
       ->method('getRawParameters')
       ->will($this->returnValue($raw_variables));
 
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
     $this->assertEquals($expected, $applies_check->access($route, $route_match, $account));
   }
 

@@ -11,7 +11,7 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -45,7 +45,7 @@ class ViewModeAccessCheck implements AccessInterface {
    *   The route to check against.
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The parametrized route.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The currently logged in account.
    * @param string $view_mode_name
    *   (optional) The view mode. Defaults to 'default'.

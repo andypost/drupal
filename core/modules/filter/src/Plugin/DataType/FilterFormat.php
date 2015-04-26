@@ -7,7 +7,7 @@
 
 namespace Drupal\filter\Plugin\DataType;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\TypedData\OptionsProviderInterface;
 use Drupal\Core\TypedData\Plugin\DataType\StringData;
 

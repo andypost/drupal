@@ -16,7 +16,7 @@ use Drupal\Core\Entity\EntityViewBuilderInterface;
 use Drupal\Core\Entity\EntityFormBuilderInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -58,7 +58,7 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -118,7 +118,7 @@ class CommentDefaultFormatter extends FormatterBase implements ContainerFactoryP
    *   The view mode.
    * @param array $third_party_settings
    *   Third party settings.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current user.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager

@@ -7,7 +7,7 @@
 
 namespace Drupal\node\Tests;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\simpletest\WebTestBase;
 
 /**
@@ -57,7 +57,7 @@ abstract class NodeTestBase extends WebTestBase {
    *   operation should be granted.
    * @param \Drupal\node\Entity\Node $node
    *   The node object to check.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user account for which to check access.
    * @param string|null $langcode
    *   (optional) The language code indicating which translation of the node
@@ -79,7 +79,7 @@ abstract class NodeTestBase extends WebTestBase {
    *   The node bundle to check access to.
    * @param bool $result
    *   Whether access should be granted or not.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user account for which to check access.
    * @param string|null $langcode
    *   (optional) The language code indicating which translation of the node

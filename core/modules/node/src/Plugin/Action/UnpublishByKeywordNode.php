@@ -10,7 +10,7 @@ namespace Drupal\node\Plugin\Action;
 use Drupal\Component\Utility\Tags;
 use Drupal\Core\Action\ConfigurableActionBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Unpublishes a node containing certain keywords.

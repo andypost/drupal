@@ -19,7 +19,7 @@ use Drupal\Core\Cache\Cache;
 use Drupal\Core\Database\ConnectionNotDefinedException;
 use Drupal\Core\Database\Database;
 use Drupal\Core\DrupalKernel;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Site\Settings;
@@ -682,7 +682,7 @@ abstract class BrowserTestBase extends \PHPUnit_Framework_TestCase {
    *   $account->passRaw = $pass_raw;
    * @endcode
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   User object representing the user to log in.
    *
    * @see drupalCreateUser()

@@ -11,7 +11,7 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines a default implementation for entity access control handler.
@@ -126,7 +126,7 @@ class EntityAccessControlHandler extends EntityHandlerBase implements EntityAcce
    *   The entity operation. Usually one of 'view', 'update' or 'delete'.
    * @param string $langcode
    *   The language code for which to check access.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user for which to check access.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
@@ -156,7 +156,7 @@ class EntityAccessControlHandler extends EntityHandlerBase implements EntityAcce
    *   'delete'.
    * @param string $langcode
    *   The language code for which to check access.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user for which to check access.
    *
    * @return \Drupal\Core\Access\AccessResultInterface|null
@@ -183,7 +183,7 @@ class EntityAccessControlHandler extends EntityHandlerBase implements EntityAcce
    *   'delete'.
    * @param string $langcode
    *   The language code for which to check access.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user for which to check access.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
@@ -247,7 +247,7 @@ class EntityAccessControlHandler extends EntityHandlerBase implements EntityAcce
    * This method is supposed to be overwritten by extending classes that
    * do their own custom access checking.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user for which to check access.
    * @param array $context
    *   An array of key-value pairs to pass additional context when needed.
@@ -271,10 +271,10 @@ class EntityAccessControlHandler extends EntityHandlerBase implements EntityAcce
   /**
    * Loads the current account object, if it does not exist yet.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account interface instance.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    *   Returns the current account object.
    */
   protected function prepareUser(AccountInterface $account = NULL) {
@@ -329,7 +329,7 @@ class EntityAccessControlHandler extends EntityHandlerBase implements EntityAcce
    *   Usually one of "view" or "edit".
    * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
    *   The field definition.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The user session for which to check access.
    * @param \Drupal\Core\Field\FieldItemListInterface $items
    *   (optional) The field values for which to check access, or NULL if access

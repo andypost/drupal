@@ -15,7 +15,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -47,7 +47,7 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
   /**
    * The Drupal account to use for checking for access to block.
    *
-   * @var \Drupal\Core\Session\AccountInterface.
+   * @var \Drupal\Core\Authentication\AccountInterface.
    */
   protected $account;
 
@@ -71,7 +71,7 @@ class BlockContentBlock extends BlockBase implements ContainerFactoryPluginInter
    *   The Plugin Block Manager.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager service.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account for which view access should be checked.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, BlockManagerInterface $block_manager, EntityManagerInterface $entity_manager, AccountInterface $account, UrlGeneratorInterface $url_generator) {

@@ -7,7 +7,7 @@
 
 namespace Drupal\Core\Cache;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Session\PermissionsHashGeneratorInterface;
 
 /**
@@ -25,7 +25,7 @@ class AccountPermissionsCacheContext extends UserCacheContext {
   /**
    * Constructs a new UserCacheContext service.
    *
-   * @param \Drupal\Core\Session\AccountInterface $user
+   * @param \Drupal\Core\Authentication\AccountInterface $user
    *   The current user.
    * @param \Drupal\user\PermissionsHashInterface $permissions_hash_generator
    *   The permissions hash generator.

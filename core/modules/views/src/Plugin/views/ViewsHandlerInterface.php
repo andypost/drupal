@@ -8,7 +8,7 @@
 namespace Drupal\views\Plugin\views;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides an interface for all views handlers.

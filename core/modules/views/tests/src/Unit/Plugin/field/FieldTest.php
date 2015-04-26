@@ -278,7 +278,7 @@ class FieldTest extends UnitTestCase {
         'title' => $title_storage,
       ]);
 
-    $account = $this->getMock('Drupal\Core\Session\AccountInterface');
+    $account = $this->getMock('Drupal\Core\Authentication\AccountInterface');
 
     $access_control_handler->expects($this->atLeastOnce())
       ->method('fieldAccess')

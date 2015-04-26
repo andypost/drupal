@@ -10,7 +10,7 @@ namespace Drupal\contact\Plugin\views\field;
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\user\Plugin\views\field\Link;
 use Drupal\views\ResultRow;
@@ -35,7 +35,7 @@ class ContactLink extends Link {
   /**
    * Current user object.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
@@ -45,7 +45,7 @@ class ContactLink extends Link {
    * @todo: https://drupal.org/node/2105123 put this method in
    *   \Drupal\Core\Plugin\PluginBase instead.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    */
   protected function currentUser() {
     if (!$this->currentUser) {

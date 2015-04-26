@@ -6,6 +6,8 @@
  */
 
 namespace Drupal\Core\Session;
+use Drupal\Core\Authentication\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines an interface for a service which has the current account stored.
@@ -24,7 +26,7 @@ interface AccountProxyInterface extends AccountInterface {
    * \Drupal\Core\Session\AccountSwitcherInterface::switchTo() and
    * \Drupal\Core\Session\AccountSwitcherInterface::switchBack().
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current account.
    */
   public function setAccount(AccountInterface $account);
@@ -32,7 +34,7 @@ interface AccountProxyInterface extends AccountInterface {
   /**
    * Gets the currently wrapped account.
    *
-   * @return \Drupal\Core\Session\AccountInterface
+   * @return \Drupal\Core\Authentication\AccountInterface
    *   The current account.
    */
   public function getAccount();

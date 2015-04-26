@@ -7,7 +7,7 @@
 
 namespace Drupal\contact;
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides an interface for assembly and dispatch of contact mail messages.
@@ -24,7 +24,7 @@ interface MailHandlerInterface {
    *
    * @param \Drupal\contact\MessageInterface $message
    *   Submitted message entity.
-   * @param \Drupal\Core\Session\AccountInterface $sender
+   * @param \Drupal\Core\Authentication\AccountInterface $sender
    *   User that submitted the message entity form.
    *
    * @throws \Drupal\contact\MailHandlerException

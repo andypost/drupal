@@ -20,14 +20,14 @@ class AdminTest extends WebTestBase {
   /**
    * User account with all available permissions
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $adminUser;
 
   /**
    * User account with limited access to administration pages.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $webUser;
 

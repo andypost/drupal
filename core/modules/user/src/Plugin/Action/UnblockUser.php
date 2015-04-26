@@ -8,7 +8,7 @@
 namespace Drupal\user\Plugin\Action;
 
 use Drupal\Core\Action\ActionBase;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Unblocks a user.

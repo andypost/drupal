@@ -12,7 +12,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityAccessControlHandlerInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Render\RendererInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\forum\ForumManagerInterface;
 use Drupal\taxonomy\TermInterface;
@@ -83,7 +83,7 @@ class ForumController extends ControllerBase {
    *   Vocabulary storage.
    * @param \Drupal\taxonomy\TermStorageInterface $term_storage
    *   Term storage.
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current logged in user.
    * @param \Drupal\Core\Entity\EntityAccessControlHandlerInterface $node_access
    *   Node access control handler.

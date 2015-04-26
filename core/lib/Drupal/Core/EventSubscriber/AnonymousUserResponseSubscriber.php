@@ -8,7 +8,7 @@
 namespace Drupal\Core\EventSubscriber;
 
 use Drupal\Core\Cache\Cache;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -22,14 +22,14 @@ class AnonymousUserResponseSubscriber implements EventSubscriberInterface {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $currentUser;
 
   /**
    * Constructs an AnonymousUserResponseSubscriber object.
    *
-   * @param \Drupal\Core\Session\AccountInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountInterface $current_user
    *   The current user.
    */
   public function __construct(AccountInterface $current_user) {

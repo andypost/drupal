@@ -8,7 +8,7 @@
 namespace Drupal\user\EventSubscriber;
 
 use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Core\Site\Settings;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\PostResponseEvent;
@@ -22,7 +22,7 @@ class UserRequestSubscriber implements EventSubscriberInterface {
   /**
    * The current account.
    *
-   * @var \Drupal\Core\Session\AccountInterface
+   * @var \Drupal\Core\Authentication\AccountInterface
    */
   protected $account;
 
@@ -36,7 +36,7 @@ class UserRequestSubscriber implements EventSubscriberInterface {
   /**
    * Constructs a new UserRequestSubscriber.
    *
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The current user.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.

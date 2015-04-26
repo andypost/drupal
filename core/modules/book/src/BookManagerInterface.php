@@ -8,7 +8,7 @@
 namespace Drupal\book;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\node\NodeInterface;
 
 
@@ -224,7 +224,7 @@ interface BookManagerInterface {
    *   The current state of the form.
    * @param \Drupal\node\NodeInterface $node
    *   The node whose form is being viewed.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   The account viewing the form.
    * @param bool $collapsed
    *   If TRUE, the fieldset starts out collapsed.

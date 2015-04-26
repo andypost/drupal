@@ -10,7 +10,7 @@ namespace Drupal\Tests\contact\Unit;
 use Drupal\contact\MailHandler;
 use Drupal\contact\MessageInterface;
 use Drupal\Core\Language\Language;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -115,7 +115,7 @@ class MailHandlerTest extends UnitTestCase {
     $message->expects($this->once())
       ->method('getContactForm')
       ->willReturn($this->getMock('\Drupal\contact\ContactFormInterface'));
-    $sender = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $sender = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $this->userStorage->expects($this->any())
       ->method('load')
       ->willReturn($sender);
@@ -292,11 +292,11 @@ class MailHandlerTest extends UnitTestCase {
    * @param string $mail_address
    *   The mail address of the user.
    *
-   * @return \Drupal\Core\Session\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\Core\Authentication\AccountInterface|\PHPUnit_Framework_MockObject_MockObject
    *   Mock sender for testing.
    */
   protected function getMockSender($anonymous = TRUE, $mail_address = 'anonymous@drupal.org') {
-    $sender = $this->getMock('\Drupal\Core\Session\AccountInterface');
+    $sender = $this->getMock('\Drupal\Core\Authentication\AccountInterface');
     $sender->expects($this->once())
       ->method('isAnonymous')
       ->willReturn($anonymous);

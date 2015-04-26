@@ -64,7 +64,7 @@ use Drupal\Core\Access\AccessResult;
  * sure to restore your {node_access} record after node_access_rebuild() is
  * called.
  *
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *   The account object whose grants are requested.
  * @param string $op
  *   The node operation to be performed, such as 'view', 'update', or 'delete'.
@@ -79,7 +79,7 @@ use Drupal\Core\Access\AccessResult;
  * @see node_access_rebuild()
  * @ingroup node_access
  */
-function hook_node_grants(\Drupal\Core\Session\AccountInterface $account, $op) {
+function hook_node_grants(\Drupal\Core\Authentication\AccountInterface $account, $op) {
   if ($account->hasPermission('access private content')) {
     $grants['example'] = array(1);
   }
@@ -258,7 +258,7 @@ function hook_node_access_records_alter(&$grants, Drupal\node\NodeInterface $nod
  *
  * @param array $grants
  *   The $grants array returned by hook_node_grants().
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *   The account requesting access to content.
  * @param string $op
  *   The operation being performed, 'view', 'update' or 'delete'.
@@ -268,7 +268,7 @@ function hook_node_access_records_alter(&$grants, Drupal\node\NodeInterface $nod
  * @see hook_node_access_records_alter()
  * @ingroup node_access
  */
-function hook_node_grants_alter(&$grants, \Drupal\Core\Session\AccountInterface $account, $op) {
+function hook_node_grants_alter(&$grants, \Drupal\Core\Authentication\AccountInterface $account, $op) {
   // Our sample module never allows certain roles to edit or delete
   // content. Since some other node access modules might allow this
   // permission, we expressly remove it by returning an empty $grants
@@ -317,7 +317,7 @@ function hook_node_grants_alter(&$grants, \Drupal\Core\Session\AccountInterface 
  *   - "delete"
  *   - "update"
  *   - "view"
- * @param \Drupal\Core\Session\AccountInterface $account
+ * @param \Drupal\Core\Authentication\AccountInterface $account
  *   The user object to perform the access check operation on.
  * @param object $langcode
  *   The language code to perform the access check operation on.
@@ -327,7 +327,7 @@ function hook_node_grants_alter(&$grants, \Drupal\Core\Session\AccountInterface 
  *
  * @ingroup node_access
  */
-function hook_node_access(\Drupal\node\NodeInterface $node, $op, \Drupal\Core\Session\AccountInterface $account, $langcode) {
+function hook_node_access(\Drupal\node\NodeInterface $node, $op, \Drupal\Core\Authentication\AccountInterface $account, $langcode) {
   $type = $node->bundle();
 
   switch ($op) {

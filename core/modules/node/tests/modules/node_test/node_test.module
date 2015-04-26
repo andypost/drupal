@@ -9,7 +9,7 @@
  */
 
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\node\NodeInterface;
 
 /**

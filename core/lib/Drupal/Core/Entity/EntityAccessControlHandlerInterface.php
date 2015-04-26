@@ -11,7 +11,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Defines an interface for entity access control handlers.
@@ -32,7 +32,7 @@ interface EntityAccessControlHandlerInterface {
    * @param string $langcode
    *   (optional) The language code for which to check access. Defaults to
    *   LanguageInterface::LANGCODE_DEFAULT.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) The user session for which to check access, or NULL to check
    *   access for the current user. Defaults to NULL.
    * @param bool $return_as_object
@@ -53,7 +53,7 @@ interface EntityAccessControlHandlerInterface {
    * @param string $entity_bundle
    *   (optional) The bundle of the entity. Required if the entity supports
    *   bundles, defaults to NULL otherwise.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *   (optional) The user session for which to check access, or NULL to check
    *   access for the current user. Defaults to NULL.
    * @param array $context
@@ -99,7 +99,7 @@ interface EntityAccessControlHandlerInterface {
    *   Usually one of "view" or "edit".
    * @param \Drupal\Core\Field\FieldDefinitionInterface $field_definition
    *   The field definition.
-   * @param \Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Authentication\AccountInterface $account
    *  (optional) The user session for which to check access, or NULL to check
    *   access for the current user. Defaults to NULL.
    * @param \Drupal\Core\Field\FieldItemListInterface $items

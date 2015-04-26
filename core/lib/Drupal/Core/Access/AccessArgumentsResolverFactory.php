@@ -9,7 +9,7 @@ namespace Drupal\Core\Access;
 
 use Drupal\Component\Utility\ArgumentsResolver;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**

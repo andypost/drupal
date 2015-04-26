@@ -7,7 +7,7 @@
 namespace Drupal\file_test;
 
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 use Drupal\file\FileAccessFormatterControlHandlerInterface;
 use Drupal\file\FileAccessControlHandler;
 

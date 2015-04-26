@@ -8,7 +8,7 @@
 namespace Drupal\user;
 
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
-use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Authentication\AccountInterface;
 
 /**
  * Provides an interface defining a user role entity.
