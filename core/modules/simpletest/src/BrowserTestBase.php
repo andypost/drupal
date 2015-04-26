@@ -20,7 +20,7 @@ use Drupal\Core\Database\ConnectionNotDefinedException;
 use Drupal\Core\Database\Database;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Authentication\AccountInterface;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;

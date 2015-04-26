@@ -8,7 +8,7 @@
 namespace Drupal\comment\Tests\Views;
 
 use Drupal\comment\Entity\Comment;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\user\RoleInterface;
 use Drupal\views\Views;
 

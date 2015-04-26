@@ -7,6 +7,7 @@
 
 namespace Drupal\Core\Session;
 use Drupal\Core\Authentication\AccountInterface;
+use Drupal\Core\Authentication\AnonymousUserSession;
 
 /**
  * A proxied implementation of AccountInterface.

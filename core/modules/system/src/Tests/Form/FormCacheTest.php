@@ -8,7 +8,7 @@
 namespace Drupal\system\Tests\Form;
 
 use Drupal\Core\Form\FormState;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\Core\Session\UserSession;
 use Drupal\simpletest\KernelTestBase;
 

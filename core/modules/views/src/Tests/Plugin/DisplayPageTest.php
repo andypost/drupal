@@ -8,7 +8,7 @@
 namespace Drupal\views\Tests\Plugin;
 
 use Drupal\Core\Menu\MenuTreeParameters;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\views\Views;
 use Drupal\views\Tests\ViewUnitTestBase;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;

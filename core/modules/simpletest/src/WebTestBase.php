@@ -22,7 +22,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Authentication\AccountInterface;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\PublicStream;

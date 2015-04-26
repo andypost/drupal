@@ -2,10 +2,12 @@
 
 /**
  * @file
- * Contains \Drupal\Core\Session\AnonymousUserSession.
+ * Contains \Drupal\Core\Authentication\AnonymousUserSession.
  */
 
-namespace Drupal\Core\Session;
+namespace Drupal\Core\Authentication;
+
+use Drupal\Core\Session\UserSession;
 
 /**
  * An account implementation representing an anonymous user.

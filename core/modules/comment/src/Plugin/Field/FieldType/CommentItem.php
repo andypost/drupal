@@ -16,7 +16,7 @@ use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\UrlGeneratorTrait;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\FieldItemBase;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 
 /**
  * Plugin implementation of the 'comment' field type.

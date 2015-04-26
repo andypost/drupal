@@ -18,7 +18,7 @@ use Drupal\Core\Database\ConnectionNotDefinedException;
 use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Session\AccountProxy;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\PublicStream;
 use Drupal\Core\Utility\Error;

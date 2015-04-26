@@ -12,7 +12,7 @@ use Drupal\Core\Queue\QueueWorkerManagerInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Queue\QueueFactory;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\Core\Session\AccountSwitcherInterface;
 use Drupal\Core\Queue\SuspendQueueException;
 use Psr\Log\LoggerInterface;

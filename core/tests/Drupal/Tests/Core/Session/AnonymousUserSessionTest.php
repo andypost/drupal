@@ -8,7 +8,7 @@
 namespace Drupal\Tests\Core\Session;
 
 use Drupal\Tests\UnitTestCase;
-use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUserSession;
   use Drupal\user\RoleInterface;
   use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\Scope;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * @coversDefaultClass \Drupal\Core\Session\AnonymousUserSession
+ * @coversDefaultClass \Drupal\Core\Authentication\AnonymousUserSession
  * @group Session
  */
 class AnonymousUserSessionTest extends UnitTestCase {
