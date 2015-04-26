@@ -2,18 +2,14 @@
 
 /**
  * @file
- * Contains \Drupal\Tests\Core\Session\AnonymousUserSessionTest.
+ * Contains \Drupal\Tests\Core\Authentication\AnonymousUserSessionTest.
  */
 
-namespace Drupal\Tests\Core\Session;
+namespace Drupal\Tests\Core\Authentication;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Authentication\AnonymousUserSession;
-  use Drupal\user\RoleInterface;
-  use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Scope;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\user\RoleInterface;
 
 /**
  * @coversDefaultClass \Drupal\Core\Authentication\AnonymousUserSession
