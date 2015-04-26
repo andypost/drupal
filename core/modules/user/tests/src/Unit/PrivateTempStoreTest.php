@@ -42,7 +42,7 @@ class PrivateTempStoreTest extends UnitTestCase {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountProxyInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountProxyInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $currentUser;
 
@@ -75,7 +75,7 @@ class PrivateTempStoreTest extends UnitTestCase {
 
     $this->keyValue = $this->getMock('Drupal\Core\KeyValueStore\KeyValueStoreExpirableInterface');
     $this->lock = $this->getMock('Drupal\Core\Lock\LockBackendInterface');
-    $this->currentUser = $this->getMock('Drupal\Core\Session\AccountProxyInterface');
+    $this->currentUser = $this->getMock('Drupal\Core\Authentication\AccountProxyInterface');
     $this->currentUser->expects($this->any())
       ->method('id')
       ->willReturn(1);

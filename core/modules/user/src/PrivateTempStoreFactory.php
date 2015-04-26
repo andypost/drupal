@@ -9,7 +9,7 @@ namespace Drupal\user;
 
 use Drupal\Core\KeyValueStore\KeyValueExpirableFactoryInterface;
 use Drupal\Core\Lock\LockBackendInterface;
-use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Authentication\AccountProxyInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -34,7 +34,7 @@ class PrivateTempStoreFactory {
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountProxyInterface
+   * @var \Drupal\Core\Authentication\AccountProxyInterface
    */
   protected $currentUser;
 

@@ -10,7 +10,7 @@ namespace Drupal\Core\EventSubscriber;
 use Drupal\Core\Authentication\AuthenticationProviderFilterInterface;
 use Drupal\Core\Authentication\AuthenticationProviderChallengeInterface;
 use Drupal\Core\Authentication\AuthenticationProviderInterface;
-use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Authentication\AccountProxyInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
@@ -49,7 +49,7 @@ class AuthenticationSubscriber implements EventSubscriberInterface {
   /**
    * Account proxy.
    *
-   * @var \Drupal\Core\Session\AccountProxyInterface
+   * @var \Drupal\Core\Authentication\AccountProxyInterface
    */
   protected $accountProxy;
 
@@ -58,7 +58,7 @@ class AuthenticationSubscriber implements EventSubscriberInterface {
    *
    * @param \Drupal\Core\Authentication\AuthenticationProviderInterface $authentication_provider
    *   An authentication provider.
-   * @param \Drupal\Core\Session\AccountProxyInterface $account_proxy
+   * @param \Drupal\Core\Authentication\AccountProxyInterface $account_proxy
    *   Account proxy.
    */
   public function __construct(AuthenticationProviderInterface $authentication_provider, AccountProxyInterface $account_proxy) {

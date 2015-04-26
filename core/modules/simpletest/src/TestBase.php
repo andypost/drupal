@@ -17,8 +17,6 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Database\ConnectionNotDefinedException;
 use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Language\Language;
-use Drupal\Core\Session\AccountProxy;
-use Drupal\Core\Authentication\AnonymousUserSession;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\PublicStream;
 use Drupal\Core\Utility\Error;
@@ -217,7 +215,7 @@ abstract class TestBase {
   /**
    * The original user, before testing began.
    *
-   * @var \Drupal\Core\Session\AccountProxyInterface
+   * @var \Drupal\Core\Authentication\AccountProxyInterface
    */
   protected $originalUser;
 

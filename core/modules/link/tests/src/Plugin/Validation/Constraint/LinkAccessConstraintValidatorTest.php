@@ -26,7 +26,7 @@ class LinkAccessConstraintValidatorTest extends UnitTestCase {
    *
    * @param \Drupal\link\LinkItemInterface $value
    *   The link item.
-   * @param \Drupal\Core\Session\AccountProxyInterface $user
+   * @param \Drupal\Core\Authentication\AccountProxyInterface $user
    *   The user account.
    * @param bool $valid
    *   A boolean indicating if the combination is expected to be valid.
@@ -86,7 +86,7 @@ class LinkAccessConstraintValidatorTest extends UnitTestCase {
         ->willReturn($url);
       // Mock a user object that returns a boolean indicating user access to all
       // links.
-      $user = $this->getMock('Drupal\Core\Session\AccountProxyInterface');
+      $user = $this->getMock('Drupal\Core\Authentication\AccountProxyInterface');
       $user->expects($this->any())
         ->method('hasPermission')
         ->with($this->equalTo('link to any page'))

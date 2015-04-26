@@ -116,7 +116,7 @@ abstract class FieldFieldAccessTestBase extends ViewUnitTestBase {
     ]);
     $entity->save();
 
-    /** @var \Drupal\Core\Session\AccountSwitcherInterface $account_switcher */
+    /** @var \Drupal\Core\Authentication\AccountSwitcherInterface $account_switcher */
     $account_switcher = \Drupal::service('account_switcher');
 
     /** @var \Drupal\Core\Render\RendererInterface $renderer */

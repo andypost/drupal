@@ -13,7 +13,7 @@ use Drupal\Core\State\StateInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Queue\QueueFactory;
 use Drupal\Core\Authentication\AnonymousUserSession;
-use Drupal\Core\Session\AccountSwitcherInterface;
+use Drupal\Core\Authentication\AccountSwitcherInterface;
 use Drupal\Core\Queue\SuspendQueueException;
 use Psr\Log\LoggerInterface;
 
@@ -53,7 +53,7 @@ class Cron implements CronInterface {
   /**
    * The account switcher service.
    *
-   * @var \Drupal\Core\Session\AccountSwitcherInterface
+   * @var \Drupal\Core\Authentication\AccountSwitcherInterface
    */
   protected $accountSwitcher;
 
@@ -82,7 +82,7 @@ class Cron implements CronInterface {
    *   The queue service.
    * @param \Drupal\Core\State\StateInterface $state
    *   The state service.
-   * @param \Drupal\Core\Session\AccountSwitcherInterface $account_switcher
+   * @param \Drupal\Core\Authentication\AccountSwitcherInterface $account_switcher
    *    The account switching service.
    * @param \Psr\Log\LoggerInterface $logger
    *   A logger instance.

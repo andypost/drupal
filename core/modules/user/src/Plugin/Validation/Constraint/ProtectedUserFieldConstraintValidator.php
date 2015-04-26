@@ -7,7 +7,7 @@
 namespace Drupal\user\Plugin\Validation\Constraint;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Authentication\AccountProxyInterface;
 use Drupal\user\UserStorageInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
@@ -28,7 +28,7 @@ class ProtectedUserFieldConstraintValidator extends ConstraintValidator implemen
   /**
    * The current user.
    *
-   * @var \Drupal\Core\Session\AccountProxyInterface
+   * @var \Drupal\Core\Authentication\AccountProxyInterface
    */
   protected $currentUser;
 
@@ -37,7 +37,7 @@ class ProtectedUserFieldConstraintValidator extends ConstraintValidator implemen
    *
    * @param \Drupal\user\UserStorageInterface $user_storage
    *   The user storage handler.
-   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+   * @param \Drupal\Core\Authentication\AccountProxyInterface $current_user
    *   The current user.
    */
   public function __construct(UserStorageInterface $user_storage, AccountProxyInterface $current_user) {

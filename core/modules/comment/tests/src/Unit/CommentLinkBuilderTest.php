@@ -44,7 +44,7 @@ class CommentLinkBuilderTest extends UnitTestCase {
   /**
    * Current user proxy mock.
    *
-   * @var \Drupal\Core\Session\AccountProxyInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Authentication\AccountProxyInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $currentUser;
 
@@ -67,7 +67,7 @@ class CommentLinkBuilderTest extends UnitTestCase {
     $this->commentManager = $this->getMock('\Drupal\comment\CommentManagerInterface');
     $this->stringTranslation = $this->getStringTranslationStub();
     $this->moduleHandler = $this->getMock('\Drupal\Core\Extension\ModuleHandlerInterface');
-    $this->currentUser = $this->getMock('\Drupal\Core\Session\AccountProxyInterface');
+    $this->currentUser = $this->getMock('\Drupal\Core\Authentication\AccountProxyInterface');
     $this->commentLinkBuilder = new CommentLinkBuilder($this->currentUser, $this->commentManager, $this->moduleHandler, $this->stringTranslation);
     $this->commentManager->expects($this->any())
       ->method('getFields')

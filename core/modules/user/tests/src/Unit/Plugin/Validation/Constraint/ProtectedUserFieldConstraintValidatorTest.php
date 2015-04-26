@@ -35,7 +35,7 @@ class ProtectedUserFieldConstraintValidatorTest extends UnitTestCase {
     $user_storage->expects($this->any())
       ->method('loadUnchanged')
       ->willReturn($unchanged_account);
-    $current_user = $this->getMock('Drupal\Core\Session\AccountProxyInterface');
+    $current_user = $this->getMock('Drupal\Core\Authentication\AccountProxyInterface');
     $current_user->expects($this->any())
       ->method('id')
       ->willReturn('current-user');

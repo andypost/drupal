@@ -635,7 +635,7 @@
  * - \Drupal\Core\Authentication\AccountInterface: The part of UserInterface that
  *   deals with access checking. In writing code that checks access, your
  *   method parameters should use this interface, not UserInterface.
- * - \Drupal\Core\Session\AccountProxyInterface: The interface for the
+ * - \Drupal\Core\Authentication\AccountProxyInterface: The interface for the
  *   current_user service (described above).
  * @}
  */
