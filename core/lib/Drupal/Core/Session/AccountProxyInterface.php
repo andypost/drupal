@@ -6,7 +6,7 @@
  */
 
 namespace Drupal\Core\Session;
-use Drupal\Core\Authentication\AccountInterface;
+
 use Drupal\Core\Authentication\AccountInterface;
 
 /**
