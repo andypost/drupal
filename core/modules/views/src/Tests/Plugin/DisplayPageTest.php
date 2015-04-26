@@ -8,7 +8,7 @@
 namespace Drupal\views\Tests\Plugin;
 
 use Drupal\Core\Menu\MenuTreeParameters;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\views\Views;
 use Drupal\views\Tests\ViewUnitTestBase;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
@@ -58,7 +58,7 @@ class DisplayPageTest extends ViewUnitTestBase {
    * Checks the behavior of the page for access denied/not found behaviors.
    */
   public function testPageResponses() {
-    \Drupal::currentUser()->setAccount(new AnonymousUserSession());
+    \Drupal::currentUser()->setAccount(new AnonymousUser());
     $subrequest = Request::create('/test_page_display_403', 'GET');
     $response = $this->container->get('http_kernel')->handle($subrequest, HttpKernelInterface::SUB_REQUEST);
     $this->assertEqual($response->getStatusCode(), 403);

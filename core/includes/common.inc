@@ -33,7 +33,7 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Routing\GeneratorNotInitializedException;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Render\Element;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 
 /**
  * @defgroup php_wrappers PHP wrapper functions

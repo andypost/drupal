@@ -8,7 +8,7 @@
 namespace Drupal\comment\Tests\Views;
 
 use Drupal\comment\Entity\Comment;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\user\Entity\Role;
 use Drupal\user\Entity\User;
 use Drupal\views\Entity\View;
@@ -150,7 +150,7 @@ class CommentUserNameTest extends ViewUnitTestBase {
     $this->assertLink($this->adminUser->label());
     $this->assertLink('barry (not verified)');
 
-    $account_switcher->switchTo(new AnonymousUserSession());
+    $account_switcher->switchTo(new AnonymousUser());
     $executable = Views::getView($view_id);
     $build = $executable->preview();
     $this->setRawContent($renderer->render($build));

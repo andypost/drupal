@@ -8,7 +8,7 @@
 namespace Drupal\comment\Tests\Views;
 
 use Drupal\comment\Entity\Comment;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\user\RoleInterface;
 use Drupal\views\Views;
 
@@ -81,7 +81,7 @@ class CommentFieldNameTest extends CommentTestBase {
 
     // Grant permission to properly check view access on render.
     user_role_grant_permissions(RoleInterface::ANONYMOUS_ID, ['access comments']);
-    $this->container->get('account_switcher')->switchTo(new AnonymousUserSession());
+    $this->container->get('account_switcher')->switchTo(new AnonymousUser());
     $view = Views::getView('test_comment_field_name');
     $this->executeView($view);
     // Test that data rendered.

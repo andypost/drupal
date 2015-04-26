@@ -8,7 +8,7 @@
 namespace Drupal\system\Tests\Form;
 
 use Drupal\Core\Form\FormState;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\Core\Session\UserSession;
 use Drupal\simpletest\KernelTestBase;
 
@@ -91,7 +91,7 @@ class FormCacheTest extends KernelTestBase {
   function testNoCacheToken() {
     // Switch to a anonymous user account.
     $account_switcher = \Drupal::service('account_switcher');
-    $account_switcher->switchTo(new AnonymousUserSession());
+    $account_switcher->switchTo(new AnonymousUser());
 
     $this->formState->set('example', $this->randomMachineName());
     \Drupal::formBuilder()->setCache($this->formBuildId, $this->form, $this->formState);

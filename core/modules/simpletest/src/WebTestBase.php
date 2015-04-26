@@ -22,7 +22,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Authentication\AccountInterface;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\PublicStream;
@@ -744,7 +744,7 @@ abstract class WebTestBase extends TestBase {
       // @see WebTestBase::drupalUserIsLoggedIn()
       unset($this->loggedInUser->session_id);
       $this->loggedInUser = FALSE;
-      $this->container->get('current_user')->setAccount(new AnonymousUserSession());
+      $this->container->get('current_user')->setAccount(new AnonymousUser());
     }
   }
 

@@ -12,7 +12,7 @@ use Drupal\Core\Queue\QueueWorkerManagerInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Queue\QueueFactory;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\Core\Authentication\AccountSwitcherInterface;
 use Drupal\Core\Queue\SuspendQueueException;
 use Psr\Log\LoggerInterface;
@@ -108,7 +108,7 @@ class Cron implements CronInterface {
 
     // Force the current user to anonymous to ensure consistent permissions on
     // cron runs.
-    $this->accountSwitcher->switchTo(new AnonymousUserSession());
+    $this->accountSwitcher->switchTo(new AnonymousUser());
 
     // Try to allocate enough time to run all the hook_cron implementations.
     drupal_set_time_limit(240);

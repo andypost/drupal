@@ -59,7 +59,7 @@ class AccountProxy implements AccountProxyInterface {
         $this->account = $this->loadUserEntity($this->initialAccountId);
       }
       else {
-        $this->account = new AnonymousUserSession();
+        $this->account = new AnonymousUser();
       }
     }
 

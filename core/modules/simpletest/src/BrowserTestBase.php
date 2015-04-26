@@ -20,7 +20,7 @@ use Drupal\Core\Database\ConnectionNotDefinedException;
 use Drupal\Core\Database\Database;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Authentication\AccountInterface;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
@@ -725,7 +725,7 @@ abstract class BrowserTestBase extends \PHPUnit_Framework_TestCase {
     // @see BrowserTestBase::drupalUserIsLoggedIn()
     unset($this->loggedInUser->sessionId);
     $this->loggedInUser = FALSE;
-    $this->container->get('current_user')->setAccount(new AnonymousUserSession());
+    $this->container->get('current_user')->setAccount(new AnonymousUser());
   }
 
   /**

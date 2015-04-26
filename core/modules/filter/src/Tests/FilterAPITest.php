@@ -9,7 +9,7 @@ namespace Drupal\filter\Tests;
 
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\Core\TypedData\OptionsProviderInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\filter\Plugin\DataType\FilterFormat;
@@ -284,7 +284,7 @@ class FilterAPITest extends EntityUnitTestBase {
     ));
 
     // Test with anonymous user.
-    $user = new AnonymousUserSession();
+    $user = new AnonymousUser();
     \Drupal::currentUser()->setAccount($user);
 
     $expected_available_options = array(

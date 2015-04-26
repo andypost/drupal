@@ -16,7 +16,7 @@ use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\UrlGeneratorTrait;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Field\FieldItemBase;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 
 /**
  * Plugin implementation of the 'comment' field type.
@@ -109,7 +109,7 @@ class CommentItem extends FieldItemBase implements CommentItemInterface {
 
     $settings = $this->getSettings();
 
-    $anonymous_user = new AnonymousUserSession();
+    $anonymous_user = new AnonymousUser();
 
     $element['default_mode'] = array(
       '#type' => 'checkbox',

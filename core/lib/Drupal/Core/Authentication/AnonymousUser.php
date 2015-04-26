@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\Core\Authentication\AnonymousUserSession.
+ * Contains \Drupal\Core\Authentication\AnonymousUser.
  */
 
 namespace Drupal\Core\Authentication;
@@ -12,7 +12,7 @@ use Drupal\Core\Session\UserSession;
 /**
  * An account implementation representing an anonymous user.
  */
-class AnonymousUserSession extends UserSession {
+class AnonymousUser extends UserSession {
 
   /**
    * Constructs a new anonymous user session.

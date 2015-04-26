@@ -9,7 +9,7 @@ namespace Drupal\comment\Tests;
 use Drupal\comment\Entity\Comment;
 use Drupal\comment\Entity\CommentType;
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Core\Authentication\AnonymousUserSession;
+use Drupal\Core\Authentication\AnonymousUser;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\simpletest\TestBase;
@@ -127,7 +127,7 @@ class CommentFieldAccessTest extends EntityUnitTestBase {
     $role->grantPermission('post comments')
       ->save();
 
-    $anonymous_user = new AnonymousUserSession();
+    $anonymous_user = new AnonymousUser();
 
     // Add two fields.
     $this->addDefaultCommentField('entity_test', 'entity_test', 'comment');
