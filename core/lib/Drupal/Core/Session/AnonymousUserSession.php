@@ -7,17 +7,13 @@
 
 namespace Drupal\Core\Session;
 
+use Drupal\Core\Authentication\AnonymousUser;
+
 /**
- * An account implementation representing an anonymous user.
+ * Provides BC wrapper for \Drupal\Core\Authentication\AnonymousUser.
+ *
+ * @deprecated in Drupal 8.x-dev, will be removed before Drupal 8.0.0. Use
+ *   \Drupal\Core\Authentication\AnonymousUser instead.
  */
-class AnonymousUserSession extends UserSession {
-
-  /**
-   * Constructs a new anonymous user session.
-   *
-   * Intentionally don't allow parameters to be passed in like UserSession.
-   */
-  public function __construct() {
-  }
-
+class AnonymousUserSession extends AnonymousUser {
 }
