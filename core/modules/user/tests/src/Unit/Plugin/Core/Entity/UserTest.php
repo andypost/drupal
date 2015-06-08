@@ -7,6 +7,7 @@
 
 namespace Drupal\Tests\user\Unit\Plugin\Core\Entity;
 
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\Tests\Core\Session\UserSessionTest;
 use Drupal\user\Entity\User;
   use Drupal\user\RoleInterface;
@@ -21,24 +22,28 @@ class UserTest extends UserSessionTest {
    * {@inheritdoc}
    */
   protected function createUserSession(array $rids = array(), $authenticated = FALSE) {
+    $roles = array();
+    foreach ($rids as $rid) {
+      $roles[] = array(
+        'target_id' => $rid,
+      );
+    }
+    $values = ['roles' => [LanguageInterface::LANGCODE_DEFAULT => $roles]];
+
     $user = $this->getMockBuilder('Drupal\user\Entity\User')
       ->disableOriginalConstructor()
-      ->setMethods(array('get', 'id'))
+      ->setMethods(array('id'))
       ->getMock();
+
+    $reflect = new \ReflectionObject($user);
+    $property = $reflect->getProperty('values');
+    $property->setAccessible(TRUE);
+    $property->setValue($user, $values);
+
     $user->expects($this->any())
       ->method('id')
       // @todo Also test the uid = 1 handling.
       ->will($this->returnValue($authenticated ? 2 : 0));
-    $roles = array();
-    foreach ($rids as $rid) {
-      $roles[] = (object) array(
-        'target_id' => $rid,
-      );
-    }
-    $user->expects($this->any())
-      ->method('get')
-      ->with('roles')
-      ->will($this->returnValue($roles));
     return $user;
   }
 

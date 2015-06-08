@@ -8,7 +8,7 @@
 namespace Drupal\user\Authentication\Provider;
 
 use Drupal\Core\Authentication\AuthenticationProviderInterface;
-use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Session\UserSession;
 use Drupal\Core\Session\SessionConfigurationInterface;
@@ -28,23 +28,23 @@ class Cookie implements AuthenticationProviderInterface {
   protected $sessionConfiguration;
 
   /**
-   * The database connection.
+   * The entity manager.
    *
-   * @var \Drupal\Core\Database\Connection
+   * @var \Drupal\Core\Entity\EntityManagerInterface
    */
-  protected $connection;
+  protected $entityManager;
 
   /**
    * Constructs a new cookie authentication provider.
    *
    * @param \Drupal\Core\Session\SessionConfigurationInterface $session_configuration
    *   The session configuration.
-   * @param \Drupal\Core\Database\Connection $connection
-   *   The database connection.
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   *   The entity manager.
    */
-  public function __construct(SessionConfigurationInterface $session_configuration, Connection $connection) {
+  public function __construct(SessionConfigurationInterface $session_configuration, EntityManagerInterface $entity_manager) {
     $this->sessionConfiguration = $session_configuration;
-    $this->connection = $connection;
+    $this->entityManager = $entity_manager;
   }
 
   /**
@@ -58,41 +58,14 @@ class Cookie implements AuthenticationProviderInterface {
    * {@inheritdoc}
    */
   public function authenticate(Request $request) {
-    return $this->getUserFromSession($request->getSession());
-  }
-
-  /**
-   * Returns the UserSession object for the given session.
-   *
-   * @param \Symfony\Component\HttpFoundation\Session\SessionInterface $session
-   *   The session.
-   *
-   * @return \Drupal\Core\Session\AccountInterface|NULL
-   *   The UserSession object for the current user, or NULL if this is an
-   *   anonymous session.
-   */
-  protected function getUserFromSession(SessionInterface $session) {
-    if ($uid = $session->get('uid')) {
-      // @todo Load the User entity in SessionHandler so we don't need queries.
-      // @see https://www.drupal.org/node/2345611
-      $values = $this->connection
-        ->query('SELECT * FROM {users_field_data} u WHERE u.uid = :uid AND u.default_langcode = 1', [':uid' => $uid])
-        ->fetchAssoc();
-
-      // Check if the user data was found and the user is active.
-      if (!empty($values) && $values['status'] == 1) {
-        // Add the user's roles.
-        $rids = $this->connection
-          ->query('SELECT roles_target_id FROM {user__roles} WHERE entity_id = :uid', [':uid' => $values['uid']])
-          ->fetchCol();
-        $values['roles'] = array_merge([AccountInterface::AUTHENTICATED_ROLE], $rids);
-
-        return new UserSession($values);
+    if ($uid = $request->getSession()->get('uid')) {
+      /** @var \Drupal\user\UserInterface $user */
+      if ($user = $this->entityManager->getStorage('user')->load($uid)) {
+        if ($user->isActive()) {
+          return $user;
+        }
       }
     }
-
-    // This is an anonymous session.
-    return NULL;
   }
 
 }

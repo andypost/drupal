@@ -49,7 +49,8 @@ use Drupal\user\UserInterface;
  *   entity_keys = {
  *     "id" = "uid",
  *     "langcode" = "langcode",
- *     "uuid" = "uuid"
+ *     "uuid" = "uuid",
+ *     "status" = "status"
  *   },
  *   links = {
  *     "canonical" = "/user/{user}",
@@ -277,14 +278,14 @@ class User extends ContentEntityBase implements UserInterface {
    * {@inheritdoc}
    */
   public function isActive() {
-    return $this->get('status')->value == 1;
+    return $this->getEntityKey('status') == 1;
   }
 
   /**
    * {@inheritdoc}
    */
   public function isBlocked() {
-    return $this->get('status')->value == 0;
+    return $this->getEntityKey('status') == 0;
   }
 
   /**
