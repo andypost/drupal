@@ -7,10 +7,8 @@
 
 namespace Drupal\contact;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Link;
 
 /**
  * Defines a class to build a listing of contact form entities.
@@ -23,9 +21,12 @@ class ContactFormListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildHeader() {
-    $header['form'] = t('Form');
-    $header['recipients'] = t('Recipients');
-    $header['selected'] = t('Selected');
+    $header['form'] = $this->t('Form');
+    $header['recipients'] = [
+      'data' => $this->t('Recipients'),
+      'class' => [RESPONSIVE_PRIORITY_LOW],
+    ];
+    $header['selected'] = $this->t('Selected');
     return $header + parent::buildHeader();
   }
 
@@ -36,14 +37,19 @@ class ContactFormListBuilder extends ConfigEntityListBuilder {
     // Special case the personal form.
     if ($entity->id() == 'personal') {
       $row['form'] = $this->getLabel($entity);
-      $row['recipients'] = t('Selected user');
-      $row['selected'] = t('No');
+      $row['recipients'] = $this->t('Selected user');
+      $row['selected'] = $this->t('No');
     }
     else {
       $row['form'] = $entity->link(NULL, 'canonical');
-      $row['recipients'] = SafeMarkup::checkPlain(implode(', ', $entity->getRecipients()));
+      $row['recipients'] = [
+        'data' => [
+          '#theme' => 'item_list',
+          '#items' => $entity->getRecipients(),
+        ],
+      ];
       $default_form = \Drupal::config('contact.settings')->get('default_form');
-      $row['selected'] = ($default_form == $entity->id() ? t('Yes') : t('No'));
+      $row['selected'] = ($default_form == $entity->id() ? $this->t('Yes') : $this->t('No'));
     }
     return $row + parent::buildRow($entity);
   }

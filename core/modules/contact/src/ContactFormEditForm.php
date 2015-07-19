@@ -84,8 +84,8 @@ class ContactFormEditForm extends EntityForm implements ContainerInjectionInterf
     $form['recipients'] = array(
       '#type' => 'textarea',
       '#title' => $this->t('Recipients'),
-      '#default_value' => implode(', ', $contact_form->getRecipients()),
-      '#description' => $this->t("Example: 'webmaster@example.com' or 'sales@example.com,support@example.com' . To specify multiple recipients, separate each email address with a comma."),
+      '#default_value' => implode("\n", $contact_form->getRecipients()),
+      '#description' => $this->t("Example: 'support@example.com' or 'sales@example.com'. To specify multiple recipients, separate each email address on a new line."),
       '#required' => TRUE,
     );
     $form['reply'] = array(
@@ -116,7 +116,7 @@ class ContactFormEditForm extends EntityForm implements ContainerInjectionInterf
     parent::validateForm($form, $form_state);
 
     // Validate and each email recipient.
-    $recipients = explode(',', $form_state->getValue('recipients'));
+    $recipients = explode("\n", $form_state->getValue('recipients'));
 
     foreach ($recipients as &$recipient) {
       $recipient = trim($recipient);
