@@ -7,6 +7,7 @@
 
 namespace Drupal\contact;
 
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 
@@ -42,12 +43,22 @@ class ContactFormListBuilder extends ConfigEntityListBuilder {
     }
     else {
       $row['form'] = $entity->link(NULL, 'canonical');
-      $row['recipients'] = [
-        'data' => [
-          '#theme' => 'item_list',
-          '#items' => $entity->getRecipients(),
-        ],
-      ];
+      $recipients = $entity->getRecipients();
+      if (count($recipients) > 1) {
+        $row['recipients'] = [
+          'data' => [
+            '#theme' => 'item_list',
+            '#items' => $recipients,
+          ],
+        ];
+      }
+      elseif (count($recipients)) {
+        // Only one recipient.
+        $row['recipients'] = SafeMarkup::checkPlain($recipients[0]);
+      }
+      else {
+        $row['recipients'] = $this->t('No recipients');
+      }
       $default_form = \Drupal::config('contact.settings')->get('default_form');
       $row['selected'] = ($default_form == $entity->id() ? $this->t('Yes') : $this->t('No'));
     }
