@@ -239,7 +239,7 @@ class ContactSitewideTest extends WebTestBase {
     $this->deleteContactForms();
 
     $label = $this->randomMachineName(16);
-    $recipients = implode(',', array($recipients[0], $recipients[1], $recipients[2]));
+    $recipients = implode("\n", array($recipients[0], $recipients[1], $recipients[2]));
     $contact_form = Unicode::strtolower($this->randomMachineName(16));
     $this->addContactForm($contact_form, $label, $recipients, '', FALSE);
     $this->drupalGet('admin/structure/contact');

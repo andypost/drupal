@@ -261,7 +261,7 @@ class ConfigTranslationUiTest extends WebTestBase {
     $label = 'Send your feedback';
     $edit = array(
       'label' => $label,
-      'recipients' => 'sales@example.com,support@example.com',
+      'recipients' => implode("\n", ['sales@example.com', 'support@example.com']),
       'reply' => 'Thank you for your mail',
     );
     $this->drupalPostForm('admin/structure/contact/manage/feedback', $edit, t('Save'));
