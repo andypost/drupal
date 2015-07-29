@@ -12,6 +12,24 @@
  */
 
 /**
+ * Assertions.
+ *
+ * The Drupal project primarily uses runtime assertions to enforce the
+ * expectations of the API by failing when incorrect calls are made by code
+ * under development.
+ *
+ * @see http://php.net/assert
+ * @see https://www.drupal.org/node/2492225
+ *
+ * If you are using PHP 7.0 it is strongly recommended that you set
+ * zend.assertions=1 in the PHP.ini file (It cannot be changed from .htaccess
+ * or runtime) on development machines and to 0 in production.
+ *
+ * @see https://wiki.php.net/rfc/expectations
+ */
+assert_options(ASSERT_ACTIVE, 1);
+
+/**
  * Enable local development services.
  */
 $settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml';
@@ -39,6 +57,13 @@ $config['system.performance']['js']['preprocess'] = FALSE;
  * Do not use this setting until after the site is installed.
  */
 $settings['cache']['bins']['render'] = 'cache.backend.null';
+
+/**
+ * Send cacheablity headers for debugging purposes.
+ *
+ * By default, cacheability headers are only sent when behind a reverse proxy.
+ */
+$settings['send_cacheability_headers'] = TRUE;
 
 /**
  * Allow test modules and themes to be installed.

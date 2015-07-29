@@ -9,7 +9,7 @@ services:
       - [initLanguageManager]
   language.config_subscriber:
     class: Drupal\language\EventSubscriber\ConfigSubscriber
-    arguments: ['@language_manager', '@language.default']
+    arguments: ['@language_manager', '@language.default', '@config.factory']
     tags:
       - { name: event_subscriber }
   language.config_factory_override:
@@ -24,8 +24,3 @@ services:
     tags:
       - { name: paramconverter }
     lazy: true
-  language.current_language_context:
-    class: Drupal\language\ContextProvider\CurrentLanguageContext
-    arguments: ['@language_manager']
-    tags:
-      - { name: 'context_provider' }

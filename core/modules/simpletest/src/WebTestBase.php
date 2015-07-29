@@ -742,6 +742,13 @@ abstract class WebTestBase extends TestBase {
       'value' => FALSE,
       'required' => TRUE,
     ];
+
+    // Send cacheability headers so tests can check their values.
+    $settings['settings']['send_cacheability_headers'] = (object) [
+      'value' => TRUE,
+      'required' => TRUE,
+    ];
+
     $this->writeSettings($settings);
     // Allow for test-specific overrides.
     $settings_testing_file = DRUPAL_ROOT . '/' . $this->originalSite . '/settings.testing.php';
@@ -1555,7 +1562,15 @@ abstract class WebTestBase extends TestBase {
     if (!isset($options['query'][MainContentViewSubscriber::WRAPPER_FORMAT])) {
       $options['query'][MainContentViewSubscriber::WRAPPER_FORMAT] = 'drupal_ajax';
     }
-    return Json::decode($this->drupalGet($path, $options, $headers));
+    return Json::decode($this->drupalGetXHR($path, $options, $headers));
+  }
+
+  /**
+   * Requests a Drupal path as if it is a XMLHttpRequest.
+   */
+  protected function drupalGetXHR($path, array $options = array(), array $headers = array()) {
+    $headers[] = 'X-Requested-With: XMLHttpRequest';
+    return $this->drupalGet($path, $options, $headers);
   }
 
   /**
@@ -1683,16 +1698,20 @@ abstract class WebTestBase extends TestBase {
           $post_array = $post;
           if ($upload) {
             foreach ($upload as $key => $file) {
-              $file = drupal_realpath($file);
-              if ($file && is_file($file)) {
-                // Use the new CurlFile class for file uploads when using PHP
-                // 5.5.
-                if (class_exists('CurlFile')) {
-                  $post[$key] = curl_file_create($file);
+              if (is_array($file) && count($file)) {
+                // There seems to be no way via php's API to cURL to upload
+                // several files with the same post field name. However, Drupal
+                // still sees array-index syntax in a similar way.
+                for ($i = 0; $i < count($file); $i++) {
+                  $postfield = str_replace('[]', '', $key) . '[' . $i . ']';
+                  $file_path = $this->container->get('file_system')->realpath($file[$i]);
+                  $post[$postfield] = curl_file_create($file_path);
                 }
-                else {
-                  // @todo: Drop support for this when PHP 5.5 is required.
-                  $post[$key] = '@' . $file;
+              }
+              else {
+                $file = $this->container->get('file_system')->realpath($file);
+                if ($file && is_file($file)) {
+                  $post[$key] = curl_file_create($file);
                 }
               }
             }

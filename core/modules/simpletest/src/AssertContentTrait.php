@@ -66,7 +66,7 @@ trait AssertContentTrait {
     $this->plainTextContent = NULL;
     $this->elements = NULL;
     $this->drupalSettings = array();
-    if (preg_match('@<script type="application/json" data-drupal-selector="drupal-settings-json">([^<]*)</script>@', $content, $matches)) {
+    if (preg_match('/var drupalSettings = (.*?);$/m', $content, $matches)) {
       $this->drupalSettings = Json::decode($matches[1]);
     }
   }
@@ -398,7 +398,7 @@ trait AssertContentTrait {
     if (!$message) {
       $message = SafeMarkup::format('Raw "@raw" found', array('@raw' => $raw));
     }
-    return $this->assert(strpos($this->getRawContent(), $raw) !== FALSE, $message, $group);
+    return $this->assert(strpos($this->getRawContent(), (string) $raw) !== FALSE, $message, $group);
   }
 
   /**
@@ -425,7 +425,7 @@ trait AssertContentTrait {
     if (!$message) {
       $message = SafeMarkup::format('Raw "@raw" not found', array('@raw' => $raw));
     }
-    return $this->assert(strpos($this->getRawContent(), $raw) === FALSE, $message, $group);
+    return $this->assert(strpos($this->getRawContent(), (string) $raw) === FALSE, $message, $group);
   }
 
   /**

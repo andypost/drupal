@@ -7,6 +7,20 @@ parameters:
     default: keyvalue.database
   factory.keyvalue.expirable:
     default: keyvalue.expirable.database
+  filter_protocols:
+    - http
+    - https
+    - ftp
+    - news
+    - nntp
+    - tel
+    - telnet
+    - mailto
+    - irc
+    - ssh
+    - sftp
+    - webcal
+    - rtsp
 services:
   # Simple cache contexts, directly derived from the request context.
   cache_context.ip:
@@ -379,10 +393,21 @@ services:
   path.current:
     class: Drupal\Core\Path\CurrentPathStack
     arguments: ['@request_stack']
+  http_handler_stack:
+    class: GuzzleHttp\HandlerStack
+    public: false
+    factory: GuzzleHttp\HandlerStack::create
+    configurator: ['@http_handler_stack_configurator', configure]
+  http_handler_stack_configurator:
+    class: Drupal\Core\Http\HandlerStackConfigurator
+    public: false
+    arguments: ['@service_container']
   http_client:
-    class: Drupal\Core\Http\Client
-    tags:
-      - { name: service_collector, tag: http_client_subscriber, call: attach }
+    class: GuzzleHttp\Client
+    factory: http_client_factory:fromOptions
+  http_client_factory:
+    class: Drupal\Core\Http\ClientFactory
+    arguments: ['@http_handler_stack']
   theme.negotiator:
     class: Drupal\Core\Theme\ThemeNegotiator
     arguments: ['@access_check.theme']
@@ -611,6 +636,11 @@ services:
   language_manager:
     class: Drupal\Core\Language\LanguageManager
     arguments: ['@language.default']
+  language.current_language_context:
+    class: Drupal\Core\Language\ContextProvider\CurrentLanguageContext
+    arguments: ['@language_manager']
+    tags:
+      - { name: 'context_provider' }
   language.default:
     class: Drupal\Core\Language\LanguageDefault
     arguments: ['%language.default_values%']
@@ -696,7 +726,7 @@ services:
       - { name: event_subscriber }
   url_generator.non_bubbling:
     class: Drupal\Core\Routing\UrlGenerator
-    arguments: ['@router.route_provider', '@path_processor_manager', '@route_processor_manager', '@config.factory', '@request_stack']
+    arguments: ['@router.route_provider', '@path_processor_manager', '@route_processor_manager', '@request_stack', '%filter_protocols%']
     public: false
     calls:
       - [setContext, ['@?router.request_context']]
@@ -710,7 +740,7 @@ services:
     arguments: ['@request_stack', '@url_generator']
   unrouted_url_assembler:
     class: Drupal\Core\Utility\UnroutedUrlAssembler
-    arguments: ['@request_stack', '@config.factory', '@path_processor_manager']
+    arguments: ['@request_stack', '@path_processor_manager', '%filter_protocols%']
   link_generator:
     class: Drupal\Core\Utility\LinkGenerator
     arguments: ['@url_generator', '@module_handler', '@renderer']
@@ -747,6 +777,9 @@ services:
     arguments: ['@database']
     tags:
       - { name: backend_overridable }
+  pgsql.entity.query.sql:
+    class: Drupal\Core\Entity\Query\Sql\pgsql\QueryFactory
+    arguments: ['@database']
   entity.query.null:
     class: Drupal\Core\Entity\Query\Null\QueryFactory
   entity.query.keyvalue:
@@ -872,6 +905,11 @@ services:
       - { name: event_subscriber }
   route_http_method_subscriber:
     class: Drupal\Core\EventSubscriber\RouteMethodSubscriber
+    tags:
+      - { name: event_subscriber }
+  psr_response_view_subscriber:
+    class: Drupal\Core\EventSubscriber\PsrResponseSubscriber
+    arguments: ['@psr7.http_foundation_factory']
     tags:
       - { name: event_subscriber }
 
@@ -1174,7 +1212,7 @@ services:
       - { name: service_collector, tag: breadcrumb_builder, call: addBuilder }
   token:
     class: Drupal\Core\Utility\Token
-    arguments: ['@module_handler', '@cache.discovery', '@language_manager', '@cache_tags.invalidator']
+    arguments: ['@module_handler', '@cache.discovery', '@language_manager', '@cache_tags.invalidator', '@renderer']
   batch.storage:
     class: Drupal\Core\Batch\BatchStorage
     arguments: ['@database', '@session', '@csrf_token']
@@ -1283,6 +1321,9 @@ services:
       - [setThemeManager, ['@theme.manager']]
   authentication:
     class: Drupal\Core\Authentication\AuthenticationManager
+    arguments: ['@authentication_collector']
+  authentication_collector:
+    class: Drupal\Core\Authentication\AuthenticationCollector
     tags:
       - { name: service_collector, tag: authentication_provider, call: addProvider }
   authentication_subscriber:
@@ -1380,7 +1421,7 @@ services:
     class: Drupal\Core\Extension\InfoParser
   twig:
     class: Drupal\Core\Template\TwigEnvironment
-    arguments: ['@app.root', '@twig.loader', '%twig.config%']
+    arguments: ['@app.root', '@cache.default', '@twig.loader', '%twig.config%']
     tags:
       - { name: service_collector, tag: 'twig.extension', call: addExtension }
   twig.extension:

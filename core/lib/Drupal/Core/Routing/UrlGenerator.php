@@ -54,14 +54,19 @@ class UrlGenerator implements UrlGeneratorInterface {
   /**
    * Overrides characters that will not be percent-encoded in the path segment.
    *
+   * The first two elements are the first two parameters of str_replace(), so
+   * if you override this variable you can also use arrays for the encoded
+   * and decoded characters.
+   *
    * @see \Symfony\Component\Routing\Generator\UrlGenerator
    */
-  protected $decodedChars = array(
+  protected $decodedChars = [
     // the slash can be used to designate a hierarchical structure and we want allow using it with this meaning
     // some webservers don't allow the slash in encoded form in the path for security reasons anyway
     // see http://stackoverflow.com/questions/4069002/http-400-if-2f-part-of-get-url-in-jboss
-    '%2F' => '/',
-  );
+    '%2F', // Map from these encoded characters.
+    '/', // Map to these decoded characters.
+  ];
 
   /**
    *  Constructs a new generator object.
@@ -72,19 +77,18 @@ class UrlGenerator implements UrlGeneratorInterface {
    *   The path processor to convert the system path to one suitable for urls.
    * @param \Drupal\Core\RouteProcessor\OutboundRouteProcessorInterface $route_processor
    *   The route processor.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config
-   *    The config factory.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   A request stack object.
+   * @param string[] $filter_protocols
+   *   (optional) An array of protocols allowed for URL generation.
    */
-  public function __construct(RouteProviderInterface $provider, OutboundPathProcessorInterface $path_processor, OutboundRouteProcessorInterface $route_processor, ConfigFactoryInterface $config, RequestStack $request_stack) {
+  public function __construct(RouteProviderInterface $provider, OutboundPathProcessorInterface $path_processor, OutboundRouteProcessorInterface $route_processor, RequestStack $request_stack, array $filter_protocols = ['http', 'https']) {
     $this->provider = $provider;
     $this->context = new RequestContext();
 
     $this->pathProcessor = $path_processor;
     $this->routeProcessor = $route_processor;
-    $allowed_protocols = $config->get('system.filter')->get('protocols') ?: array('http', 'https');
-    UrlHelper::setAllowedProtocols($allowed_protocols);
+    UrlHelper::setAllowedProtocols($filter_protocols);
     $this->requestStack = $request_stack;
   }
 
@@ -212,7 +216,7 @@ class UrlGenerator implements UrlGeneratorInterface {
     }
 
     // The contexts base URL is already encoded (see Symfony\Component\HttpFoundation\Request)
-    $url = strtr(rawurlencode($url), $this->decodedChars);
+    $url = str_replace($this->decodedChars[0], $this->decodedChars[1], rawurlencode($url));
 
     // Drupal paths rarely include dots, so skip this processing if possible.
     if (strpos($url, '/.') !== FALSE) {

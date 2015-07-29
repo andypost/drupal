@@ -49,7 +49,7 @@ class AccountPermissionsCacheContext extends UserCacheContextBase implements Cac
    * {@inheritdoc}
    */
   public function getContext() {
-    return 'ph.' . $this->permissionsHashGenerator->generate($this->user);
+    return $this->permissionsHashGenerator->generate($this->user);
   }
 
   /**
@@ -57,7 +57,11 @@ class AccountPermissionsCacheContext extends UserCacheContextBase implements Cac
    */
   public function getCacheableMetadata() {
     $cacheable_metadata = new CacheableMetadata();
-    $tags = [];
+
+    // The permissions hash changes when:
+    // - a user is updated to have different roles;
+    $tags = ['user:' . $this->user->id()];
+    // - a role is updated to have different permissions.
     foreach ($this->user->getRoles() as $rid) {
       $tags[] = "config:user.role.$rid";
     }

@@ -125,7 +125,7 @@ function system_help($route_name, RouteMatchInterface $route_match) {
         }
       }
       else {
-        $output .= '<p>' . t('Regularly review available updates to maintain a secure and current site. Always run the <a href="!update-php">update script</a> each time a module is updated. Enable the Update Manager module to update and install modules and themes.', array('!update-php' => \Drupal::url('system.db_update'))) . '</p>';
+        $output .= '<p>' . t('Regularly review available updates to maintain a secure and current site. Always run the <a href="!update-php">update script</a> each time a module is updated. Enable the <a href="!update-manager">Update Manager module</a> to update and install modules and themes.', array('!update-php' => \Drupal::url('system.db_update'), '!update-manager' => \Drupal::url('system.modules_list', [], ['fragment' => 'module-update']))) . '</p>';
       }
       return $output;
 
@@ -648,21 +648,20 @@ function system_js_settings_build(&$settings, AttachedAssetsInterface $assets) {
  * as well as theme_token ajax state.
  */
 function system_js_settings_alter(&$settings, AttachedAssetsInterface $assets) {
-  // url() generates the script and prefix using hook_url_outbound_alter().
-  // Instead of running the hook_url_outbound_alter() again here, extract
-  // them from url().
-  // @todo Make this less hacky: https://www.drupal.org/node/1547376.
   $request = \Drupal::request();
-  $scriptPath = $request->getScriptName();
-
-  $pathPrefix = '';
   $current_query = $request->query->all();
-  Url::fromRoute('<front>', [], array('script' => &$scriptPath, 'prefix' => &$pathPrefix))->toString(TRUE);
+
+  // Let output path processors set a prefix.
+  /** @var \Drupal\Core\PathProcessor\OutboundPathProcessorInterface $path_processor */
+  $path_processor = \Drupal::service('path_processor_manager');
+  $options = ['prefix' => ''];
+  $path_processor->processOutbound('/', $options);
+  $pathPrefix = $options['prefix'];
+
   $current_path = \Drupal::routeMatch()->getRouteName() ? Url::fromRouteMatch(\Drupal::routeMatch())->getInternalPath() : '';
   $current_path_is_admin = \Drupal::service('router.admin_context')->isAdminRoute();
   $path_settings = [
     'baseUrl' => $request->getBaseUrl() . '/',
-    'scriptPath' => $scriptPath,
     'pathPrefix' => $pathPrefix,
     'currentPath' => $current_path,
     'currentPathIsAdmin' => $current_path_is_admin,
@@ -689,8 +688,14 @@ function system_js_settings_alter(&$settings, AttachedAssetsInterface $assets) {
   $library_dependency_resolver = \Drupal::service('library.dependency_resolver');
   if (isset($settings['ajaxPageState']) || in_array('core/drupal.ajax', $library_dependency_resolver->getLibrariesWithDependencies($assets->getAlreadyLoadedLibraries()))) {
     if (!defined('MAINTENANCE_MODE')) {
-      $settings['ajaxPageState']['theme_token'] = \Drupal::csrfToken()
-        ->get(\Drupal::theme()->getActiveTheme()->getName());
+      // The theme token is only validated when the theme requested is not the
+      // default, so don't generate it unless necessary.
+      // @see \Drupal\Core\Theme\AjaxBasePageNegotiator::determineActiveTheme()
+      $active_theme_key = \Drupal::theme()->getActiveTheme()->getName();
+      if ($active_theme_key !== \Drupal::service('theme_handler')->getDefault()) {
+        $settings['ajaxPageState']['theme_token'] = \Drupal::csrfToken()
+          ->get($active_theme_key);
+      }
     }
   }
 }
@@ -1362,9 +1367,9 @@ function system_retrieve_file($url, $destination = NULL, $managed = FALSE, $repl
     }
   }
   try {
-    $data = \Drupal::httpClient()
+    $data = (string) \Drupal::httpClient()
       ->get($url)
-      ->getBody(TRUE);
+      ->getBody();
     $local = $managed ? file_save_data($data, $path, $replace) : file_unmanaged_save_data($data, $path, $replace);
   }
   catch (RequestException $exception) {
