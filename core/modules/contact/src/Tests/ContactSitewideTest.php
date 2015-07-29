@@ -145,10 +145,12 @@ class ContactSitewideTest extends WebTestBase {
     $this->assertNoUniqueText($label, 'New form included in forms list.');
 
     // Test update contact form.
-    $this->updateContactForm($id, $label = $this->randomMachineName(16), $recipients_str = implode("\n", array($recipients[0], $recipients[1])), $reply = $this->randomMachineName(30), FALSE);
+    // Make sure we allow empty lines between recipients.
+    $new_recipients = array($recipients[0], '', $recipients[1]);
+    $this->updateContactForm($id, $label = $this->randomMachineName(16), $recipients_str = implode("\n", $new_recipients), $reply = $this->randomMachineName(30), FALSE);
     $config = $this->config('contact.form.' . $id)->get();
     $this->assertEqual($config['label'], $label);
-    $this->assertEqual($config['recipients'], array($recipients[0], $recipients[1]));
+    $this->assertEqual($config['recipients'], $new_recipients);
     $this->assertEqual($config['reply'], $reply);
     $this->assertNotEqual($id, $this->config('contact.settings')->get('default_form'));
     $this->assertRaw(t('Contact form %label has been updated.', array('%label' => $label)));

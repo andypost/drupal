@@ -102,7 +102,7 @@ class MailHandler implements MailHandlerInterface {
       // Send to the form recipient(s), using the site's default language.
       $params['contact_form'] = $contact_form;
 
-      $to = implode(', ', $contact_form->getRecipients());
+      $to = implode(', ', array_filter($contact_form->getRecipients()));
     }
     elseif ($recipient = $message->getPersonalRecipient()) {
       // Send to the user in the user's preferred language.
