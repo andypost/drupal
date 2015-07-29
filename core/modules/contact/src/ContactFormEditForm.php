@@ -120,7 +120,7 @@ class ContactFormEditForm extends EntityForm implements ContainerInjectionInterf
 
     foreach ($recipients as &$recipient) {
       $recipient = trim($recipient);
-      if (!$this->emailValidator->isValid($recipient)) {
+      if ($recipient && !$this->emailValidator->isValid($recipient)) {
         $form_state->setErrorByName('recipients', $this->t('%recipient is an invalid email address.', array('%recipient' => $recipient)));
       }
     }

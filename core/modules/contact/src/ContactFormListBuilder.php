@@ -43,7 +43,7 @@ class ContactFormListBuilder extends ConfigEntityListBuilder {
     }
     else {
       $row['form'] = $entity->link(NULL, 'canonical');
-      $recipients = $entity->getRecipients();
+      $recipients = array_filter($entity->getRecipients());
       if (count($recipients) > 1) {
         $row['recipients'] = [
           'data' => [
