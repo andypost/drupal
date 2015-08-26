@@ -8,6 +8,7 @@
 namespace Drupal\system\Tests\Form;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
@@ -97,7 +98,7 @@ class FormTest extends WebTestBase {
     $elements['file']['empty_values'] = $empty_strings;
 
     // Regular expression to find the expected marker on required elements.
-    $required_marker_preg = '@<.*?class=".*?form-required.*?">@';
+    $required_marker_preg = '@<.*?class=".*?js-form-required.*form-required.*?">@';
     // Go through all the elements and all the empty values for them.
     foreach ($elements as $type => $data) {
       foreach ($data['empty_values'] as $key => $empty) {
@@ -533,7 +534,7 @@ class FormTest extends WebTestBase {
     // All the elements should be marked as disabled, including the ones below
     // the disabled container.
     $actual_count = count($disabled_elements);
-    $expected_count = 41;
+    $expected_count = 42;
     $this->assertEqual($actual_count, $expected_count, SafeMarkup::format('Found @actual elements with disabled property (expected @expected).', array(
       '@actual' => count($disabled_elements),
       '@expected' => $expected_count,
@@ -616,7 +617,7 @@ class FormTest extends WebTestBase {
       $path = strtr($path, array('!type' => $type));
       // Verify that the element exists.
       $element = $this->xpath($path, array(
-        ':name' => SafeMarkup::checkPlain($name),
+        ':name' => Html::escape($name),
         ':div-class' => $class,
         ':value' => isset($item['#value']) ? $item['#value'] : '',
       ));

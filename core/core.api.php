@@ -49,6 +49,7 @@
  * - @link user_api User accounts, permissions, and roles @endlink
  * - @link theme_render Render API @endlink
  * - @link themeable Theme system @endlink
+ * - @link update_api Update API @endlink
  * - @link migration Migration @endlink
  *
  * @section additional Additional topics
@@ -567,6 +568,9 @@
  * @code
  *  $settings['cache']['default'] = 'cache.custom';
  * @endcode
+ *
+ * Finally, you can chain multiple cache backends together, see
+ * \Drupal\Core\Cache\ChainedFastBackend and \Drupal\Core\Cache\BackendChain.
  *
  * @see https://www.drupal.org/node/1884796
  * @}

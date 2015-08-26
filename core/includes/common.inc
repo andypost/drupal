@@ -22,6 +22,7 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Asset\AttachedAssets;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Render\SafeString;
 use Drupal\Core\Render\Renderer;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
@@ -366,6 +367,9 @@ function format_size($size, $langcode = NULL) {
  *   A translated date string in the requested format.
  *
  * @see \Drupal\Core\Datetime\DateFormatter::format()
+ *
+ * @deprecated in Drupal 8.0.0, will be removed before Drupal 9.0.0.
+ *   Use \Drupal::service('date.formatter')->format().
  */
 function format_date($timestamp, $type = 'medium', $format = '', $timezone = NULL, $langcode = NULL) {
   return \Drupal::service('date.formatter')->format($timestamp, $type, $format, $timezone, $langcode);
@@ -487,7 +491,7 @@ function _drupal_add_html_head_link($attributes, $header = FALSE) {
 
   if ($header) {
     // Also add a HTTP header "Link:".
-    $href = '<' . SafeMarkup::checkPlain($attributes['href']) . '>;';
+    $href = '<' . Html::escape($attributes['href']) . '>;';
     unset($attributes['href']);
     $element['#attached']['http_header'][] = array('Link',  $href . drupal_http_header_attributes($attributes), TRUE);
   }
@@ -517,7 +521,6 @@ function drupal_js_defaults($data = NULL) {
   return array(
     'type' => 'file',
     'group' => JS_DEFAULT,
-    'every_page' => FALSE,
     'weight' => 0,
     'scope' => 'header',
     'cache' => TRUE,
@@ -642,7 +645,7 @@ function drupal_process_attached(array $elements) {
           call_user_func_array('_drupal_add_html_head_link', $args);
           break;
         case 'http_header':
-          call_user_func_array('_drupal_add_http_header', $args);
+          // @todo Remove validation in https://www.drupal.org/node/2477223
           break;
         default:
           throw new \LogicException(sprintf('You are not allowed to use %s in #attached', $callback));
@@ -1084,8 +1087,9 @@ function drupal_render(&$elements, $is_recursive_call = FALSE) {
  *   can be passed in to save another run of
  *   \Drupal\Core\Render\Element::children().
  *
- * @return string
+ * @return string|\Drupal\Component\Utility\SafeStringInterface
  *   The rendered HTML of all children of the element.
+ *
  * @see drupal_render()
  */
 function drupal_render_children(&$element, $children_keys = NULL) {
@@ -1098,7 +1102,7 @@ function drupal_render_children(&$element, $children_keys = NULL) {
       $output .= drupal_render($element[$key]);
     }
   }
-  return SafeMarkup::set($output);
+  return SafeString::create($output);
 }
 
 /**
@@ -1376,7 +1380,7 @@ function _drupal_flush_css_js() {
  */
 function debug($data, $label = NULL, $print_r = TRUE) {
   // Print $data contents to string.
-  $string = SafeMarkup::checkPlain($print_r ? print_r($data, TRUE) : var_export($data, TRUE));
+  $string = Html::escape($print_r ? print_r($data, TRUE) : var_export($data, TRUE));
 
   // Display values with pre-formatting to increase readability.
   $string = '<pre>' . $string . '</pre>';

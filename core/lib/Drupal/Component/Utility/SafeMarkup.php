@@ -15,9 +15,9 @@ namespace Drupal\Component\Utility;
  * provides a store for known safe strings and methods to manage them
  * throughout the page request.
  *
- * Strings sanitized by self::checkPlain() and self::escape() or
- * self::xssFilter() are automatically marked safe, as are markup strings
- * created from @link theme_render render arrays @endlink via drupal_render().
+ * Strings sanitized by self::checkPlain() and self::escape() are automatically
+ * marked safe, as are markup strings created from @link theme_render render
+ * arrays @endlink via drupal_render().
  *
  * This class should be limited to internal use only. Module developers should
  * instead use the appropriate
@@ -139,84 +139,6 @@ class SafeMarkup {
   }
 
   /**
-   * Applies a very permissive XSS/HTML filter for admin-only use.
-   *
-   * Note: This method only filters if $string is not marked safe already.
-   *
-   * @deprecated as of Drupal 8.0.x, will be removed before Drupal 8.0.0. If the
-   *   string used as part of a @link theme_render render array @endlink use
-   *   #markup to allow the render system to filter automatically. If the result
-   *   is not being used directly in the rendering system (for example, when its
-   *   result is being combined with other strings before rendering), use
-   *   Xss::filterAdmin(). Otherwise, use SafeMarkup::xssFilter() and the tag
-   *   list provided by Xss::getAdminTagList() instead. In the rare instance
-   *   that the caller does not want to filter strings that are marked safe
-   *   already, it needs to check SafeMarkup::isSafe() itself.
-   *
-   * @see \Drupal\Component\Utility\SafeMarkup::xssFilter()
-   * @see \Drupal\Component\Utility\SafeMarkup::isSafe()
-   * @see \Drupal\Component\Utility\Xss::filterAdmin()
-   * @see \Drupal\Component\Utility\Xss::getAdminTagList()
-   */
-  public static function checkAdminXss($string) {
-    return static::isSafe($string) ? $string : static::xssFilter($string, Xss::getAdminTagList());
-  }
-
-  /**
-   * Filters HTML for XSS vulnerabilities and marks the result as safe.
-   *
-   * Calling this method unnecessarily will result in bloating the safe string
-   * list and increases the chance of unintended side effects.
-   *
-   * If Twig receives a value that is not marked as safe then it will
-   * automatically encode special characters in a plain-text string for display
-   * as HTML. Therefore, SafeMarkup::xssFilter() should only be used when the
-   * string might contain HTML that needs to be rendered properly by the
-   * browser.
-   *
-   * If you need to filter for admin use, like Xss::filterAdmin(), then:
-   * - If the string is used as part of a @link theme_render render array @endlink,
-   *   use #markup to allow the render system to filter by the admin tag list
-   *   automatically.
-   * - Otherwise, use the SafeMarkup::xssFilter() with tag list provided by
-   *   Xss::getAdminTagList() instead.
-   *
-   * This method should only be used instead of Xss::filter() when the result is
-   * being added to a render array that is constructed before rendering begins.
-   *
-   * In the rare instance that the caller does not want to filter strings that
-   * are marked safe already, it needs to check SafeMarkup::isSafe() itself.
-   *
-   * @param $string
-   *   The string with raw HTML in it. It will be stripped of everything that
-   *   can cause an XSS attack. The string provided will always be escaped
-   *   regardless of whether the string is already marked as safe.
-   * @param array $html_tags
-   *   (optional) An array of HTML tags. If omitted, it uses the default tag
-   *   list defined by \Drupal\Component\Utility\Xss::filter().
-   *
-   * @return string
-   *   An XSS-safe version of $string, or an empty string if $string is not
-   *   valid UTF-8. The string is marked as safe.
-   *
-   * @ingroup sanitization
-   *
-   * @see \Drupal\Component\Utility\Xss::filter()
-   * @see \Drupal\Component\Utility\Xss::filterAdmin()
-   * @see \Drupal\Component\Utility\Xss::getAdminTagList()
-   * @see \Drupal\Component\Utility\SafeMarkup::isSafe()
-   */
-  public static function xssFilter($string, $html_tags = NULL) {
-    if (is_null($html_tags)) {
-      $string = Xss::filter($string);
-    }
-    else {
-      $string = Xss::filter($string, $html_tags);
-    }
-    return static::set($string);
-  }
-
-  /**
   * Gets all strings currently marked as safe.
   *
   * This is useful for the batch and form APIs, where it is important to
@@ -247,7 +169,7 @@ class SafeMarkup {
    * @see drupal_validate_utf8()
    */
   public static function checkPlain($text) {
-    $string = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    $string = Html::escape($text);
     static::$safeStrings[$string]['html'] = TRUE;
     return $string;
   }
@@ -275,8 +197,8 @@ class SafeMarkup {
    *   formatting depends on the first character of the key:
    *   - @variable: Escaped to HTML using self::escape(). Use this as the
    *     default choice for anything displayed on a page on the site.
-   *   - %variable: Escaped to HTML and formatted using self::placeholder(),
-   *     which makes the following HTML code:
+   *   - %variable: Escaped to HTML wrapped in <em> tags, which makes the
+   *     following HTML code:
    *     @code
    *       <em class="placeholder">text output here.</em>
    *     @endcode
@@ -296,7 +218,7 @@ class SafeMarkup {
    *
    * @see t()
    */
-  public static function format($string, array $args = array()) {
+  public static function format($string, array $args) {
     $safe = TRUE;
 
     // Transform arguments before inserting them.
@@ -310,7 +232,7 @@ class SafeMarkup {
         case '%':
         default:
           // Escaped and placeholder.
-          $args[$key] = static::placeholder($value);
+          $args[$key] = '<em class="placeholder">' . static::escape($value) . '</em>';
           break;
 
         case '!':
@@ -327,70 +249,6 @@ class SafeMarkup {
     }
 
     return $output;
-  }
-
-  /**
-   * Formats text for emphasized display in a placeholder inside a sentence.
-   *
-   * Used automatically by self::format().
-   *
-   * @param string $text
-   *   The text to format (plain-text).
-   *
-   * @return string
-   *   The formatted text (html).
-   */
-  public static function placeholder($text) {
-    $string = '<em class="placeholder">' . static::escape($text) . '</em>';
-    static::$safeStrings[$string]['html'] = TRUE;
-    return $string;
-  }
-
-  /**
-   * Replaces all occurrences of the search string with the replacement string.
-   *
-   * Functions identically to str_replace(), but marks the returned output as
-   * safe if all the inputs and the subject have also been marked as safe.
-   *
-   * @param string|array $search
-   *   The value being searched for. An array may be used to designate multiple
-   *   values to search for.
-   * @param string|array $replace
-   *   The replacement value that replaces found search values. An array may be
-   *   used to designate multiple replacements.
-   * @param string $subject
-   *   The string or array being searched and replaced on.
-   *
-   * @return string
-   *   The passed subject with replaced values.
-   */
-  public static function replace($search, $replace, $subject) {
-    $output = str_replace($search, $replace, $subject);
-
-    // If any replacement is unsafe, then the output is also unsafe, so just
-    // return the output.
-    if (!is_array($replace)) {
-      if (!SafeMarkup::isSafe($replace)) {
-        return $output;
-      }
-    }
-    else {
-      foreach ($replace as $replacement) {
-        if (!SafeMarkup::isSafe($replacement)) {
-          return $output;
-        }
-      }
-    }
-
-    // If the subject is unsafe, then the output is as well, so return it.
-    if (!SafeMarkup::isSafe($subject)) {
-      return $output;
-    }
-    else {
-      // If we have reached this point, then all replacements were safe. If the
-      // subject was also safe, then mark the entire output as safe.
-      return SafeMarkup::set($output);
-    }
   }
 
 }

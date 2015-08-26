@@ -93,7 +93,12 @@ class ViewsUIController extends ControllerBase {
       foreach ($views as $view) {
         $rows[$field_name]['data'][1][] = $this->l($view, new Url('entity.view.edit_form', array('view' => $view)));
       }
-      $rows[$field_name]['data'][1] = SafeMarkup::set(implode(', ', $rows[$field_name]['data'][1]));
+      $item_list = [
+        '#theme' => 'item_list',
+        '#items' => $rows[$field_name]['data'][1],
+        '#context' => ['list_style' => 'comma-list'],
+      ];
+      $rows[$field_name]['data'][1] = ['data' => $item_list];
     }
 
     // Sort rows by field name.
@@ -121,7 +126,11 @@ class ViewsUIController extends ControllerBase {
       foreach ($row['views'] as $row_name => $view) {
         $row['views'][$row_name] = $this->l($view, new Url('entity.view.edit_form', array('view' => $view)));
       }
-      $row['views'] = SafeMarkup::set(implode(', ', $row['views']));
+      $row['views']['data'] = [
+        '#theme' => 'item_list',
+        '#items' => $row['views'],
+        '#context' => ['list_style' => 'comma-list'],
+      ];
     }
 
     // Sort rows by field name.

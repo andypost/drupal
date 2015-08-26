@@ -210,7 +210,7 @@ function drupal_rewrite_settings($settings = array(), $settings_file = NULL) {
     }
     $variable_names['$'. $setting] = $setting;
   }
-  $contents = file_get_contents(DRUPAL_ROOT . '/' . $settings_file);
+  $contents = file_get_contents($settings_file);
   if ($contents !== FALSE) {
     // Initialize the contents for the settings.php file if it is empty.
     if (trim($contents) === '') {
@@ -315,7 +315,7 @@ function drupal_rewrite_settings($settings = array(), $settings_file = NULL) {
     }
 
     // Write the new settings file.
-    if (file_put_contents(DRUPAL_ROOT . '/' . $settings_file, $buffer) === FALSE) {
+    if (file_put_contents($settings_file, $buffer) === FALSE) {
       throw new Exception(t('Failed to modify %settings. Verify the file permissions.', array('%settings' => $settings_file)));
     }
     else {
@@ -1066,19 +1066,6 @@ function install_profile_info($profile, $langcode = 'en') {
     $cache[$profile][$langcode] = $info;
   }
   return $cache[$profile][$langcode];
-}
-
-/**
- * Ensures the environment for a Drupal database on a predefined connection.
- *
- * This will run tasks that check that Drupal can perform all of the functions
- * on a database, that Drupal needs. Tasks include simple checks like CREATE
- * TABLE to database specific functions like stored procedures and client
- * encoding.
- */
-function db_run_tasks($driver) {
-  db_installer_object($driver)->runTasks();
-  return TRUE;
 }
 
 /**

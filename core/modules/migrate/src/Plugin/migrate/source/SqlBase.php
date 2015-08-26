@@ -29,11 +29,6 @@ abstract class SqlBase extends SourcePluginBase {
   protected $query;
 
   /**
-   * @var \Drupal\migrate\Entity\MigrationInterface
-   */
-  protected $migration;
-
-  /**
    * @var \Drupal\Core\Database\Connection
    */
   protected $database;
@@ -138,7 +133,7 @@ abstract class SqlBase extends SourcePluginBase {
       //      OR above high water).
       $conditions = $this->query->orConditionGroup();
       $condition_added = FALSE;
-      if ($this->mapJoinable()) {
+      if (empty($this->configuration['ignore_map']) && $this->mapJoinable()) {
         // Build the join to the map table. Because the source key could have
         // multiple fields, we need to build things up.
         $count = 1;

@@ -46,16 +46,14 @@ class ContactFormListBuilder extends ConfigEntityListBuilder {
       // Filter empty lines.
       $recipients = array_filter($entity->getRecipients());
       if (count($recipients) > 1) {
-        $row['recipients'] = [
-          'data' => [
-            '#theme' => 'item_list',
-            '#items' => $recipients,
-          ],
+        $row['recipients']['data'] = [
+          '#theme' => 'item_list',
+          '#items' => $recipients,
         ];
       }
       elseif (count($recipients)) {
         // Only one recipient.
-        $row['recipients'] = SafeMarkup::checkPlain($recipients[0]);
+        $row['recipients']['data']['#markup'] = $recipients[0];
       }
       else {
         $row['recipients'] = $this->t('No recipients');

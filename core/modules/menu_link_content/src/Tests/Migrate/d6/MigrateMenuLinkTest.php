@@ -12,7 +12,7 @@ use Drupal\migrate_drupal\Tests\d6\MigrateDrupal6TestBase;
 /**
  * Menu link migration.
  *
- * @group menu_link_content
+ * @group migrate_drupal_6
  */
 class MigrateMenuLinkTest extends MigrateDrupal6TestBase {
 
@@ -42,7 +42,6 @@ class MigrateMenuLinkTest extends MigrateDrupal6TestBase {
       ),
     ));
 
-    $this->loadDumps(['MenuLinks.php']);
     $this->executeMigration('d6_menu_links');
   }
 
@@ -70,12 +69,23 @@ class MigrateMenuLinkTest extends MigrateDrupal6TestBase {
     $menu_link = entity_load('menu_link_content', 140);
     $this->assertIdentical('Drupal.org', $menu_link->getTitle());
     $this->assertIdentical('secondary-links', $menu_link->getMenuName());
-    $this->assertIdentical('', $menu_link->getDescription());
+    $this->assertIdentical(NULL, $menu_link->getDescription());
     $this->assertIdentical(TRUE, $menu_link->isEnabled());
     $this->assertIdentical(FALSE, $menu_link->isExpanded());
     $this->assertIdentical(['attributes' => ['title' => '']], $menu_link->link->options);
     $this->assertIdentical('https://www.drupal.org', $menu_link->link->uri);
     $this->assertIdentical(0, $menu_link->getWeight());
+
+    // assert that missing title attributes don't stop or break migration.
+    $menu_link = entity_load('menu_link_content', 393);
+    $this->assertIdentical('Test 3', $menu_link->getTitle());
+    $this->assertIdentical('secondary-links', $menu_link->getMenuName());
+    $this->assertIdentical(NULL, $menu_link->getDescription());
+    $this->assertIdentical(TRUE, $menu_link->isEnabled());
+    $this->assertIdentical(FALSE, $menu_link->isExpanded());
+    $this->assertIdentical([], $menu_link->link->options);
+    $this->assertIdentical('internal:/user/login', $menu_link->link->uri);
+    $this->assertIdentical(15, $menu_link->getWeight());
   }
 
 }

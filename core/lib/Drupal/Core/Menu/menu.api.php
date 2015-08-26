@@ -122,6 +122,22 @@
  * For example, the placeholder '{myvar}' in a route will become the $myvar
  * parameter to the method.
  *
+ * Additionally, if a parameter is typed to one of the following special classes
+ * the system will pass those values as well.
+ *
+ * - \Symfony\Component\HttpFoundation\Request: The raw Symfony request object.
+ *   It is generally only useful if the controller needs access to the query
+ *   parameters of the request. By convention, this parameter is usually named
+ *   $request.
+ * - \Psr\Http\Message\ServerRequestInterface: The raw request, represented
+ *   using the PSR-7 ServerRequest format. This object is derived as necessary
+ *   from the Symfony request, so if either will suffice the Symfony request
+ *   will be slightly more performant. By convention this parameter is usually
+ *   named $request.
+ * - \Drupal\Core\Routing\RouteMatchInterface: The "route match" data from
+ *   this request. This object contains various standard data derived from
+ *   the request and routing process. Consult the interface for details.
+ *
  * Most controllers will need to display some information stored in the Drupal
  * database, which will involve using one or more Drupal services (see the
  * @link container Services and container topic @endlink). In order to properly
@@ -546,12 +562,8 @@ function hook_contextual_links_plugins_alter(array &$contextual_links) {
 /**
  * Perform alterations to the breadcrumb built by the BreadcrumbManager.
  *
- * @param array $breadcrumb
- *   An array of breadcrumb link a tags, returned by the breadcrumb manager
- *   build method, for example
- *   @code
- *     array('<a href="/">Home</a>');
- *   @endcode
+ * @param \Drupal\Core\Breadcrumb\Breadcrumb $breadcrumb
+ *   A breadcrumb object returned by BreadcrumbBuilderInterface::build().
  * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
  *   The current route match.
  * @param array $context
@@ -562,9 +574,9 @@ function hook_contextual_links_plugins_alter(array &$contextual_links) {
  *
  * @ingroup menu
  */
-function hook_system_breadcrumb_alter(array &$breadcrumb, \Drupal\Core\Routing\RouteMatchInterface $route_match, array $context) {
+function hook_system_breadcrumb_alter(\Drupal\Core\Breadcrumb\Breadcrumb &$breadcrumb, \Drupal\Core\Routing\RouteMatchInterface $route_match, array $context) {
   // Add an item to the end of the breadcrumb.
-  $breadcrumb[] = Drupal::l(t('Text'), 'example_route_name');
+  $breadcrumb->addLink(Drupal::l(t('Text'), 'example_route_name'));
 }
 
 /**

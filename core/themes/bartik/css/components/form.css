@@ -1,11 +1,14 @@
-/* -------------- Password Field  ------------- */
+/**
+ * @file
+ * Visual styles for Bartik's forms.
+ */
 
+/* Password field. */
 .password-field {
   margin: 0;
 }
 
-/* -------------- Form Elements   ------------- */
-
+/* Form elements. */
 form {
   margin: 0;
   padding: 0;
@@ -137,6 +140,7 @@ input.form-submit:focus {
 .form-actions {
   padding-top: 10px;
 }
+
 /* Node Form */
 #edit-body {
   margin-bottom: 2em;
@@ -237,9 +241,6 @@ input.form-submit:focus {
   line-height: 1.2;
   margin-left: 120px; /* LTR */
 }
-#content h2.comment-form {
-  margin-bottom: 0.5em;
-}
 .comment-form .form-textarea {
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
@@ -277,5 +278,5 @@ input.form-submit:focus {
 
 /* Form error message styles. */
 .form-item--error-message {
-  color: #ea2800;
+  color: #e32700;
 }

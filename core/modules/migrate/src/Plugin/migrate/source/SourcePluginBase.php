@@ -60,20 +60,6 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
   protected $currentSourceIds;
 
   /**
-   * Number of rows intentionally ignored (prepareRow() returned FALSE)
-   *
-   * @var int
-   */
-  protected $numIgnored = 0;
-
-  /**
-   * Number of rows we've at least looked at.
-   *
-   * @var int
-   */
-  protected $numProcessed = 0;
-
-  /**
    * The high water mark at the beginning of the import operation.
    *
    * If the source has a property for tracking changes (like Drupal ha
@@ -214,7 +200,6 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
       $id_map->delete($this->currentSourceIds, TRUE);
       $this->migrateExecutable->saveQueuedMessages();
       $id_map->saveIdMapping($row, array(), MigrateIdMapInterface::STATUS_IGNORED, $this->migrateExecutable->rollbackAction);
-      $this->numIgnored++;
       $this->currentRow = NULL;
       $this->currentSourceIds = NULL;
       $result = FALSE;
@@ -226,7 +211,6 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
       // after hashes).
       $row->rehash();
     }
-    $this->numProcessed++;
     return $result;
   }
 
@@ -280,8 +264,6 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
    */
   public function rewind() {
     $this->idMap = $this->migration->getIdMap();
-    $this->numProcessed = 0;
-    $this->numIgnored = 0;
     $this->getIterator()->rewind();
     $this->next();
   }
@@ -378,27 +360,6 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
   }
 
   /**
-   * Getter for numIgnored data member.
-   */
-  public function getIgnored() {
-    return $this->numIgnored;
-  }
-
-  /**
-   * Getter for numProcessed data member.
-   */
-  public function getProcessed() {
-    return $this->numProcessed;
-  }
-
-  /**
-   * Reset numIgnored back to 0.
-   */
-  public function resetStats() {
-    $this->numIgnored = 0;
-  }
-
-  /**
    * Get the source count.
    *
    * Return a count of available source records, from the cache if appropriate.
@@ -423,7 +384,7 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
     // class to get the count from the source.
     if ($refresh || !$this->cacheCounts) {
       $count = $this->getIterator()->count();
-      $this->getCache()->set($this->cacheKey, $count, 'cache');
+      $this->getCache()->set($this->cacheKey, $count);
     }
     else {
       // Caching is in play, first try to retrieve a cached count.
@@ -436,7 +397,7 @@ abstract class SourcePluginBase extends PluginBase implements MigrateSourceInter
         // No cached count, ask the derived class to count 'em up, and cache
         // the result.
         $count = $this->getIterator()->count();
-        $this->getCache()->set($this->cacheKey, $count, 'cache');
+        $this->getCache()->set($this->cacheKey, $count);
       }
     }
     return $count;

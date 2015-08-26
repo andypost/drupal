@@ -13,7 +13,7 @@ use Drupal\migrate_drupal\Tests\d6\MigrateDrupal6TestBase;
 /**
  * Upgrade block settings to block.block.*.yml.
  *
- * @group block
+ * @group migrate_drupal_6
  */
 class MigrateBlockTest extends MigrateDrupal6TestBase {
 
@@ -71,7 +71,6 @@ class MigrateBlockTest extends MigrateDrupal6TestBase {
     // Install one of D8's test themes.
     \Drupal::service('theme_handler')->install(array('test_theme'));
 
-    $this->loadDumps(['Blocks.php', 'BlocksRoles.php', 'AggregatorFeed.php']);
     $this->executeMigration('d6_block');
   }
 

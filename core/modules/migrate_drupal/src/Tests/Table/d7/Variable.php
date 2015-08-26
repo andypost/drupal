@@ -212,6 +212,9 @@ class Variable extends DrupalDumpBase {
       'name' => 'menu_options_test_content_type',
       'value' => 'a:4:{i:0;s:9:"main-menu";i:1;s:10:"management";i:2;s:10:"navigation";i:3;s:9:"user-menu";}',
     ))->values(array(
+      'name' => 'menu_override_parent_selector',
+      'value' => 'b:1;',
+    ))->values(array(
       'name' => 'menu_parent_test_content_type',
       'value' => 's:11:"main-menu:0";',
     ))->values(array(
@@ -284,11 +287,32 @@ class Variable extends DrupalDumpBase {
       'name' => 'search_active_modules',
       'value' => 'a:2:{s:4:"node";s:4:"node";s:4:"user";s:4:"user";}',
     ))->values(array(
+      'name' => 'search_and_or_limit',
+      'value' => 'i:7;',
+    ))->values(array(
       'name' => 'search_cron_limit',
       'value' => 's:3:"100";',
     ))->values(array(
       'name' => 'search_default_module',
       'value' => 's:4:"node";',
+    ))->values(array(
+      'name' => 'search_tag_weights',
+      'value' => 'a:12:{s:2:"h1";i:25;s:2:"h2";i:18;s:2:"h3";i:15;s:2:"h4";i:12;s:2:"h5";i:9;s:2:"h6";i:6;s:1:"u";i:3;s:1:"b";i:3;s:1:"i";i:3;s:6:"strong";i:3;s:2:"em";i:3;s:1:"a";i:10;}',
+    ))->values(array(
+      'name' => 'simpletest_clear_results',
+      'value' => 'b:1;',
+    ))->values(array(
+      'name' => 'simpletest_httpauth_method',
+      'value' => 'i:1;',
+    ))->values(array(
+      'name' => 'simpletest_httpauth_password',
+      'value' => 's:6:"foobaz";',
+    ))->values(array(
+      'name' => 'simpletest_httpauth_username',
+      'value' => 's:7:"testbot";',
+    ))->values(array(
+      'name' => 'simpletest_verbose',
+      'value' => 'b:1;',
     ))->values(array(
       'name' => 'site_403',
       'value' => 's:4:"node";',
@@ -335,8 +359,14 @@ class Variable extends DrupalDumpBase {
       'name' => 'syslog_identity',
       'value' => 's:6:"drupal";',
     ))->values(array(
+      'name' => 'teaser_length',
+      'value' => 'i:1024;',
+    ))->values(array(
       'name' => 'theme_default',
       'value' => 's:6:"bartik";',
+    ))->values(array(
+      'name' => 'tracker_batch_size',
+      'value' => 'i:999;',
     ))->values(array(
       'name' => 'user_admin_role',
       'value' => 's:1:"3";',
@@ -449,4 +479,4 @@ class Variable extends DrupalDumpBase {
   }
 
 }
-#5b6552f715939e2b33c22779e47e73e3
+#dbc0f593050ff48cc18dfa4fed47daaf
