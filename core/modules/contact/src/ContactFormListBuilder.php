@@ -7,7 +7,6 @@
 
 namespace Drupal\contact;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 
@@ -45,15 +44,12 @@ class ContactFormListBuilder extends ConfigEntityListBuilder {
       $row['form'] = $entity->link(NULL, 'canonical');
       // Filter empty lines.
       $recipients = array_filter($entity->getRecipients());
-      if (count($recipients) > 1) {
+      if ($recipients) {
         $row['recipients']['data'] = [
           '#theme' => 'item_list',
           '#items' => $recipients,
+          '#context' => ['list_style' => 'comma-list'],
         ];
-      }
-      elseif (count($recipients)) {
-        // Only one recipient.
-        $row['recipients']['data']['#markup'] = $recipients[0];
       }
       else {
         $row['recipients'] = $this->t('No recipients');
