@@ -191,7 +191,7 @@ abstract class CommentTestBase extends WebTestBase {
    */
   function commentExists(CommentInterface $comment = NULL, $reply = FALSE) {
     if ($comment) {
-      $comment_element = $this->cssSelect('.comment-wrapper ' . ($reply ? '.indented ' : '') . '#comment-' . $comment->id() . ' ~ article');
+      $comment_element = $this->cssSelect('.comment-wrapper ' . ($reply ? '.indented ' : '') . 'article#comment-' . $comment->id());
       if (empty($comment_element)) {
         return FALSE;
       }

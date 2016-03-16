@@ -175,7 +175,6 @@ class CommentViewBuilder extends EntityViewBuilder {
       }
 
       // Add anchor for each comment.
-      $prefix .= "<a id=\"comment-{$comment->id()}\"></a>\n";
       $build['#prefix'] = $prefix;
 
       // Close all open divs.

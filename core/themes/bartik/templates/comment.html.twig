@@ -5,6 +5,7 @@
  *
  * Available variables:
  * - author: Comment author. Can be a link or plain text.
+ * - comment_id: Comment id.
  * - content: The content-related items for the comment display. Use
  *   {{ content }} to print them all, or print a subset such as
  *   {{ content.field_example }}. Use the following code to temporarily suppress
@@ -74,7 +75,7 @@
     'clearfix',
   ]
 %}
-<article role="article"{{ attributes.addClass(classes)|without('role') }}>
+<article role="article"{{ attributes.addClass(classes)|without('role') }} id="comment-{{ comment_id }}">
   {#
     Hide the "new" indicator by default, let a piece of JavaScript ask the
     server which comments are new for the user. Rendering the final "new"
