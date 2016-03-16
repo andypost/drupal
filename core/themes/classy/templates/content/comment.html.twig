@@ -76,7 +76,7 @@
     author_id and author_id == commented_entity.getOwnerId() ? 'by-' ~ commented_entity.getEntityTypeId() ~ '-author',
   ]
 %}
-<article{{ attributes.addClass(classes) }} id="comment-{{ comment_id }}">
+<article{{ attributes.addClass(classes) }}>
   {#
     Hide the "new" indicator by default, let a piece of JavaScript ask the
     server which comments are new for the user. Rendering the final "new"
